@@ -2,7 +2,7 @@
 const D=window.DBP;const {affixes,definitions,limits}=D;
 const extraStats=["basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","lifeKill","regen","xp","potionFind","potionCharges","armorBonus"];
 const stats=[...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','goldFind','abilityLevels','int','damage','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','mr','armor','maxHP','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
-const labels={weaponDamage:'武器ダメージ',weaponSpeed:'武器速度',weaponDps:'武器基礎DPS',strongAttack:'強攻撃ダメージ',goldFind:'Gold Find',abilityLevels:'全アビリティレベル',int:'知力',damage:'固定ダメージ',lightning:'雷ダメージ',allDamage:'全ダメージ',healthy:'対健康ダメージ',injured:'対負傷ダメージ',elite:'対エリートダメージ',critChance:'Crit率',critDamage:'Critダメージ',critRed:'Critダメ軽減',cdr:'CDR',mcr:'MCR',as:'ASボーナス',dodge:'Dodge',mr:'Magic Resist',armor:'Armor',maxHP:'最大HP',bonusHP:'Bonus HP',mana:'最大Mana',move:'移動速度',loh:'Life on Hit',itemFind:'Item Find',manaKill:'Mana on Kill',physicalDR:'物理軽減',coldDR:'冷気軽減',fireDR:'炎軽減',arcane:'アルケインダメージ',physical:'物理ダメージ',poison:'毒ダメージ',fire:'炎ダメージ',cold:'冷気ダメージ',str:'力',dex:'敏捷',thorns:'棘ダメージ',arcaneDR:'アルケイン軽減',poisonDR:'毒軽減',lightningDR:'雷軽減'};
+const labels={weaponDamage:'武器ダメージ',weaponSpeed:'武器速度',weaponDps:'武器基礎DPS',strongAttack:'強攻撃ダメージ',goldFind:'Gold Find',abilityLevels:'全アビリティレベル',int:'知力',damage:'固定ダメージ',lightning:'雷ダメージ',allDamage:'全ダメージ',healthy:'対健康ダメージ',injured:'対負傷ダメージ',elite:'対エリートダメージ',critChance:'Crit率',critDamage:'Critダメージ',critRed:'Critダメ軽減',cdr:'CDR',mcr:'MCR',as:'ASボーナス',dodge:'Dodge',mr:'Magic Resist',armor:'Armor',maxHP:'最大HP',bonusHP:'Bonus HP',mana:'最大Mana',move:'ボーナス移動速度',loh:'Life on Hit',itemFind:'Item Find',manaKill:'Mana on Kill',physicalDR:'物理軽減',coldDR:'冷気軽減',fireDR:'炎軽減',arcane:'アルケインダメージ',physical:'物理ダメージ',poison:'毒ダメージ',fire:'炎ダメージ',cold:'冷気ダメージ',str:'力',dex:'敏捷',thorns:'棘ダメージ',arcaneDR:'アルケイン軽減',poisonDR:'毒軽減',lightningDR:'雷軽減'};
 Object.assign(labels,{"basicAttack":"基本攻撃ダメージ","strongAttack":"強攻撃ダメージ","fire":"炎ダメージ","cold":"冷気ダメージ","slowed":"減速状態へのダメージ","immobilized":"移動不能状態へのダメージ","vulnerable":"脆弱状態へのダメージ","distant":"遠距離の敵へのダメージ","dot":"継続ダメージ","burned":"燃焼状態へのダメージ","lifeKill":"撃破時HP回復","lightningDR":"雷ダメージ軽減","arcaneDR":"アルケインダメージ軽減","regen":"HP自然回復","xp":"経験値獲得","potionFind":"ポーション発見率","potionCharges":"追加ポーション所持数","armorBonus":"ボーナスArmor","specialDamage":"特殊攻撃ダメージ"});
 const percent=new Set(['strongAttack','goldFind','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','bonusHP','move','itemFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','arcaneDR','poisonDR','lightningDR']);
 for(const key of ["basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","xp","potionFind","armorBonus"])percent.add(key);
@@ -58,8 +58,24 @@ function calc(doc,build,sub={}){
   }
   const s=build.settings||{};const base=s.base||{};
   for(const [k,v] of Object.entries(base))if(v!==''&&v!==null&&v!==undefined)add(k,Number(v),'登録済みの装備外基礎値','manual');
-  const p=s.paragon||{};
-  if(p.bonusMR)add('bonusMR',p.bonusMR,'Paragon Bonus MR','history');if(p.bonusArmor)add('bonusArmor',p.bonusArmor,'Paragon Bonus Armor','history');if(p.bonusHP)add('bonusHP',p.bonusHP,'Paragon Bonus HP','history');if(p.maxMana)add('mana',p.maxMana,'Paragon Max Mana','history');if(p.as)add('as',p.as,'Paragon AS','history');
+  const allocation=D.paragonAllocation(s);
+  if(!allocation.legacy){
+    for(const stat of D.paragonStats){
+      const points=allocation.points[stat.key]||0;
+      if(points)add(stat.stat,Number((points*stat.per).toFixed(7)),'Paragon '+stat.label+' ('+points+'pt)','verified');
+    }
+    if(allocation.issues.length)pending.push('Paragon：不正な割り振り値は上限内の整数に補正して計算');
+    if(s.paragonLevel!==undefined&&s.paragonLevel!==null&&allocation.total>Number(s.paragonLevel))pending.push('Paragon：現在の割り振りが設定レベルを超過');
+  }else{
+    // Existing saved builds used direct bonus values, not allocated points.
+    // Preserve exact bonuses until the user edits the Paragon point allocation.
+    const p=s.paragon||{};
+    if(p.bonusMR)add('bonusMR',p.bonusMR,'Paragon Bonus MR（旧形式）','history');
+    if(p.bonusArmor)add('bonusArmor',p.bonusArmor,'Paragon Bonus Armor（旧形式）','history');
+    if(p.bonusHP)add('bonusHP',p.bonusHP,'Paragon Bonus HP（旧形式）','history');
+    if(p.maxMana)add('mana',p.maxMana,'Paragon Max Mana（旧形式）','history');
+    if(p.as)add('as',p.as,'Paragon AS（旧形式）','history');
+  }
   if(s.aura){add('critChance',10,'Flame Aura · Crit率','history');if((s.talents||{}).flameWard){add('bonusMR',80,'炎の加護 · MR +80%','history');add('bonusArmor',80,'炎の加護 · Armor +80%','history');}}
   if(s.pet?.id==='raptor'){const lvl=Number(s.pet.level||0);if(lvl>=10)add('critChance',6,'ラプター +10','history');else if(lvl>=4)add('critChance',4.2,'ラプター +4','history');}
   if(s.pet?.id==='wyrm'){add('bonusMR',Number(s.pet.level||0)>=10?150:100,'汚された古竜（未検証）','estimated');}
@@ -68,9 +84,11 @@ function calc(doc,build,sub={}){
   if(s.food==='crab')add('allDR',10,'灰殻のカニ','history');
   if((s.talents||{}).arcaneReservoir){const mana=sum.mana;if(base.mana!==undefined && base.mana!=='' && base.mana!==null && mana)add('int',mana*.4,'魔力の貯蔵8/8 · Mana由来INT','calculated');else pending.push('装備外の基礎Mana未登録につき魔力の貯蔵のINT換算は未計算');}
   // Magic Resist and Armor are affected by bonus percentages. Baseline remains unknown unless explicitly entered.
-  const rawMR=(sum.mr||0)+(sum.int||0);const rawArmor=sum.armor||0;
+  if((sum.dex||0)>0)add('critRed',100*sum.dex/(sum.dex+1500),'敏捷由来 Critダメージ軽減','calculated');
+  const rawMR=(sum.mr||0)+(sum.int||0);const rawArmor=(sum.armor||0)+(sum.str||0);
   const effective={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+((sum.bonusArmor||0)+(sum.armorBonus||0))/100)};
   breakdown.mr=[...(breakdown.mr||[]),...(breakdown.int||[]).map(x=>({...x,source:x.source+' → INT由来MR'}))];
+  breakdown.armor=[...(breakdown.armor||[]),...(breakdown.str||[]).map(x=>({...x,source:x.source+' → STR由来Armor'}))];
   for(const k of ['critChance','critRed','cdr','mcr','dodge'])if(effective[k]!==undefined)effective[k]=Math.min(limits[k],effective[k]);
   const raw={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+((sum.bonusArmor||0)+(sum.armorBonus||0))/100)};
   // Max HP represents fixed HP multiplied by Bonus HP; absent base means partial sum.
