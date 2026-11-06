@@ -4,6 +4,24 @@
  */
 (function(){
 'use strict';
+// Each Paragon level grants one point; caps are allocation limits (not stat caps).
+// Sources: https://wikily.gg/deskrawl/paragon
+//          https://playongg.com/games/deskrawl/systems/gameconfig
+const paragonStats=[{"key":"str","group":"コア","label":"力","stat":"str","per":1,"max":null},{"key":"dex","group":"コア","label":"敏捷","stat":"dex","per":1,"max":null},{"key":"int","group":"コア","label":"知力","stat":"int","per":1,"max":null},{"key":"move","group":"コア","label":"ボーナスMS","stat":"move","per":0.5,"max":50},{"key":"maxMana","group":"コア","label":"最大マナ","stat":"mana","per":2,"max":50},{"key":"critChance","group":"攻撃","label":"クリティカル率","stat":"critChance","per":0.1,"max":50},{"key":"critDamage","group":"攻撃","label":"クリティカルダメージ","stat":"critDamage","per":2,"max":50},{"key":"as","group":"攻撃","label":"攻撃速度ボーナス","stat":"as","per":0.4,"max":50},{"key":"cdr","group":"攻撃","label":"クールダウン短縮","stat":"cdr","per":0.2,"max":50},{"key":"bonusArmor","group":"防御","label":"ボーナスArmor","stat":"bonusArmor","per":1,"max":50},{"key":"bonusMR","group":"防御","label":"ボーナスMR","stat":"bonusMR","per":1,"max":50},{"key":"bonusHP","group":"防御","label":"ボーナスHP","stat":"bonusHP","per":0.5,"max":50},{"key":"regen","group":"防御","label":"HP自然回復","stat":"regen","per":4,"max":50},{"key":"loh","group":"補助","label":"Life on Hit","stat":"loh","per":5,"max":25},{"key":"potionFind","group":"補助","label":"ポーション発見率","stat":"potionFind","per":5,"max":null}];
+function paragonAllocation(settings){
+ const current=settings?.paragonPoints;
+ const legacy=!current||typeof current!=='object'||Array.isArray(current);
+ const source=legacy?(settings?.paragon||{}):current;
+ const points={};const issues=[];let total=0;
+ for(const item of paragonStats){
+   const sourceValue=Number(source[item.key]??0);
+   const estimate=legacy?sourceValue/item.per:sourceValue;
+   const safe=Number.isFinite(estimate)?Math.max(0,Math.min(item.max??Number.MAX_SAFE_INTEGER,Math.round(estimate))):0;
+   if(!Number.isFinite(estimate)||Math.abs(safe-estimate)>1e-7)issues.push(item.label);
+   points[item.key]=safe;total+=safe;
+ }
+ return {points,total,legacy,issues};
+}
 const slots=[['weapon','武器'],['head','頭'],['neck','首飾り'],['shoulder','肩'],['chest','胸'],['gloves','手袋'],['belt','ベルト'],['legs','脚'],['boots','ブーツ'],['ring1','指輪①'],['ring2','指輪②']];
 const affixes={
 basicAttack:["基本攻撃ダメージ",109.5,"pct","通常攻撃系"],
@@ -94,6 +112,6 @@ const seedConfigs=[
 ['ring2','sage',[],null,'既知のDivine']
 ];
 function uid(prefix){return prefix+'-'+(globalThis.crypto&&crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2))}
-function makeSeed(){const items=[],loadout={};for(const [slot,definitionId,primary,secondary,note] of seedConfigs){const it={id:uid('item'),definitionId,slot,primary:[...primary],secondary:secondary||'',upgrade:0,upgradeKnown:false,overrides:{},gems:[],nickname:'',memo:note,source:'history',owned:null,createdAt:new Date().toISOString()};items.push(it);loadout[slot]=it.id;}const old={id:uid('item'),definitionId:'unyielding',slot:'chest',primary:['healthy','injured','bonusHP','coldDR'],secondary:'loh',upgrade:8,upgradeKnown:true,overrides:{},gems:[],nickname:'旧・LoH胸',memo:'以前の+8試用装備',source:'history',owned:null,createdAt:new Date().toISOString()};items.push(old);const build={id:uid('build'),name:'Stormcaller 通常',loadout,settings:{aura:true,enemyLevel:70,paragon:{bonusMR:0,bonusArmor:0,bonusHP:0,maxMana:30,as:0},talents:{flameWard:8,arcaneReservoir:8},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{},notes:'会話履歴による初期下書き。実測値・強化段階は確認が必要。'},createdAt:new Date().toISOString()};return {schemaVersion:1,masterVersion:'conversation-draft-2026-11-06',items,builds:[build],activeBuildId:build.id,measurements:[{id:uid('measurement'),at:'2026-11-04',buildId:build.id,reference:true,values:{critChance:83.2,cdr:76.6,armor:9416,mr:2909,as:1.2,mana:130,stormCost:21},notes:'旧装備のAura発動中の会話上の記録。現在構成の確定値ではない。'}]};}
-window.DBP={slots,affixes,rules,definitions,gems,gemSocketLimits,gemSocketGroup,gemEffect,makeSeed,uid,limits:{critChance:85,critRed:100,dodge:85,cdr:80,mcr:85},version:'black-mist-affixes-2026-11-06'};
+function makeSeed(){const items=[],loadout={};for(const [slot,definitionId,primary,secondary,note] of seedConfigs){const it={id:uid('item'),definitionId,slot,primary:[...primary],secondary:secondary||'',upgrade:0,upgradeKnown:false,overrides:{},gems:[],nickname:'',memo:note,source:'history',owned:null,createdAt:new Date().toISOString()};items.push(it);loadout[slot]=it.id;}const old={id:uid('item'),definitionId:'unyielding',slot:'chest',primary:['healthy','injured','bonusHP','coldDR'],secondary:'loh',upgrade:8,upgradeKnown:true,overrides:{},gems:[],nickname:'旧・LoH胸',memo:'以前の+8試用装備',source:'history',owned:null,createdAt:new Date().toISOString()};items.push(old);const build={id:uid('build'),name:'Stormcaller 通常',loadout,settings:{aura:true,enemyLevel:70,paragonPoints:{maxMana:15},paragonLevel:null,talents:{flameWard:8,arcaneReservoir:8},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{},notes:'会話履歴による初期下書き。実測値・強化段階は確認が必要。'},createdAt:new Date().toISOString()};return {schemaVersion:1,masterVersion:'conversation-draft-2026-11-06',items,builds:[build],activeBuildId:build.id,measurements:[{id:uid('measurement'),at:'2026-11-04',buildId:build.id,reference:true,values:{critChance:83.2,cdr:76.6,armor:9416,mr:2909,as:1.2,mana:130,stormCost:21},notes:'旧装備のAura発動中の会話上の記録。現在構成の確定値ではない。'}]};}
+window.DBP={paragonStats,paragonAllocation,slots,affixes,rules,definitions,gems,gemSocketLimits,gemSocketGroup,gemEffect,makeSeed,uid,limits:{critChance:85,critRed:100,dodge:85,cdr:80,mcr:85},version:'black-mist-affixes-2026-11-06'};
 })();
