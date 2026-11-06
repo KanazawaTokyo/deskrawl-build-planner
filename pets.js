@@ -24,7 +24,8 @@ const gearTypes=[
 ];
 // Pet equipment uses a single combined Sorcerer affix pool, not the hero-slot
 // primary/secondary distinctions. No sockets and no item upgrades.
-const gearAffixes=['damage','critDamage','as','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','maxHP','mana','cdr','armor','mr','dodge','armorBonus','lightningDR','arcaneDR','thorns','bonusHP','physicalDR','coldDR','poisonDR','mcr','fireDR','critRed','potionCharges','critChance','allDamage','int','fire','cold','lightning','distant','dot','burned'];
+const gearAffixes=['damage','critDamage','as','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','maxHP','mana','cdr','armor','mr','dodge','armorBonus','lightningDR','arcaneDR','thorns','bonusHP','physicalDR','coldDR','poisonDR','mcr','fireDR','critRed','potionCharges','critChance','allDamage','int','fire','cold','lightning','distant','dot','burned',
+'loh','lifeKill','manaKill','regen','itemFind','goldFind','potionFind','xp','move'];
 const max850={
   int:78,mana:78,damage:47,critDamage:93.8,as:23.5,
   basicAttack:109.5,strongAttack:109.5,specialDamage:125.1,fire:125.1,cold:125.1,lightning:125.1,
@@ -32,7 +33,7 @@ const max850={
   distant:156.4,dot:156.4,burned:156.4,maxHP:704,cdr:15.6,lightningDR:15.6,arcaneDR:15.6,
   physicalDR:15.6,coldDR:15.6,poisonDR:15.6,mcr:15.6,fireDR:15.6,armor:782,mr:782,
   dodge:7.8,armorBonus:31.3,thorns:156,bonusHP:31.3,critRed:31.3,potionCharges:1,
-  critChance:12.5,allDamage:62.6
+  critChance:12.5,allDamage:62.6,loh:31,lifeKill:94,manaKill:16,regen:31,itemFind:31.3,goldFind:31.3,potionFind:31.3,xp:31.3,move:15.6
 };
 const rare850Max={
   int:73,mana:73,damage:44,critDamage:88,as:22,basicAttack:102.6,strongAttack:102.6,specialDamage:117.3,
@@ -40,7 +41,7 @@ const rare850Max={
   elite:146.6,vulnerable:146.6,distant:146.6,dot:146.6,burned:146.6,maxHP:660,cdr:14.7,
   lightningDR:14.7,arcaneDR:14.7,physicalDR:14.7,coldDR:14.7,poisonDR:14.7,mcr:14.7,
   fireDR:14.7,armor:733,mr:733,dodge:7.3,armorBonus:29.3,thorns:147,bonusHP:29.3,critRed:29.3,
-  potionCharges:1,critChance:11.7,allDamage:58.6
+  potionCharges:1,critChance:11.7,allDamage:58.6,loh:29,lifeKill:88,manaKill:15,regen:29,itemFind:29.3,goldFind:29.3,potionFind:29.3,xp:29.3,move:14.7
 };
 const legacyIds={wyrm:'defiled-wyrm',emberfang:'emberfang',naga:'shoal-naga',raptor:'raptor'};
 function lookup(id){return minions.find(x=>x.id===(legacyIds[id]||id))||null;}
