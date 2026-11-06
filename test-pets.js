@@ -1,7 +1,7 @@
 'use strict';
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const handlers={},store={},app={innerHTML:'',addEventListener:(k,v)=>handlers[k]=v};
-const ctx={window:null,document:{getElementById:id=>id==='app'?app:id==='toast'?{textContent:'',classList:{add(){},remove(){}}}:null,addEventListener(){}},localStorage:{getItem:k=>store[k]||null,setItem:(k,v)=>store[k]=v},Date,JSON,Math,Set,Number,String,URL,URLSearchParams,Blob,Map,crypto:require('node:crypto').webcrypto,console,setTimeout:()=>0,clearTimeout:()=>{},confirm:()=>true,prompt:()=>'',fetch:()=>Promise.reject(Error('no network')),history:{replaceState(){}},location:{hash:'',pathname:'/',search:'',origin:'file://'}};
+const ctx={window:null,document:{getElementById:id=>id==='app'?app:id==='toast'?{textContent:'',classList:{add(){},remove(){}}}:null,addEventListener(){},createElement:()=>({style:{},click(){}}),body:{appendChild(){}}},localStorage:{getItem:k=>store[k]||null,setItem:(k,v)=>store[k]=v},Date,JSON,Math,Set,Number,String,URL,URLSearchParams,Blob,Map,crypto:require('node:crypto').webcrypto,console,setTimeout:()=>0,clearTimeout:()=>{},confirm:()=>true,prompt:()=>'',fetch:()=>Promise.reject(Error('no network')),history:{replaceState(){}},location:{hash:'',pathname:'/',search:'',origin:'file://'}};
 ctx.window=ctx;ctx.addEventListener=()=>{};vm.createContext(ctx);
 for(const file of ['master.js','calc.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+file,'utf8'),ctx,{filename:file});
 const D=ctx.DBP,C=ctx.DBPCalc,build=()=>ctx.DBPApp.getState().builds[0],result=()=>ctx.DBPApp.calc();
