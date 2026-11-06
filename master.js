@@ -25,9 +25,9 @@ function paragonAllocation(settings){
 // Level +10 passive catalog: values are passive skill levels, not minion XP levels.
 // WikiLy minion pages verified 2026-11-06; temporary abilities are descriptive only.
 const petCatalog=[{"id":"flying-fish-king","name":"トビウオ王","passives":[["mcr","Ocean's Providence",15]],"ability":"Mana Monsoon：+40 Mana Regen / 5秒、CD 14秒"},{"id":"lord-of-the-cinder","name":"灰燼の王","passives":[["cdr","Cinder Sovereign",20]],"ability":"Ashen Wrath：Critダメージ+175% / 5秒、CD 10秒"},{"id":"tidewrath-crab-king","name":"怒濤の蟹王","passives":[["critDamage","Massive Crab Claws",80],["coldDR","Thicker Shell",40],["fireDR","Heatproof Shell",40]]},{"id":"defiled-wyrm","name":"汚された古竜","passives":[["regenBonus","Everliving Blood",150],["bonusMR","Sepulchral Scales",150]]},{"id":"ogre","name":"オーガ","passives":[["stunned","Damage to Stunned III",80],["physicalDR","Iron Hide",30]]},{"id":"redrock-lord","name":"赤岩の領主","passives":[["strongAttack","Strong Attack Damage III",60]],"ability":"Power of Redrock Lord：物理ダメージ+100% / 6秒、CD 12秒"}];
-const petGearAffixes=['damage','critDamage','as','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','maxHP','mana','cdr','armor','mr','dodge','armorBonus','lightningDR','arcaneDR','thorns','bonusHP','physicalDR','coldDR','poisonDR','mcr','fireDR','critRed','potionCharges','critChance','allDamage','int','fire','cold','lightning','distant','dot','burned','loh','regen','itemFind','goldFind','xp','potionFind','lifeKill','manaKill','move'];
-// Saddle Black Mist: 3 freely chosen revealed affixes from its PRIMARY pool.
-const petGearPrimary=petGearAffixes.filter(id=>!['loh','regen','itemFind','goldFind','xp','potionFind','lifeKill','manaKill','move'].includes(id));
+const petGearPrimary=['damage','critDamage','as','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','maxHP','mana','cdr','armor','mr','dodge','armorBonus','lightningDR','arcaneDR','thorns','bonusHP','physicalDR','coldDR','poisonDR','mcr','fireDR','critRed','potionCharges','critChance','allDamage','int','fire','cold','lightning','distant','dot','burned'];
+const petGearAffixes=petGearPrimary;
+
 function petPassiveList(id){return petCatalog.find(p=>p.id===id)?.passives||[];}
 const slots=[['weapon','武器'],['head','頭'],['neck','首飾り'],['shoulder','肩'],['chest','胸'],['gloves','手袋'],['belt','ベルト'],['legs','脚'],['boots','ブーツ'],['ring1','指輪①'],['ring2','指輪②']];
 const affixes={
