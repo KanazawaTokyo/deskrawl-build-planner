@@ -11,8 +11,8 @@ const get=()=>ctx.DBPApp.getState(),b=()=>get().builds.find(x=>x.id===get().acti
 const click=action=>events.click({target:{closest:()=>({dataset:{action}})}});
 const change=(kind,value,key='',idx='')=>events.change({target:{id:'',type:typeof value==='boolean'?'checkbox':'text',checked:!!value,value:String(value),dataset:{change:kind,key,idx}}});
 assert.equal(P.minions.filter(p=>p.rarity==='Legendary').length,24);
-assert.equal(P.minions.length,24);
-assert.equal(P.gearTypes.length,5);
+assert.equal(P.minions.length,68);
+assert.equal(P.gearTypes.length,6);
 assert.equal(P.gearAffixes.length,39);
 assert.equal(P.lookup('wyrm').id,'defiled-wyrm');
 click('tab-pet');
@@ -72,4 +72,48 @@ assert(result.breakdown.critDamage.some(x=>x.source.includes('Killing Precision 
 click('tab-stats');
 assert(app.innerHTML.includes('ステータス'));
 assert(C.full.includes('manaBonus'));
-console.log('PASS: pet tab, 24 Legendary Lv10 passives, inheritance, equipment, level gates, input validation, cloud schema');
+// Complete minion roster cross-check against WikiLy 68 entries (24/16/27/1).
+for(const [r,n] of [['Legendary',24],['Rare',16],['Uncommon',27],['Common',1]])
+  assert.equal(P.minions.filter(x=>x.rarity===r).length,n,r+' roster mismatch');
+assert.equal(P.minions.filter(x=>x.unobtainable).length,2);
+assert.equal(P.minions.filter(x=>!x.unobtainable).length,66);
+for(const minion of P.minions){
+ assert.equal(minion.sourceUrl,'https://wikily.gg/deskrawl/minions/'+minion.id);
+ assert(minion.passives.length>0,minion.id+' has no passives');
+ for(const p of minion.passives){
+   assert(p.id&&p.label&&p.stat&&Number.isFinite(p.base)&&Number.isFinite(p.max),minion.id+' bad +10 passive');
+   assert(C.full.includes(p.stat),minion.id+' passive does not appear in Stats: '+p.stat);
+ }
+}
+const pre=pet().id;
+change('petMain','oakback-pack-bull');
+assert.equal(pet().id,pre,'unobtainable minion cannot be selected');
+change('petMain','skeleton-warrior');
+assert.equal(pet().id,pre,'unobtainable skeleton cannot be selected');
+change('petMain','shoal-naga');
+assert(calc().breakdown.manaRegen.some(x=>x.value===12&&x.source.includes('Shoal Naga')));
+change('petMain','orc-fighter');
+assert(calc().breakdown.strBonus.some(x=>x.value===20));
+const strengthDoc={items:[],builds:[]};
+const strengthResult=C.calc(strengthDoc,{loadout:{},settings:{aura:false,base:{str:100},pet:{id:'orc-fighter',level:10,progressionVersion:1}}});
+assert.equal(strengthResult.sum.str,120,'+20% Strength must derive from base+equipment Strength');
+assert.equal(strengthResult.raw.armor,120,'derived STR contributes to Armor');
+change('petMain','sand-wasp');
+assert(calc().breakdown.poisoned.some(x=>x.value===40));
+change('petMain','brown-horse');
+assert(calc().breakdown.move.some(x=>x.source.includes('Brown Horse')&&x.value===10));
+change('petMain','flying-fish-king');
+change('petGearType','saddle-of-the-golden-khan-normal');
+assert.equal(pet().equipment.id,'saddle-of-the-golden-khan-normal');
+change('petGearStat','strongAttack','',0);
+assert(!calc().breakdown.strongAttack.some(x=>x.source.includes('Saddle of the Golden Khan')),
+       'normal Legendary rolls should not be autofilled');
+change('petGearValue','90','',0);
+assert(calc().breakdown.strongAttack.some(x=>x.source.includes('Saddle of the Golden Khan')&&x.value===90));
+change('petGearValue','120','',0);
+assert.equal(pet().equipment.rolls[0].value,90,'normal Legendary item must respect Legendary IL850 maximum');
+change('petGearType','saddle-of-the-golden-khan');
+change('petGearStat','strongAttack','',0);
+assert(calc().breakdown.strongAttack.some(x=>x.source.includes('Saddle of the Golden Khan')&&x.value===109.5));
+console.log('PASS: all 68 sourced minions (66 obtainable), 44 new +10 passives, STR interaction, and normal/BM Saddle differences');
+console.log('PASS: pet tab, 68 minions Lv10 passives, inheritance, equipment, level gates, input validation, cloud schema');
