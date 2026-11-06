@@ -3,7 +3,7 @@ const D=window.DBP,C=window.DBPCalc;
 const PU=window.DBPPetUI||null;
 const LS='deskrawl_planner_v01',CFG='deskrawl_planner_cloud_v01',SESSION='deskrawl_planner_session_v01';
 let state;try{const raw=localStorage.getItem(LS);state=raw?JSON.parse(raw):D.makeSeed();if(!state||state.schemaVersion!==1)throw Error('Invalid saved schema');}catch(e){state=D.makeSeed()}
-let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',settingsOpen:false,settingsTab:'paragon',talentSelected:'arcaneExposure',modal:'',mobileDetails:false,compareBuildId:'',cloudNote:'',status:'local',dirty:false};
+let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',settingsOpen:false,settingsTab:'paragon',talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',cloudNote:'',status:'local',dirty:false};
 let cloudCfg;try{const builtIn=window.DBP_CLOUD_CONFIG;const local=JSON.parse(localStorage.getItem(CFG)||'null');cloudCfg=builtIn?.url&&builtIn?.key?builtIn:local}catch(e){cloudCfg=window.DBP_CLOUD_CONFIG||null}
 let session;try{session=JSON.parse(localStorage.getItem(SESSION)||'null')}catch(e){session=null}
 let cloudRevision=0,cloudSaveTimer=null,cloudBusy=false,cloudDirty=false,cloudSyncBlocked=false;const app=document.getElementById('app');const toast=document.getElementById('toast');
