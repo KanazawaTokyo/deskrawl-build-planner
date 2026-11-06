@@ -1,0 +1,103 @@
+'use strict';
+const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
+const source=file=>fs.readFileSync(__dirname+'/'+file,'utf8');
+const ctx={window:null,console,Math,Date,JSON,Set,Number,String,Array,Map};
+ctx.window=ctx;vm.createContext(ctx);
+for(const f of ['master.js','pets.js','calc.js','combat.js','combat-ui.js'])vm.runInContext(source(f),ctx,{filename:f});
+const B=ctx.DBPCombat,UI=ctx.DBPCombatUI;
+const approx=(value,target,desc)=>assert(Math.abs(value-target)<1e-8,desc+': '+value+' vs '+target);
+const stats={effective:{weaponDamage:100,damage:0,int:0,critChance:0,critDamage:0,lightning:100,allDamage:50,
+ strongAttack:100,specialDamage:0,healthy:100,elite:100,vulnerable:100,armor:3500,mr:3500,
+ physicalDR:30,fireDR:20,allDR:10,dodge:25,critRed:100,flatDR:0},breakdown:{}};
+const setting={base:{int:0,critChance:0,critDamage:0,dodge:0}};
+const opts={attackType:'strong',damageType:'lightning',skillPercent:100,skillFlat:0,
+ enemyHealth:90,elite:true,vulnerable:true,heroLevel:70};
+const hit=B.attack(stats,setting,opts);
+assert.equal(hit.primary,0);
+approx(hit.elemMult,2.5,'element and all damage share an additive bucket');
+approx(hit.condMult,4,'healthy+elite+vulnerable = 300% conditional');
+approx(hit.attackMult,2,'strong attack separate multiplier');
+approx(hit.vulnMult,1.3,'vulnerable native factor is separate from vs vulnerable');
+assert.equal(hit.normal.final,2600,'base100 × element2.5 × conditional4 × strong2 × vulnerable1.3');
+assert.equal(hit.expected,2600,'0% critical chance yields normal hit');
+approx(hit.layers.reduce((sum,x)=>sum+x.share,0),100,'log contributions sum to 100%');
+assert(hit.conditions.find(x=>x.key==='healthy').active);
+assert(!B.attack(stats,setting,{...opts,enemyHealth:80}).conditions.find(x=>x.key==='healthy').active,'healthy is >80 only');
+assert(!B.attack(stats,setting,{...opts,enemyHealth:30}).conditions.find(x=>x.key==='injured').active,'injured is <30 only');
+const status=B.attack({effective:{...stats.effective,immobilized:90,stunned:70},breakdown:{}},setting,
+ {...opts,stunned:true,immobilized:true}).conditions;
+assert.equal(status.find(x=>x.key==='immobilized').value,90,'stunned and immobilized do not double-count same vs-immobilized stat');
+assert.equal(status.find(x=>x.key==='stunned').value,70,'separate vs-stunned stat applies once');
+const critStats={...stats,effective:{...stats.effective,critChance:50,critDamage:200}};
+const crit=B.attack(critStats,setting,{...opts,targetCritRed:50});
+approx(crit.critMult,2,'target CritRed reduces the bonus portion of a crit');
+approx(crit.expected,(crit.normal.final+crit.critical.final)/2,'average is weighted by crit chance');
+assert.equal(B.attack({effective:{...stats.effective,weaponDamage:0},breakdown:{}},setting,opts).normal,null,'do not fabricate damage if weapon missing');
+const partial=B.baseline({effective:{}},{base:{}});
+assert.equal(partial.int,10);
+assert.equal(partial.critChance,5);
+assert.equal(partial.critDamage,150);
+assert.equal(partial.dodge,5);
+assert.equal(B.baseline({effective:{}},{base:{int:100,critChance:30,critDamage:190,dodge:8}}).critDamage,0,
+ 'do not double-count user supplied baseline');
+const all=B.defense(stats,setting,{incomingHit:10000,attackerLevel:70,defenseType:'physical'});
+const phy=all.selected;
+approx(phy.resistCut,.5,'3500 armor vs lv70 is 50% physical cut');
+assert.equal(phy.afterFlat,3150,'10000 × .5 × .7 × .9');
+approx(phy.directCut,.685,'physical mitigation excludes dodge');
+approx(phy.expectedCut,.76375,'physical mitigation includes dodge');
+const fire=B.defense(stats,setting,{incomingHit:10000,attackerLevel:70,defenseType:'fire'}).selected;
+assert.equal(fire.afterFlat,3600,'10000 × .5 × .8 × .9 fire');
+approx(fire.expectedCut,.73,'fire mitigation including 25% dodge');
+const arcane=B.defense(stats,setting,{incomingHit:10000,attackerLevel:70,defenseType:'arcane'}).selected;
+assert.equal(arcane.afterFlat,4500,'zero arcane DR still takes MR and general DR');
+const extreme=B.defense({effective:{armor:3500,physicalDR:200,allDR:200,dodge:200,critRed:150,flatDR:10},breakdown:{}},
+ setting,{incomingHit:10000,attackerLevel:70,defenseType:'physical',incomingCrit:true,incomingCritBonus:150}).selected;
+approx(extreme.typeCut,.9,'type DR cap 90%');
+approx(extreme.generalCut,.9,'general DR cap 90%');
+approx(extreme.dodge,.85,'dodge cap 85%');
+approx(extreme.critRed,1,'CritRed cap 100%');
+approx(extreme.critMult,1,'100% CritRed eliminates extra critical bonus');
+assert.equal(B.validateInput('targetTypeDR',91),null,'invalid >90% target DR blocked');
+assert.equal(B.validateInput('defenseType','chaos'),null,'unknown type blocked');
+assert.equal(B.validateInput('vulnerable',true),true);
+assert.equal(B.defense(stats,setting,opts).byType.length,6);
+const rendered=UI.render(stats,setting);
+assert(rendered.includes('ダメージ・ダメージ軽減率'));
+assert(rendered.includes('属性別の実効軽減率'));
+assert(rendered.includes('倍率グループの内訳'));
+assert(rendered.includes('条件付きボーナス'));
+assert(rendered.includes('data-change="combat" data-key="damageType"'));
+assert(rendered.includes('data-action="combat-defense-type"'));
+assert(rendered.includes('log(倍率)'));
+const events={},local={};
+const app={innerHTML:'',addEventListener:(key,fn)=>events[key]=fn};
+const toast={textContent:'',classList:{add(){},remove(){}}};
+const doc={getElementById:id=>id==='app'?app:id==='toast'?toast:null,
+ createElement:()=>({style:{},files:[],click(){}}),body:{appendChild(){}},addEventListener(){}};
+Object.assign(ctx,{document:doc,localStorage:{getItem:k=>local[k]??null,setItem:(k,v)=>{local[k]=v;},removeItem:k=>delete local[k]},
+ crypto:require('node:crypto').webcrypto,Blob,URL,URLSearchParams,setTimeout:()=>0,clearTimeout:()=>{},confirm:()=>true,prompt:()=> 'test',
+ location:{hash:'',pathname:'/',origin:'file://',search:''},history:{replaceState(){}},fetch:()=>Promise.reject(Error('not available'))});
+ctx.window.addEventListener=()=>{};
+vm.runInContext(source('pet-ui.js'),ctx,{filename:'pet-ui.js'});
+vm.runInContext(source('app.js'),ctx,{filename:'app.js'});
+const click=(action,value)=>events.click({target:{closest:()=>({dataset:{action,value}})}});
+const change=(key,value,type='number')=>events.change({target:{id:'',type,checked:type==='checkbox'?value:false,value:String(value),dataset:{change:'combat',key}}});
+click('tab-combat');
+assert.equal(ctx.DBPApp.getUI().tab,'combat');
+assert(app.innerHTML.includes('倍率グループの内訳'));
+const active=()=>ctx.DBPApp.getState().builds[0].settings.combat;
+change('elite',true,'checkbox');change('vulnerable',true,'checkbox');change('attackType','strong','select-one');
+change('skillPercent',220);change('enemyHealth',85);
+assert.equal(active().elite,true);
+assert.equal(active().vulnerable,true);
+assert.equal(active().attackType,'strong');
+assert.equal(active().skillPercent,220);
+assert.equal(active().enemyHealth,85);
+change('targetAllDR',150);
+assert.equal(active().targetAllDR,undefined,'invalid DR must be refused');
+click('combat-defense-type','physical');
+assert.equal(active().defenseType,'physical');
+assert.equal(ctx.DBPApp.getState().schemaVersion,1,'same schema and cloud JSON payload');
+assert.equal(JSON.parse(local.deskrawl_planner_v01).builds[0].settings.combat.defenseType,'physical');
+console.log('PASS: damage group math, target conditions, 6 mitigation types, caps, UI and per-build cloud-ready scenario');
