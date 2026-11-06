@@ -90,7 +90,27 @@ function renderStats(){const b=build(),r=C.calc(state,b);return `<main class="wo
 function statTile(k,r){const val=r.effective[k];const cap=D.limits[k];return `<button class="stat-tile ${ui.selectedStat===k&&!ui.settingsOpen?'chosen':''}" data-action="stat" data-value="${k}"><span class="stat-label">${E(C.labels[k])}</span><strong>${E(C.format(k,val))}</strong><span class="stat-hint">${cap?`上限 ${cap}%${r.raw[k]>cap?' · 超過 '+C.format(k,r.raw[k]-cap):''}`:k==='mr'?'Armorとは別計算':'実効値・部分合計'}</span>${cap?`<div class="progress"><i style="width:${Math.min(100,Math.max(0,(val||0)/cap*100))}%"></i></div>`:''}</button>`}
 function renderBreakdown(r){const k=ui.selectedStat,list=r.breakdown[k]||[],raw=r.raw[k],eff=r.effective[k];return `<div class="side-panel"><div class="side-title"><div><small>STAT BREAKDOWN</small><h2>${E(C.labels[k]||k)}</h2></div><button class="icon-btn" data-action="settings" title="設定パネル">⚙</button></div><div class="side-total"><span>登録データからの計算値</span><strong>${E(C.format(k,eff))}</strong>${raw!==eff?`<small>上限適用前 ${E(C.format(k,raw))}</small>`:''}</div><h3>取得元内訳</h3>${list.length?list.map(x=>`<div class="break-row"><div><span>${E(x.source)}</span><small>${E(qualityOf(x.quality))}</small></div><strong>+${E(C.format(k,x.value))}</strong></div>`).join(''):'<div class="notice">この項目の取得元は未登録です。ビルド設定か装備を入力してください。</div>'}${k==='mr'||k==='armor'?`<div class="mitigation"><span>敵Lv ${E(build().settings?.enemyLevel||70)} の推定軽減率</span><strong>${E(r.mitigations[k].toFixed(1))}%</strong><small>式：防御値 ÷（防御値 + 50 × 敵Lv）。登録値のみで計算した参考値。</small></div>`:''}<button class="btn outline wide" data-action="settings">設定を編集 <span>→</span></button><p class="side-note">${r.pending.length}件の未校正項目があります。確度の低い数値を最終値として扱わないでください。</p></div>`;}
 function potionOptions(current){return [['none','なし'],['swift','上級迅速（AS）'],['vitality','上級活力（HP）'],['resistance','上級耐性（MR）'],['wind','風（Dodge）'],['focus','上級集中（CDR）'],['efficiency','上級効率（MCR）'],['cruel','上級残酷（Crit）']].map(x=>opt(x[0],x[1],current)).join('')}
-function renderSettings(){const b=build(),s=b.settings||{},p=s.paragon||{},t=s.talents||{},pet=s.pet||{};let body='';if(ui.settingsTab==='paragon')body=`<p class="helper">ポイント数を入力します。ゲーム内の補正が不確かな場合は実測値を優先してください。</p>${[['bonusMR','Bonus Magic Resist（%）'],['bonusArmor','Bonus Armor（%）'],['bonusHP','Bonus HP（%）'],['maxMana','最大Mana +'],['as','Attack Speedボーナス（%）']].map(([k,label])=>settingNumber('paragon.'+k,label,p[k]||0)).join('')}`;
+function renderParagonSettings(s){
+ const a=D.paragonAllocation(s),level=s.paragonLevel===undefined||s.paragonLevel===null?'':s.paragonLevel;
+ const remaining=level===''?'':Number(level)-a.total;
+ const groups=['コア','攻撃','防御','補助'].map(group=>{
+   const rows=D.paragonStats.filter(stat=>stat.group===group).map(stat=>{
+     const points=a.points[stat.key]||0;
+     const effect=Number((points*stat.per).toFixed(7));
+     const cap=stat.max===null?'上限なし':stat.max+'pt上限';
+     return `<label class="field paragon-entry"><span>${E(stat.label)} <small class="paragon-limit">${E(cap)}</small></span><input type="number" min="0" ${stat.max===null?'':`max="${stat.max}"`} step="1" inputmode="numeric" data-change="paragonPoint" data-key="${E(stat.key)}" value="${points}" /><small class="paragon-effect">1pt = +${E(C.format(stat.stat,stat.per))} · 合計 +${E(C.format(stat.stat,effect))}</small></label>`;
+   }).join('');
+   return `<div class="form-title paragon-heading"><b>${group}</b><span>${D.paragonStats.filter(x=>x.group===group).length}項目</span></div><div class="paragon-group">${rows}</div>`;
+ }).join('');
+ return `<p class="helper">振り分けたポイント数を入力します。上限は各項目ごとの最大割り振り数です（最終ステータスの上限とは別）。</p>
+ <label class="field"><span>Paragonレベル（任意・所持ポイント数）</span><input type="number" min="0" step="1" inputmode="numeric" data-change="paragonLevel" value="${E(level)}" placeholder="未設定" /></label>
+ <div class="notice gentle">割り振り合計 <strong>${a.total}pt</strong>${remaining===''?' · 所持ポイント数は未登録':` / ${E(level)}pt · 残り <strong>${remaining}pt</strong>`}</div>
+ ${a.legacy?'<div class="notice">旧バージョンの入力はポイント数ではなくステータス補正値です。画面にはポイント換算値を表示しています。Paragonを編集すると旧値を残して新しいポイント方式に切り替わります。</div>':''}
+ ${a.issues.length?`<div class="notice">注意：${E(a.issues.join('・'))}は既存値を正確にポイントへ変換できません。保存データを確認してください（変換操作は停止します）。</div>`:''}
+ ${groups}
+ <p class="helper">参照：DeskrawlのParagonゲーム設定。最大マナ50pt＝+100、CDR50pt＝+10%、移動速度50pt＝+25%。</p>`;
+}
+function renderSettings(){const b=build(),s=b.settings||{},t=s.talents||{},pet=s.pet||{};let body='';if(ui.settingsTab==='paragon')body=renderParagonSettings(s);
 else if(ui.settingsTab==='talents')body=`<p class="helper">習得レベルはビルドごとに保存。AuraのON/OFFは上のショートカットと同期します。</p>${settingNumber('talents.flameWard','炎の加護（0〜8）',t.flameWard||0,0,8)}${settingNumber('talents.arcaneReservoir','魔力の貯蔵（0〜8）',t.arcaneReservoir||0,0,8)}<label class="checkbox-row"><input type="checkbox" data-change="aura" ${s.aura?'checked':''}/> Flame Aura発動中</label><label class="field"><span>敵レベル（軽減率用）</span><input type="number" min="1" max="999" data-change="enemyLevel" value="${E(s.enemyLevel||70)}"></label>`;
 else if(ui.settingsTab==='pet')body=`<label class="field"><span>使用ミニオン</span><select data-change="petId">${[['unknown','未確認／未設定'],['raptor','ラプター'],['emberfang','炎牙'],['wyrm','汚された古竜'],['naga','浅瀬のナーガ'],['other','その他']].map(x=>opt(x[0],x[1],pet.id||'unknown')).join('')}</select></label>${settingNumber('pet.level','強化レベル（0〜10）',pet.level||0,0,10)}<label class="field"><span>継承スキル（任意）</span><select data-change="inherit">${[['','なし／未確認'],['ember','炎牙の燃焼ブレス'],['strong','強攻撃ダメージ'],['vulnerable','脆弱付与'],['other','その他']].map(x=>opt(x[0],x[1],pet.inherit||'')).join('')}</select></label><div class="notice">ミニオン効果の一部は未検証です。固有効果・継承は保存できますが、計算対象外の項目があります。</div>`;
 else if(ui.settingsTab==='consumables')body=`<label class="field"><span>戦闘ポーション</span><select data-change="quickpotion">${potionOptions(s.potion)}</select></label><label class="field"><span>料理</span><select data-change="food">${[['none','なし'],['crab','灰殻のカニ'],['other','その他']].map(x=>opt(x[0],x[1],s.food||'none')).join('')}</select></label><label class="field"><span>ユーティリティ</span><select data-change="utility">${[['none','なし'],['speed','移動速度'],['exp','獲得経験値'],['gold','ゴールド']].map(x=>opt(x[0],x[1],s.utility||'none')).join('')}</select></label>`;
@@ -130,7 +150,7 @@ case 'measurement':ui.modal='measurement';render();break;
 case 'measurement-save':{const fields=['critChance','critRed','cdr','mcr','dodge','mr','armor','maxHP','as','mana'];let values={};for(const key of fields){const v=document.getElementById('measure-'+key)?.value;if(v!=='')values[key]=Number(v)}if(!Object.keys(values).length){flash('数値を少なくとも1つ入力してください');return}modify(()=>{state.measurements.push({id:D.uid('measurement'),at:document.getElementById('measurementDate').value,buildId:b.id,values,notes:document.getElementById('measurementMemo').value,loadout:{...b.loadout},settings:JSON.parse(JSON.stringify(b.settings)),createdAt:new Date().toISOString()});ui.modal=''});flash('実測スナップショットを保存しました');break;}
 }
 }
-function defaultSettings(){return {aura:true,enemyLevel:70,paragon:{bonusMR:0,bonusArmor:0,bonusHP:0,maxMana:0,as:0},talents:{flameWard:0,arcaneReservoir:0},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{}}}
+function defaultSettings(){return {aura:true,enemyLevel:70,paragonPoints:{},paragonLevel:null,talents:{flameWard:0,arcaneReservoir:0},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{}}}
 function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=getItem(id),v=el.type==='checkbox'?el.checked:el.value;
  if(kind==='equalLevel'){ui.equalLevel=Number(v);render();return}
  if(kind==='locked'&&it){modify(()=>{it.locked=Boolean(v)});flash(v?'装備を固定しました':'装備の固定を解除しました');return}
@@ -147,7 +167,27 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
  const protect=kind==='definition'&&lockedOpCount(it)>0||kind==='primary'&&isOpLocked(it,'primary',Number(el.dataset.idx))||kind==='secondary'&&isOpLocked(it,'secondary')||kind==='override'&&(()=>{const k=String(itKey(el)||'').split(':')[1];return k==='s'?isOpLocked(it,'secondary'):/^[0-3]$/.test(k)&&isOpLocked(it,'primary',Number(k))})();
  if(protect){render();flash('必須OPは固定中です。該当する「必須」チェックを外してから変更してください。');return}if(countRefs(it.id)>1&&!['upgradeKnown'].includes(kind)&&!confirm('この装備は'+countRefs(it.id)+'ビルドで共有されています。変更すると両方に反映されます。続行しますか？')){render();return}modify(()=>{if(kind==='definition'){it.definitionId=v;it.primary=[];it.secondary='';it.opLocks={primary:[],secondary:false};it.overrides={}}else if(kind==='nickname')it.nickname=v.slice(0,120);else if(kind==='upgrade')it.upgrade=Number(v);else if(kind==='upgradeKnown')it.upgradeKnown=v;else if(kind==='primary'){const idx=Number(el.dataset.idx);if(it.primary.includes(v)&&v!==it.primary[idx]&&v){flash('同じOPを2枠に設定できません');return}while(it.primary.length<4)it.primary.push('');it.primary[idx]=v;if(it.opLocks?.primary)it.opLocks.primary[idx]=false;}else if(kind==='secondary'){it.secondary=v;if(it.opLocks)it.opLocks.secondary=false;}else if(kind==='memo')it.memo=v.slice(0,1000);else if(kind==='override'){it.overrides[itKey(el)]=v===''?null:Number(v)}else if(kind==='gem'){const idx=Number(el.dataset.idx);while(it.gems.length<=idx)it.gems.push({type:''});it.gems[idx]={type:v};}});return;}
  if(kind==='aura'){modify(()=>{b.settings.aura=v});return}if(kind==='quickpotion'){modify(()=>{b.settings.potion=v});return}if(kind==='enemyLevel'){modify(()=>{b.settings.enemyLevel=Math.max(1,Math.min(999,Number(v)||70))});return}
- if(kind==='setting'){const [group,key]=el.dataset.key.split('.');modify(()=>{b.settings[group]??={};b.settings[group][key]=v===''?'':Number(v)});return}
+ if(kind==='paragonPoint'){
+    const def=D.paragonStats.find(x=>x.key===el.dataset.key),input=Number(v);
+    if(!def||v!==''&&(!Number.isSafeInteger(input)||input<0)){render();flash('Paragonは0以上の整数ポイントで入力してください');return}
+    const next=Math.min(def.max??Number.MAX_SAFE_INTEGER,v===''?0:input);
+    const current=D.paragonAllocation(b.settings);
+    if(current.legacy&&current.issues.length){render();flash('旧Paragon補正値に変換できない項目があります。バックアップを確認してください。');return}
+    const nextTotal=current.total-current.points[def.key]+next;
+    const level=b.settings?.paragonLevel;
+    if(level!==undefined&&level!==null&&nextTotal>Number(level)){render();flash('Paragonレベル（所持ポイント数）を超えて割り振れません');return}
+    modify(()=>{b.settings.paragonPoints={...current.points,[def.key]:next}});
+    if(next!==input)flash(def.label+'は最大'+def.max+'ptに補正しました');
+    return;
+  }
+  if(kind==='paragonLevel'){
+    if(v===''){modify(()=>{b.settings.paragonLevel=null});return}
+    const num=Number(v);
+    if(!Number.isSafeInteger(num)||num<0){render();flash('Paragonレベルは0以上の整数にしてください');return}
+    if(num<D.paragonAllocation(b.settings).total){render();flash('割り振り済みポイント数を下回るレベルには設定できません');return}
+    modify(()=>{b.settings.paragonLevel=num});return;
+  }
+  if(kind==='setting'){const [group,key]=el.dataset.key.split('.');modify(()=>{b.settings[group]??={};b.settings[group][key]=v===''?'':Number(v)});return}
  if(kind==='petId'||kind==='inherit'){modify(()=>{b.settings.pet??={};b.settings.pet[kind==='petId'?'id':'inherit']=v});return}
  if(kind==='food'||kind==='utility')modify(()=>{b.settings[kind]=v});
 }
