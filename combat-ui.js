@@ -45,7 +45,7 @@ function trace(a){
  if(!a.normal)return '<div class="notice">武器ダメージを登録すると通常ヒット・クリティカル・期待値を計算できます。倍率の内訳は引き続き確認できます。</div>';
  const rows=[
  ['武器ダメージ ＋ 固定ダメージ',a.weaponDamage+' ＋ '+a.flatDamage,a.weaponDamage+a.flatDamage],
- ['スキル係数 ＋ スキル固定ダメージ',fx(a.skillMult)+' ＋ '+a.settings.skillFlat,a.normal.start],
+ ['スキル係数 ＋ スキル固定ダメージ',fx(a.skillMult)+' ＋ '+a.settings.skillFlat,Math.floor((a.weaponDamage+a.flatDamage)*a.skillMult+a.settings.skillFlat)],
  ['知力補正',fx(a.primaryMult),a.normal.start],
  ['属性補正',fx(a.elemMult),a.normal.elementStage],
  ['クリティカル（通常ヒット）','×1',a.normal.criticalStage],
