@@ -73,3 +73,30 @@
 .paragon-limit{display:block;font-size:9px;color:var(--faint);margin-top:4px}
 .paragon-entry input{width:76px;min-height:35px;text-align:center;padding:5px 8px;font-variant-numeric:tabular-nums}
 .paragon-effect{grid-column:1 / -1;font-size:10px;color:var(--mint);font-variant-numeric:tabular-nums}
+
+/* Deskrawl minion builder */
+.pet-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(270px,350px);gap:23px;align-items:start}
+.pet-main{min-width:0;display:grid;gap:16px}
+.pet-card .field{margin:12px 0}
+.pet-subhead{color:#becbd6;font-size:12px;margin:19px 0 10px}
+.pet-level{max-width:210px}
+.pet-passive-list{display:grid;gap:8px}
+.pet-passive{background:#111a24;border:1px solid #354151;border-radius:10px;padding:12px;display:grid;grid-template-columns:minmax(0,1fr) 88px 84px;gap:10px;align-items:center}
+.pet-passive div{min-width:0}
+.pet-passive strong{display:block;font-size:12px}
+.pet-passive small{display:block;color:#93a8b9;font-size:10px;margin-top:5px}
+.pet-passive select{min-width:0;background:#101720;border:1px solid #354252;color:#e8edf5;border-radius:7px;padding:8px}
+.pet-valid{color:#75d7bf;font-size:10px}
+.pet-invalid{color:#e1ad74;font-size:10px}
+.pet-action{padding:12px 14px;background:#111b25;border:1px solid #33414e;border-radius:9px;margin-bottom:7px}
+.pet-action b{font-size:12px}
+.pet-action small{display:block;color:#9baabb;font-size:11px;line-height:1.7;margin-top:4px}
+.pet-gear-rows{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.pet-gear-row{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 80px;align-items:end;gap:10px;border:1px solid #354151;background:#111a24;border-radius:9px;padding:12px}
+.pet-gear-row .field{margin:0}
+.pet-gear-value{color:#75d7bf;font-size:11px;text-align:right;padding-bottom:11px}
+.pet-side{position:sticky;top:18px}
+.pet-side .data-row{padding:13px 2px}
+.pet-side .data-row span{white-space:normal;line-height:1.5}
+@media(max-width:1000px){.pet-layout{grid-template-columns:1fr}.pet-side{position:static}}
+@media(max-width:540px){.pet-passive{grid-template-columns:minmax(0,1fr) 80px}.pet-passive>span{grid-column:1 / -1}.pet-gear-row{grid-template-columns:1fr 1fr}.pet-gear-value{grid-column:1 / -1;text-align:left;padding:0}}
