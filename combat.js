@@ -47,7 +47,7 @@ function baseline(stats,settings){
  const b=settings?.base||{};
  const missing=k=>b[k]===undefined||b[k]===null||b[k]==='';
  return {
-  int:missing('int')?10:0,
+  int:missing('int')&&!(settings?.talentPoints&&typeof settings.talentPoints==='object')?10:0,
   critChance:missing('critChance')?5:0,
   critDamage:missing('critDamage')?150:0,
   dodge:missing('dodge')?5:0
