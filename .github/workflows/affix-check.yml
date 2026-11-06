@@ -16,6 +16,7 @@ jobs:
           node test-affix-pools.js
           node test-paragon.js
           node test-pets.js
+          node test-combat.js
           node test.js
           node test-gems.js
           node test-cloud.js
