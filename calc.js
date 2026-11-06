@@ -1,6 +1,6 @@
 (function(){'use strict';
 const D=window.DBP;const {affixes,definitions,limits}=D;
-const P=window.DBPPets||null;
+const P=window.DBPPets||null,T=window.DBPTalents||null;
 const extraStats=["basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","lifeKill","regen","xp","potionFind","potionCharges","armorBonus"];
 const stats=['stunned','bleeding','poisoned','healingReceived','materialFind','strBonus','thornsBonus','manaRegen','manaBonus','regenBonus','lohBonus',...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','goldFind','abilityLevels','int','damage','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','mr','armor','maxHP','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
 const labels={weaponDamage:'武器ダメージ',weaponSpeed:'武器速度',weaponDps:'武器基礎DPS',strongAttack:'強攻撃ダメージ',goldFind:'Gold Find',abilityLevels:'全アビリティレベル',int:'知力',damage:'固定ダメージ',lightning:'雷ダメージ',allDamage:'全ダメージ',healthy:'対健康ダメージ',injured:'対負傷ダメージ',elite:'対エリートダメージ',critChance:'Crit率',critDamage:'Critダメージ',critRed:'Critダメ軽減',cdr:'CDR',mcr:'MCR',as:'ASボーナス',dodge:'Dodge',mr:'Magic Resist',armor:'Armor',maxHP:'最大HP',bonusHP:'Bonus HP',mana:'最大Mana',move:'ボーナス移動速度',loh:'Life on Hit',itemFind:'Item Find',manaKill:'Mana on Kill',physicalDR:'物理軽減',coldDR:'冷気軽減',fireDR:'炎軽減',arcane:'アルケインダメージ',physical:'物理ダメージ',poison:'毒ダメージ',fire:'炎ダメージ',cold:'冷気ダメージ',str:'力',dex:'敏捷',thorns:'棘ダメージ',arcaneDR:'アルケイン軽減',poisonDR:'毒軽減',lightningDR:'雷軽減'};
@@ -11,8 +11,23 @@ percent.add('bonusMR');percent.add('bonusArmor');
 labels.bonusMR='ボーナス魔法耐性';labels.bonusArmor='ボーナスArmor';
 Object.assign(labels,{stunned:'対スタン中の敵',bleeding:'対出血中の敵',poisoned:'対毒状態の敵',healingReceived:'受ける回復量ボーナス',materialFind:'素材発見率',strBonus:'力ボーナス',thornsBonus:'反射ダメージボーナス',manaRegen:'毎秒マナ回復',manaBonus:'最大マナ倍率',regenBonus:'HP自然回復倍率',lohBonus:'命中時回復倍率'});
 for(const k of ['stunned','bleeding','poisoned','healingReceived','materialFind','strBonus','thornsBonus','manaBonus','regenBonus','lohBonus'])percent.add(k);
+Object.assign(labels,{
+ basicCritChance:'基本攻撃Crit率',basicRange:'基本攻撃射程',basicManaGain:'基本攻撃マナ獲得',
+ frostCdr:'冷気スキルCDR',flameBreathCritDamage:'Flame Breath Critダメージ',fireElementalAs:'Fire Elemental攻撃速度',
+ chillPotency:'Chill効果',iceMeteorMcr:'Ice Meteorマナ軽減',iceShardsDamage:'Ice Shardsダメージ',
+ lightningAbilityCritDamage:'雷スキルCritダメージ',fireMeteorDamage:'Fire Meteorダメージ',
+ fireMeteorCooldownPenalty:'Fire Meteor CD増加',frozenDuration:'Frozen持続時間',
+ iceBlockHeal:'Ice Block中HP回復/秒',electrocuteManaGain:'Electrocuteマナ獲得',
+ flameLightningBurned:'Flame Lightning対燃焼',flameLightningElectrostatic:'Flame Lightning対感電',
+ frostBeamSize:'Frost Beam範囲',electrostaticSpreadChance:'Electrostatic伝搬率',
+ lightningCloudDuration:'Lightning Cloud持続',frozenCritChance:'対凍結Crit率',
+ frozenCritDamage:'対凍結Critダメージ',lightningStormDamage:'Lightning Stormダメージ',
+ allDR:'共通ダメージ軽減',manaRegen:'マナ自然回復',bonusMR:'ボーナス魔法耐性',bonusArmor:'ボーナスArmor'
+});
+for(const k of ['basicCritChance','basicRange','frostCdr','flameBreathCritDamage','fireElementalAs','chillPotency','iceMeteorMcr','iceShardsDamage','lightningAbilityCritDamage','fireMeteorDamage','fireMeteorCooldownPenalty','frozenDuration','iceBlockHeal','flameLightningBurned','flameLightningElectrostatic','frostBeamSize','electrostaticSpreadChance','lightningCloudDuration','frozenCritChance','frozenCritDamage','lightningStormDamage','allDR'])percent.add(k);
+const talentSpecialStats=['basicCritChance','basicRange','basicManaGain','frostCdr','flameBreathCritDamage','fireElementalAs','chillPotency','iceMeteorMcr','iceShardsDamage','lightningAbilityCritDamage','fireMeteorDamage','fireMeteorCooldownPenalty','frozenDuration','iceBlockHeal','electrocuteManaGain','flameLightningBurned','flameLightningElectrostatic','frostBeamSize','electrostaticSpreadChance','lightningCloudDuration','frozenCritChance','frozenCritDamage','lightningStormDamage','allDR','manaRegen'];
 const priority=['critChance','critRed','mr','dodge','cdr','mcr'];
-const full=[...priority,'bonusArmor','bonusMR','stunned','bleeding','poisoned','healingReceived','materialFind','strBonus','thornsBonus','manaRegen','manaBonus','regenBonus','lohBonus',...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','abilityLevels','maxHP','armor','int','critDamage','lightning','allDamage','damage','healthy','injured','elite','as','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
+const full=[...talentSpecialStats,...priority,'bonusArmor','bonusMR','stunned','bleeding','poisoned','healingReceived','materialFind','strBonus','thornsBonus','manaRegen','manaBonus','regenBonus','lohBonus',...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','abilityLevels','maxHP','armor','int','critDamage','lightning','allDamage','damage','healthy','injured','elite','as','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
 const armorSlots=new Set(['head','shoulder','chest','gloves','legs','boots']);
 function multiplier(level,pos=0,count=6){const n=Math.max(0,Math.min(12,Number(level)||0));const steps=2*Math.min(n,10);const awarded=Math.floor(steps/count)+(pos<steps%count?1:0);return 1+.05*awarded+(n>=11?.05:0)+(n>=12?.05:0);}
 function factor(item,idx,level){if(item.slot==='weapon'){const pos=idx==='s'?6:Number(idx)+2;return multiplier(level,pos,7);}const hasArmor=armorSlots.has(item.slot);const count=hasArmor?6:5;const pos=idx==='armor'?0:(idx==='s'?(hasArmor?5:4):(Number(idx)+(hasArmor?1:0)));return multiplier(level,pos,count)}
@@ -62,6 +77,10 @@ function calc(doc,build,sub={}){
     }
   }
   const s=build.settings||{};const base=s.base||{};
+  const tal=T?T.allocation(s):null;
+  // Hero Lv70: known base stats; apply once when using the full talent tree.
+  // Legacy builds retain their previous partial-total behavior until explicit migration.
+  if(tal&&!tal.legacy){if(base.mana===undefined||base.mana===null||base.mana==='')add('mana',100,'英雄の基礎最大Mana','verified');if(base.int===undefined||base.int===null||base.int==='')add('int',10,'ソーサラーの基礎知力','verified');}
   for(const [k,v] of Object.entries(base))if(v!==''&&v!==null&&v!==undefined)add(k,Number(v),'登録済みの装備外基礎値','manual');
   const allocation=D.paragonAllocation(s);
   if(!allocation.legacy){
@@ -81,7 +100,16 @@ function calc(doc,build,sub={}){
     if(p.maxMana)add('mana',p.maxMana,'Paragon Max Mana（旧形式）','history');
     if(p.as)add('as',p.as,'Paragon AS（旧形式）','history');
   }
-  if(s.aura){add('critChance',10,'Flame Aura · Crit率','history');if((s.talents||{}).flameWard){add('bonusMR',80,'炎の加護 · MR +80%','history');add('bonusArmor',80,'炎の加護 · Armor +80%','history');}}
+  if(s.aura){add('critChance',10,'Flame Aura · Crit率','history');if(!tal||tal.legacy){if((s.talents||{}).flameWard){add('bonusMR',80,'炎の加護 · MR +80%（旧設定）','history');add('bonusArmor',80,'炎の加護 · Armor +80%（旧設定）','history');}}}
+  if(tal&&!tal.legacy){
+    const derived=T.effects(tal.ranks,{aura:Boolean(s.aura),mana:0});
+    for(const e of derived.result){
+      // The conversion talent depends on the final MaxMana after all flat bonuses.
+      if(e.source.includes('Manaの'))continue;
+      add(e.stat,e.value,'タレント · '+e.source,e.quality);
+    }
+    if(tal.issues.length)pending.push('タレント：未解放・不正な割り振りを除外して計算しています');
+  }
   // Active minion passives, one inherited +10 skill, and one minion gear.
   // Never treat timed active abilities as permanent hero-stat modifiers.
   if(P){
@@ -136,7 +164,14 @@ function calc(doc,build,sub={}){
   const potion={swift:{as:20},vitality:{bonusHP:15},resistance:{bonusMR:20},wind:{dodge:5},focus:{cdr:10},efficiency:{mcr:10},cruel:{critChance:10}}[s.potion];
   if(potion)Object.entries(potion).forEach(([k,v])=>add(k,v,'使用ポーション','history'));
   if(s.food==='crab')add('allDR',10,'灰殻のカニ','history');
-  if((s.talents||{}).arcaneReservoir){const mana=sum.mana;if(base.mana!==undefined && base.mana!=='' && base.mana!==null && mana)add('int',mana*.4,'魔力の貯蔵8/8 · Mana由来INT','calculated');else pending.push('装備外の基礎Mana未登録につき魔力の貯蔵のINT換算は未計算');}
+  if(tal&&!tal.legacy){
+    const level=tal.ranks.arcaneReservoir||0;
+    if(level)add('int',(sum.mana||0)*(.05*level),'タレント · 魔力の貯蔵 '+level+'/8 · 最大Manaから知力変換','calculated');
+  }else if((s.talents||{}).arcaneReservoir){
+    const mana=sum.mana;
+    if(base.mana!==undefined&&base.mana!==''&&base.mana!==null&&mana)add('int',mana*.4,'魔力の貯蔵8/8 · Mana由来INT（旧設定）','calculated');
+    else pending.push('旧タレント：装備外の基礎Mana未登録のため知力変換を保留');
+  }
   // Magic Resist and Armor are affected by bonus percentages. Baseline remains unknown unless explicitly entered.
   if((sum.dex||0)>0)add('critRed',100*sum.dex/(sum.dex+1500),'敏捷由来 Critダメージ軽減','calculated');
   const rawMR=(sum.mr||0)+(sum.int||0);const rawArmor=(sum.armor||0)+(sum.str||0);
@@ -154,5 +189,5 @@ function calc(doc,build,sub={}){
 }
 function format(k,v){if(v===undefined||v===null||!Number.isFinite(v))return '—';const n=Math.round(v*100)/100;return n.toLocaleString('ja-JP',{maximumFractionDigits:2})+(percent.has(k)?'%':'');}
 function delta(k,from,to){if(from===undefined&&to===undefined)return null;return (to||0)-(from||0);}
-window.DBPCalc={stats,labels,percent,priority,full,multiplier,valueOf,itemTotal,calc,format,delta};
+window.DBPCalc={stats,labels,percent,talentSpecialStats,priority,full,multiplier,valueOf,itemTotal,calc,format,delta};
 })();
