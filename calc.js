@@ -1,16 +1,18 @@
 (function(){'use strict';
 const D=window.DBP;const {affixes,definitions,limits}=D;
-const extraStats=['stunned','regenBonus',"basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","lifeKill","regen","xp","potionFind","potionCharges","armorBonus"];
-const stats=[...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','goldFind','abilityLevels','int','damage','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','mr','armor','maxHP','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
+const P=window.DBPPets||null;
+const extraStats=["basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","lifeKill","regen","xp","potionFind","potionCharges","armorBonus"];
+const stats=['stunned','bleeding','manaRegen','manaBonus','regenBonus','lohBonus',...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','goldFind','abilityLevels','int','damage','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','mr','armor','maxHP','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
 const labels={weaponDamage:'武器ダメージ',weaponSpeed:'武器速度',weaponDps:'武器基礎DPS',strongAttack:'強攻撃ダメージ',goldFind:'Gold Find',abilityLevels:'全アビリティレベル',int:'知力',damage:'固定ダメージ',lightning:'雷ダメージ',allDamage:'全ダメージ',healthy:'対健康ダメージ',injured:'対負傷ダメージ',elite:'対エリートダメージ',critChance:'Crit率',critDamage:'Critダメージ',critRed:'Critダメ軽減',cdr:'CDR',mcr:'MCR',as:'ASボーナス',dodge:'Dodge',mr:'Magic Resist',armor:'Armor',maxHP:'最大HP',bonusHP:'Bonus HP',mana:'最大Mana',move:'ボーナス移動速度',loh:'Life on Hit',itemFind:'Item Find',manaKill:'Mana on Kill',physicalDR:'物理軽減',coldDR:'冷気軽減',fireDR:'炎軽減',arcane:'アルケインダメージ',physical:'物理ダメージ',poison:'毒ダメージ',fire:'炎ダメージ',cold:'冷気ダメージ',str:'力',dex:'敏捷',thorns:'棘ダメージ',arcaneDR:'アルケイン軽減',poisonDR:'毒軽減',lightningDR:'雷軽減'};
 Object.assign(labels,{"basicAttack":"基本攻撃ダメージ","strongAttack":"強攻撃ダメージ","fire":"炎ダメージ","cold":"冷気ダメージ","slowed":"減速状態へのダメージ","immobilized":"移動不能状態へのダメージ","vulnerable":"脆弱状態へのダメージ","distant":"遠距離の敵へのダメージ","dot":"継続ダメージ","burned":"燃焼状態へのダメージ","lifeKill":"撃破時HP回復","lightningDR":"雷ダメージ軽減","arcaneDR":"アルケインダメージ軽減","regen":"HP自然回復","xp":"経験値獲得","potionFind":"ポーション発見率","potionCharges":"追加ポーション所持数","armorBonus":"ボーナスArmor","specialDamage":"特殊攻撃ダメージ"});
 const percent=new Set(['strongAttack','goldFind','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','bonusHP','move','itemFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','arcaneDR','poisonDR','lightningDR']);
 for(const key of ["basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","xp","potionFind","armorBonus"])percent.add(key);
 percent.add('bonusMR');percent.add('bonusArmor');
-labels.stunned='スタン状態へのダメージ';labels.regenBonus='HP自然回復ボーナス';percent.add('stunned');percent.add('regenBonus');
 labels.bonusMR='ボーナス魔法耐性';labels.bonusArmor='ボーナスArmor';
+Object.assign(labels,{stunned:'対スタン中の敵',bleeding:'対出血中の敵',manaRegen:'毎秒マナ回復',manaBonus:'最大マナ倍率',regenBonus:'HP自然回復倍率',lohBonus:'命中時回復倍率'});
+for(const k of ['stunned','bleeding','manaBonus','regenBonus','lohBonus'])percent.add(k);
 const priority=['critChance','critRed','mr','dodge','cdr','mcr'];
-const full=[...priority,...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','abilityLevels','maxHP','armor','int','critDamage','lightning','allDamage','damage','healthy','injured','elite','as','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
+const full=[...priority,'stunned','bleeding','manaRegen','manaBonus','regenBonus','lohBonus',...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','abilityLevels','maxHP','armor','int','critDamage','lightning','allDamage','damage','healthy','injured','elite','as','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
 const armorSlots=new Set(['head','shoulder','chest','gloves','legs','boots']);
 function multiplier(level,pos=0,count=6){const n=Math.max(0,Math.min(12,Number(level)||0));const steps=2*Math.min(n,10);const awarded=Math.floor(steps/count)+(pos<steps%count?1:0);return 1+.05*awarded+(n>=11?.05:0)+(n>=12?.05:0);}
 function factor(item,idx,level){if(item.slot==='weapon'){const pos=idx==='s'?6:Number(idx)+2;return multiplier(level,pos,7);}const hasArmor=armorSlots.has(item.slot);const count=hasArmor?6:5;const pos=idx==='armor'?0:(idx==='s'?(hasArmor?5:4):(Number(idx)+(hasArmor?1:0)));return multiplier(level,pos,count)}
@@ -80,37 +82,53 @@ function calc(doc,build,sub={}){
     if(p.as)add('as',p.as,'Paragon AS（旧形式）','history');
   }
   if(s.aura){add('critChance',10,'Flame Aura · Crit率','history');if((s.talents||{}).flameWard){add('bonusMR',80,'炎の加護 · MR +80%','history');add('bonusArmor',80,'炎の加護 · Armor +80%','history');}}
-  // Pet passive skills and minion XP level are distinct. Only verified +10 values
-  // are modeled; active timed abilities are not permanent character stats.
-  const pet=s.pet||{},main=D.petCatalog.find(x=>x.id===pet.id);
-  if(main){
-    const level=Number(pet.level??10),skill=Number(pet.passiveLevel??10);
-    if(level>=10&&skill===10){
-      for(const [stat,label,value] of main.passives)add(stat,value,main.name+' · '+label+' +10','verified');
-    }else pending.push(main.name+'：パッシブはLv10未満のため、Lv10効果を計算対象外');
-  }else if(pet.id&&pet.id!=='unknown')pending.push('ペット：旧形式または未登録のミニオンは未計算');
-  if(pet.inheritId){
-    const inherited=D.petCatalog.find(x=>x.id===pet.inheritId);
-    const index=Number(pet.inheritIndex??0);
-    if(!inherited||!inherited.passives[index])pending.push('継承スキル：未登録または不正な選択');
-    else if(inherited.id===pet.id)pending.push('継承スキル：メインペット自身からは継承できません');
-    else if(Number(pet.level??10)<10)pending.push('継承スキル：メインペットLv10が必要');
-    else{
-      const [stat,label,value]=inherited.passives[index];
-      add(stat,value,'継承 · '+inherited.name+' · '+label+' +10','verified');
-    }
-  }
-  if(pet.gear?.enabled){
-    if(Number(pet.level??10)<5)pending.push('ペット装備：メインペットLv5未満のため無効');
-    else if(pet.gear.type==='blackmist'){
-      const ids=Array.isArray(pet.gear.affixes)?pet.gear.affixes:[];
-      const seen=new Set();
-      for(const id of ids.slice(0,3)){
-        if(!id)continue;
-        if(!D.petGearPrimary.includes(id)||seen.has(id)){pending.push('ペット装備：不正または重複したOPを除外');continue}
-        seen.add(id);add(id,D.affixes[id][1],'Black Mist · Saddle of the Golden Khan · '+D.affixes[id][0],'verified');
+  // Active minion passives, one inherited +10 skill, and one minion gear.
+  // Never treat timed active abilities as permanent hero-stat modifiers.
+  if(P){
+    const pet=s.pet||{}, main=P.lookup(pet.id),rank=Math.max(0,Math.min(10,Number(pet.level)||0));
+    if(!pet.progressionVersion){
+      // Compatibility: untouched legacy entries keep the previously calculated bonuses.
+      if(pet.id==='raptor'){if(rank>=10)add('critChance',6,'旧Raptor +10（要移行）','history');else if(rank>=4)add('critChance',4.2,'旧Raptor +4（要移行）','history');}
+      if(pet.id==='wyrm')add('bonusMR',rank>=10?150:100,'旧Defiled Wyrm（要移行）','estimated');
+      if(pet.id&&pet.id!=='unknown')pending.push('ペット：旧設定のため、ペットタブでLv10パッシブ・装備・継承を確定してください');
+    } else if(main){
+      for(const passive of main.passives){
+        const level=Number(pet.passiveLevels?.[passive.id]??10);
+        if(level===10&&rank===10)add(passive.stat,passive.max,main.name+' · '+passive.label+' Lv10','verified');
+        else if(level===0)add(passive.stat,passive.base,main.name+' · '+passive.label+' Lv0','verified');
+        else pending.push('ペット：'+passive.label+' のLv'+level+'効果は未校正（未計算）');
       }
-    }else pending.push('ペット装備：通常Legendaryのロール値は未登録のため未計算');
+      const inherited=P.skill(pet.inheritFrom,pet.inheritSkill);
+      if(inherited){
+        if(!pet.inheritUnlocked||rank<10)pending.push('ペット：継承枠が未解放、またはメインペットがLv10未満');
+        else if(inherited.petId===main.id)pending.push('ペット：自身のスキルは継承できません');
+        else if(inherited.kind==='passive')add(inherited.stat,inherited.max,P.lookup(inherited.petId).name+' · 継承Lv10 '+inherited.label,'verified');
+        // Inherited active skill remains a timed/situational effect, shown in Pet tab.
+      }
+      const equipment=P.gearTypes.find(g=>g.id===pet.equipment?.id);
+      if(equipment&&equipment.slots){
+        if(!pet.equipmentUnlocked||rank<5)pending.push('ペット：装備枠が未解放、またはメインペットがLv5未満');
+        else{
+          const rolls=(pet.equipment.rolls||[]).slice(0,equipment.slots),seen=new Set();
+          for(let i=0;i<rolls.length;i++){
+            const roll=rolls[i],stat=roll?.stat;
+            if(!stat)continue;
+            if(!P.gearAffixes.includes(stat)||seen.has(stat)){pending.push('ペット装備：無効または重複したOP '+stat);continue}
+            seen.add(stat);
+            const cap=(equipment.id==='saddle-of-the-golden-khan'?P.max850:P.rare850Max)[stat];
+            const amount=equipment.id==='saddle-of-the-golden-khan'?cap:Number(roll?.value);
+            if(!Number.isFinite(amount)||amount<0||Number.isFinite(cap)&&amount>cap){pending.push('ペット装備：'+stat+' の実測値を確認してください');continue}
+            if(equipment.id!=='saddle-of-the-golden-khan'&&(roll.value===null||roll.value===undefined||roll.value==='')){pending.push('ペット装備：'+stat+' の実測値が未入力');continue}
+            add(stat,amount,equipment.name+' · OP '+(i+1)+' · '+(labels[stat]||stat),equipment.id==='saddle-of-the-golden-khan'?'verified':'manual');
+          }
+        }
+      }
+    }else if(pet.id&&pet.id!=='unknown')pending.push('ペット：登録されていないペットID '+pet.id);
+  }
+  // Percentage bonuses on the base resource totals are derived after all
+  // non-pet sources and remain visible in the per-stat contribution breakdown.
+  for(const [key,bonus] of [['mana','manaBonus'],['regen','regenBonus'],['loh','lohBonus']]){
+    if(sum[bonus])add(key,(sum[key]||0)*sum[bonus]/100,'ペットパッシブ · '+labels[bonus]+'による増加','calculated');
   }
   const potion={swift:{as:20},vitality:{bonusHP:15},resistance:{bonusMR:20},wind:{dodge:5},focus:{cdr:10},efficiency:{mcr:10},cruel:{critChance:10}}[s.potion];
   if(potion)Object.entries(potion).forEach(([k,v])=>add(k,v,'使用ポーション','history'));
@@ -119,11 +137,11 @@ function calc(doc,build,sub={}){
   // Magic Resist and Armor are affected by bonus percentages. Baseline remains unknown unless explicitly entered.
   if((sum.dex||0)>0)add('critRed',100*sum.dex/(sum.dex+1500),'敏捷由来 Critダメージ軽減','calculated');
   const rawMR=(sum.mr||0)+(sum.int||0);const rawArmor=(sum.armor||0)+(sum.str||0);
-  const effective={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+((sum.bonusArmor||0)+(sum.armorBonus||0))/100),regen:(sum.regen||0)*(1+(sum.regenBonus||0)/100)};
+  const effective={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+((sum.bonusArmor||0)+(sum.armorBonus||0))/100)};
   breakdown.mr=[...(breakdown.mr||[]),...(breakdown.int||[]).map(x=>({...x,source:x.source+' → INT由来MR'}))];
   breakdown.armor=[...(breakdown.armor||[]),...(breakdown.str||[]).map(x=>({...x,source:x.source+' → STR由来Armor'}))];
   for(const k of ['critChance','critRed','cdr','mcr','dodge'])if(effective[k]!==undefined)effective[k]=Math.min(limits[k],effective[k]);
-  const raw={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+((sum.bonusArmor||0)+(sum.armorBonus||0))/100),regen:(sum.regen||0)*(1+(sum.regenBonus||0)/100)};
+  const raw={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+((sum.bonusArmor||0)+(sum.armorBonus||0))/100)};
   // Max HP represents fixed HP multiplied by Bonus HP; absent base means partial sum.
   effective.maxHP=(sum.maxHP||0)*(1+(sum.bonusHP||0)/100);
   raw.maxHP=effective.maxHP;
