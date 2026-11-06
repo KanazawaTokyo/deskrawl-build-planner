@@ -5,13 +5,13 @@ const path = require('node:path');
 const root = path.join(__dirname, '..');
 const read = (file) => fs.readFileSync(path.join(root, file), 'utf8');
 const cssReference = '<link rel="stylesheet" href="styles.css">';
-const jsReferences = ['master.js','calc.js','app.js'].map(file=>`<script src="${file}"></script>`).join('');
+const jsReferences = ['master.js','calc.js','cloud-config.js','app.js'].map(file=>`<script src="${file}"></script>`).join('');
 const template=read('index.source.html');
 if (!template.includes(cssReference) || !template.includes(jsReferences)) {
   throw Error('Template references changed: refused to produce an incomplete build');
 }
 const css = read('styles.css');
-const js = ['master.js','calc.js','app.js'].map(read).join('\n');
+const js = ['master.js','calc.js','cloud-config.js','app.js'].map(read).join('\n');
 if (/<\/script/i.test(js)) throw Error('Unexpected closing script tag in source');
 const html=template.replace(cssReference,`<style>\n${css}\n</style>`)
                    .replace(jsReferences,`<script>\n${js}\n</script>`);

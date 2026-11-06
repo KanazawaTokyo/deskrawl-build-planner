@@ -6,9 +6,9 @@ Stormcaller用の装備、宝石Tier 6、強化、候補比較、複数ビルド
 
 `https://kanazawatokyo.github.io/deskrawl-build-planner/`
 
-**まだ公開されていません。** リポジトリ作成とGitHub Pagesの設定後に有効になります。
+**GitHub Pagesで公開済み。** デプロイ元は `main` です。
 
-## 初回設定（GitHub）
+## 公開済みのGitHub Pages構成（参考）
 
 1. GitHubの https://github.com/new で、`KanazawaTokyo/deskrawl-build-planner` を作成。無料のGitHub Pagesを使う場合は通常 **Public** リポジトリが必要です。公開前にソース内の初期ビルド例も公開される点を確認してください。
 2. 本フォルダのファイル・フォルダをGitHubの新規リポジトリへコミット。ChatGPTからコミットする場合は、新規リポジトリを作成してそのURLを知らせてください。
@@ -36,3 +36,10 @@ GitHub Pages利用時点では**ブラウザ内保存**です。別PC・iPhone�
 - `.env`、Supabase Secret Key、GitHub OAuth Client SecretなどをGitHubにアップロードしないでください。
 - GitHub OAuthとSupabase連携は別途構築が必要です。現在、GitHub Pagesへ公開するだけではログインや端末間同期は有効になりません。
 - 現在のゲーム数値には公開データ由来の推定値を含みます。計算式は実測と照合してください。
+
+
+## クラウド同期（Supabase / GitHub認証）
+
+公開用接続設定は `cloud-config.js`（URL + publishable keyのみ）で設定済みです。OAuth AppとSupabaseのProvider設定が有効化されるまでGitHubログインは機能しません。
+同期の詳細な手順・データ保護・初回データ移行については [SUPABASE_SETUP.md](SUPABASE_SETUP.md) を参照してください。
+同期中の競合を認識して利用者がローカルを維持すると、自動同期は止まり、明示的な解消までクラウドへ書き込みません。

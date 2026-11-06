@@ -23,6 +23,7 @@ create trigger planner_state_set_updated_at before update on public.planner_stat
 for each row execute function public.planner_state_touch_updated_at();
 alter table public.planner_state enable row level security;
 revoke all on table public.planner_state from public, anon;
+grant usage on schema public to authenticated;
 grant select, insert, update, delete on public.planner_state to authenticated;
 
 drop policy if exists "owner read" on public.planner_state;

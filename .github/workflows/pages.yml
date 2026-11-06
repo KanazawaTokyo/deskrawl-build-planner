@@ -24,6 +24,7 @@ jobs:
           node --version
           node test.js
           node test-gems.js
+          node test-cloud.js
       - name: Build website
         run: node scripts/build.js
       - name: Configure GitHub Pages

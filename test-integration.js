@@ -1,0 +1,14 @@
+'use strict';
+const fs = require('node:fs'), assert = require('node:assert/strict'), vm=require('node:vm');
+const src=fs.readFileSync(__dirname+'/cloud-config.js','utf8');
+const ctx={window:{}};vm.runInNewContext(src,ctx);
+const cfg=ctx.window.DBP_CLOUD_CONFIG;
+assert.equal(cfg.url,'https://unxqiwzgjexwbvjcspwo.supabase.co');
+assert.match(cfg.key,/^sb_publishable_[A-Za-z0-9_-]+$/);
+assert(!/service_role|sb_secret_|client_secret/i.test(src.split('Object.freeze({')[1]||''),'no secrets in public configuration object');
+const template=fs.readFileSync(__dirname+'/index.source.html','utf8');
+assert(template.indexOf('cloud-config.js')<template.indexOf('app.js'),'public config loads before app');
+const app=fs.readFileSync(__dirname+'/app.js','utf8');
+assert(app.includes('cloudSyncBlocked=true'),'save conflict should block automatic writes');
+assert(app.includes('redirect_to='),'OAuth redirects to original site path');
+console.log('PASS: cloud public configuration, script order, OAuth routing and conflict block');
