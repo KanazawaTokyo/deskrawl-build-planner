@@ -6,6 +6,19 @@
 'use strict';
 const slots=[['weapon','武器'],['head','頭'],['neck','首飾り'],['shoulder','肩'],['chest','胸'],['gloves','手袋'],['belt','ベルト'],['legs','脚'],['boots','ブーツ'],['ring1','指輪①'],['ring2','指輪②']];
 const affixes={
+basicAttack:["基本攻撃ダメージ",109.5,"pct","通常攻撃系"],
+strongAttack:["強攻撃ダメージ",109.5,"pct","Strong Attack系"],
+fire:["炎ダメージ",125.1,"pct","炎属性"],
+cold:["冷気ダメージ",125.1,"pct","冷気属性"],
+slowed:["減速状態へのダメージ",156.4,"pct","対減速"],
+immobilized:["移動不能状態へのダメージ",156.4,"pct","対移動不能"],
+vulnerable:["脆弱状態へのダメージ",156.4,"pct","対脆弱"],
+distant:["遠距離の敵へのダメージ",156.4,"pct","対遠距離"],
+dot:["継続ダメージ",156.4,"pct","DoT"],
+burned:["燃焼状態へのダメージ",156.4,"pct","対燃焼"],
+lifeKill:["撃破時HP回復",94,"flat","キル時回復"],
+lightningDR:["雷ダメージ軽減",15.6,"pct","雷限定"],
+arcaneDR:["アルケインダメージ軽減",15.6,"pct","アルケイン限定"],
 int:['知力',78,'flat','攻撃・魔法耐性'], mr:['魔法抵抗',782,'flat','魔法ダメージを軽減'],
 critChance:['クリティカル率',12.5,'pct','上限85%'],critDamage:['クリティカルダメージ',93.8,'pct','クリティカル追加倍率'],critRed:['クリティカルダメージ軽減',31.3,'pct','上限100%'],
 lightning:['雷ダメージ',125.1,'pct','雷属性'],allDamage:['全ダメージボーナス',62.6,'pct','属性ダメージと同じグループ（要検証）'],
@@ -31,17 +44,17 @@ const gems={
 function gemEffect(type,slot){const group=gemSocketGroup[slot],data=gems[type]?.[group];return data?{type,group,stat:data[0],value:data[1],tier:6}:null;}
 const common=['int','mr','maxHP','dodge','critRed','critChance','critDamage','cdr','mcr','as','damage','allDamage','bonusHP'];
 const rules={
-weapon:{primary:['int','damage','lightning','critDamage','critChance','healthy','injured','elite','as','mcr','cdr'],secondary:['loh','manaKill','itemFind']},
-head:{primary:['int','maxHP','mr','critRed','critChance','critDamage','cdr','bonusHP','dodge','armorBonus'],secondary:['itemFind','goldFind','xp','loh','move']},
-neck:{primary:['int','lightning','allDamage','healthy','injured','elite','critChance','critDamage','mr','damage','bonusHP'],secondary:['move','itemFind','loh','goldFind','xp']},
-shoulder:{primary:['int','maxHP','cdr','mr','dodge','poisonDR','coldDR','fireDR','critRed','bonusHP'],secondary:['move','loh','itemFind','xp']},
-chest:{primary:['int','mr','healthy','injured','bonusHP','maxHP','dodge','physicalDR','armorBonus','coldDR','specialDamage','thorns'],secondary:['loh','itemFind','regen','goldFind','xp']},
-gloves:{primary:['int','damage','critRed','mr','critDamage','critChance','mcr','cdr','as','mana'],secondary:['manaKill','itemFind','goldFind','potionFind','xp']},
-belt:{primary:['int','maxHP','dodge','mr','mcr','cdr','as','potionCharges','thorns'],secondary:['potionFind','regen','manaKill','xp']},
-legs:{primary:['int','mr','maxHP','bonusHP','dodge','critRed','physicalDR','coldDR','fireDR','armorBonus'],secondary:['loh','itemFind','goldFind','xp','regen']},
-boots:{primary:['int','mr','critRed','mcr','dodge','maxHP','coldDR','fireDR'],secondary:['move','loh','itemFind','goldFind','potionFind']},
-ring1:{primary:['int','critChance','critDamage','lightning','healthy','injured','mr','cdr','mcr','as'],secondary:['goldFind','itemFind']},
-ring2:{primary:['int','critChance','critDamage','lightning','healthy','injured','mr','cdr','mcr','as'],secondary:['goldFind','itemFind']}
+weapon:{primary:["int","damage","critDamage","as","basicAttack","strongAttack","specialDamage","fire","cold","lightning","healthy","injured","slowed","immobilized","elite","distant","dot","burned","vulnerable"],secondary:["loh","lifeKill","manaKill"]},
+head:{primary:["int","maxHP","mana","cdr","mr","dodge","armorBonus","lightningDR","arcaneDR"],secondary:["regen","itemFind","goldFind","potionFind","xp"]},
+neck:{primary:["int","critChance","critDamage","as","cdr","mr","basicAttack","strongAttack","healthy","injured","slowed","elite","vulnerable","armorBonus","allDamage","fire","cold","lightning"],secondary:["move","loh","itemFind","xp"]},
+shoulder:{primary:["int","maxHP","mr","dodge","cdr","poisonDR","fireDR","critRed","thorns"],secondary:["regen","move"]},
+chest:{primary:["int","mr","healthy","injured","bonusHP","maxHP","dodge","physicalDR","armorBonus","coldDR","specialDamage","thorns"],secondary:["loh","itemFind","regen","goldFind","xp"]},
+gloves:{primary:["int","damage","critRed","mr","critDamage","critChance","mcr","cdr","as","mana"],secondary:["manaKill","itemFind","goldFind","potionFind","xp"]},
+belt:{primary:["int","maxHP","dodge","mr","mcr","cdr","as","potionCharges","thorns"],secondary:["potionFind","regen","manaKill","xp"]},
+legs:{primary:["int","mr","maxHP","bonusHP","dodge","thorns","physicalDR","poisonDR","armorBonus"],secondary:["loh","itemFind","goldFind","xp","regen"]},
+boots:{primary:["int","mr","critRed","mcr","dodge","maxHP","coldDR","fireDR"],secondary:["move","loh","itemFind","goldFind","potionFind"]},
+ring1:{primary:["int","critChance","critDamage","as","mana","mr","vulnerable","fire","cold","lightning","allDamage"],secondary:["loh","lifeKill","xp","itemFind","goldFind"]},
+ring2:{primary:["int","critChance","critDamage","as","mana","mr","vulnerable","fire","cold","lightning","allDamage"],secondary:["loh","lifeKill","xp","itemFind","goldFind"]}
 };
 const definitions=[
 {id:'grandmother',slot:'weapon',name:'The Grandmother',rarity:'Divine',effect:'固有：クリティカル率+5%、クリティカルダメージ+120%（固有効果は強化倍率に含めない）',sourceUrl:'https://wikily.gg/deskrawl/equipment/the-grandmother/',fixed:[['weaponSpeed',0.80],['weaponDamage',430],['damage',50],['strongAttack',120],['healthy',170],['maxHP',850],['manaKill',17],['loh',34]],powerStats:[['critChance',5],['critDamage',120]]},
@@ -82,5 +95,5 @@ const seedConfigs=[
 ];
 function uid(prefix){return prefix+'-'+(globalThis.crypto&&crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2))}
 function makeSeed(){const items=[],loadout={};for(const [slot,definitionId,primary,secondary,note] of seedConfigs){const it={id:uid('item'),definitionId,slot,primary:[...primary],secondary:secondary||'',upgrade:0,upgradeKnown:false,overrides:{},gems:[],nickname:'',memo:note,source:'history',owned:null,createdAt:new Date().toISOString()};items.push(it);loadout[slot]=it.id;}const old={id:uid('item'),definitionId:'unyielding',slot:'chest',primary:['healthy','injured','bonusHP','coldDR'],secondary:'loh',upgrade:8,upgradeKnown:true,overrides:{},gems:[],nickname:'旧・LoH胸',memo:'以前の+8試用装備',source:'history',owned:null,createdAt:new Date().toISOString()};items.push(old);const build={id:uid('build'),name:'Stormcaller 通常',loadout,settings:{aura:true,enemyLevel:70,paragon:{bonusMR:0,bonusArmor:0,bonusHP:0,maxMana:30,as:0},talents:{flameWard:8,arcaneReservoir:8},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{},notes:'会話履歴による初期下書き。実測値・強化段階は確認が必要。'},createdAt:new Date().toISOString()};return {schemaVersion:1,masterVersion:'conversation-draft-2026-11-06',items,builds:[build],activeBuildId:build.id,measurements:[{id:uid('measurement'),at:'2026-11-04',buildId:build.id,reference:true,values:{critChance:83.2,cdr:76.6,armor:9416,mr:2909,as:1.2,mana:130,stormCost:21},notes:'旧装備のAura発動中の会話上の記録。現在構成の確定値ではない。'}]};}
-window.DBP={slots,affixes,rules,definitions,gems,gemSocketLimits,gemSocketGroup,gemEffect,makeSeed,uid,limits:{critChance:85,critRed:100,dodge:85,cdr:80,mcr:85},version:'tier6-gems-2026-11-06'};
+window.DBP={slots,affixes,rules,definitions,gems,gemSocketLimits,gemSocketGroup,gemEffect,makeSeed,uid,limits:{critChance:85,critRed:100,dodge:85,cdr:80,mcr:85},version:'black-mist-affixes-2026-11-06'};
 })();
