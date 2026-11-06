@@ -21,3 +21,18 @@
 .gem-table tbody th{white-space:nowrap;color:var(--text)}
 .gem-table td{color:#bac8d6}
 @media(max-width:760px){.gem-table{min-width:530px}}
+
+/* Equipment-level edit lock: restrained amber focus only on the equipment icon. */
+.gear-slot.is-locked .slot-icon{color:#ddc184;border-color:rgba(204,165,82,.56);background:linear-gradient(145deg,#352e24,#262c31);box-shadow:0 0 11px rgba(218,171,83,.13),inset 0 0 0 1px rgba(233,183,86,.08);text-shadow:0 0 8px rgba(239,198,107,.27)}
+.lock-indicator{font-size:9px;color:#c6a66b;border:1px solid #695638;border-radius:5px;padding:3px 5px;white-space:nowrap}
+.equipment-lock-toggle{display:flex;align-items:center;gap:12px;padding:12px 14px;margin:6px 0 18px;background:rgba(172,140,79,.055);border:1px solid #3c3c36;border-radius:10px;cursor:pointer}
+.equipment-lock-toggle:has(input:checked){border-color:#76603b;background:rgba(169,131,63,.085)}
+.equipment-lock-toggle input{accent-color:#c59c4e;width:17px;height:17px;flex:none;cursor:pointer}
+.equipment-lock-toggle>span{display:flex;flex-direction:column;gap:4px}
+.equipment-lock-toggle strong{font-size:12px;color:#d6c3a1}
+.equipment-lock-toggle small{font-size:10px;color:#9ca5ab;line-height:1.4}
+.equipment-fields{border:0;padding:0;margin:0;min-width:0}
+.equipment-fields:disabled .field input,.equipment-fields:disabled .field select,.equipment-fields:disabled .field textarea,.equipment-fields:disabled .affix-row select,.equipment-fields:disabled .gem-item select{opacity:.59;cursor:not-allowed}
+.equipment-fields:disabled .checkbox-row{opacity:.59}
+.editor button:disabled,.compare-card button:disabled{opacity:.44;cursor:not-allowed;filter:none}
+.locked-candidate{color:#c5a365}.candidate-lock-label{font-size:9px;font-weight:500;color:#c5a365;margin-left:7px}
