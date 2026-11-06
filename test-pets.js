@@ -13,7 +13,7 @@ const change=(kind,value,key='',idx='')=>events.change({target:{id:'',type:typeo
 assert.equal(P.minions.filter(p=>p.rarity==='Legendary').length,24);
 assert.equal(P.minions.length,68);
 assert.equal(P.gearTypes.length,6);
-assert.equal(P.gearAffixes.length,39);
+assert.equal(P.gearAffixes.length,48);
 assert.equal(P.lookup('wyrm').id,'defiled-wyrm');
 click('tab-pet');
 assert(app.innerHTML.includes('ペット・継承・装備'));
@@ -115,5 +115,17 @@ assert.equal(pet().equipment.rolls[0].value,90,'normal Legendary item must respe
 change('petGearType','saddle-of-the-golden-khan');
 change('petGearStat','strongAttack','',0);
 assert(calc().breakdown.strongAttack.some(x=>x.source.includes('Saddle of the Golden Khan')&&x.value===109.5));
+// Minion equipment primary and secondary union (game data: PlayOnGG Itemization Config).
+const secondary=['loh','lifeKill','manaKill','regen','itemFind','goldFind','potionFind','xp','move'];
+for(const stat of secondary)assert(P.gearAffixes.includes(stat),'secondary OP missing: '+stat);
+change('petGearStat','lifeKill','',1);
+const bmLife=calc().breakdown.lifeKill?.find(x=>x.source.includes('Saddle of the Golden Khan'));
+assert.equal(bmLife?.value,94,'Black Mist IL850 Life on Kill max');
+change('petGearType','fine-saddle');
+change('petGearStat','move','',0);
+change('petGearValue','15','',0);
+assert.equal(pet().equipment.rolls[0].value,null,'Rare move bonus must not exceed +14.7%');
+change('petGearValue','14.7','',0);
+assert.equal(calc().breakdown.move.find(x=>x.source.includes('Fine Saddle')).value,14.7);
 console.log('PASS: all 68 sourced minions (66 obtainable), 44 new +10 passives, STR interaction, and normal/BM Saddle differences');
 console.log('PASS: pet tab, 68 minions Lv10 passives, inheritance, equipment, level gates, input validation, cloud schema');
