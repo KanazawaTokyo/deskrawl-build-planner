@@ -39,7 +39,7 @@ assert.equal(capSwap.ranks.stormConduit,1);
 assert.equal(T.spent(capSwap.ranks),70);
 assert(T.valid(capSwap.ranks));
 const refund=T.canRemove(p,'arcaneInsight');
-assert.equal(refund.ok,false,'at 70, required 60pt tier must prevent lower-row refund');
+assert.equal(refund.ok,true,'refund is allowed if all later tiers still meet their prerequisites');
 const malformed=T.allocation({talentPoints:{stormConduit:1,stormMastery:999,arcaneInsight:10,manaFlow:8,unknown:80}});
 assert.equal(malformed.ranks.stormConduit,undefined,'unreachable capstone must be discarded');
 assert.equal(malformed.ranks.stormMastery,undefined,'unreachable row must be discarded');
