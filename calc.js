@@ -6,6 +6,8 @@ const labels={weaponDamage:'武器ダメージ',weaponSpeed:'武器速度',weapo
 Object.assign(labels,{"basicAttack":"基本攻撃ダメージ","strongAttack":"強攻撃ダメージ","fire":"炎ダメージ","cold":"冷気ダメージ","slowed":"減速状態へのダメージ","immobilized":"移動不能状態へのダメージ","vulnerable":"脆弱状態へのダメージ","distant":"遠距離の敵へのダメージ","dot":"継続ダメージ","burned":"燃焼状態へのダメージ","lifeKill":"撃破時HP回復","lightningDR":"雷ダメージ軽減","arcaneDR":"アルケインダメージ軽減","regen":"HP自然回復","xp":"経験値獲得","potionFind":"ポーション発見率","potionCharges":"追加ポーション所持数","armorBonus":"ボーナスArmor","specialDamage":"特殊攻撃ダメージ"});
 const percent=new Set(['strongAttack','goldFind','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','bonusHP','move','itemFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','arcaneDR','poisonDR','lightningDR']);
 for(const key of ["basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","xp","potionFind","armorBonus"])percent.add(key);
+percent.add('bonusMR');percent.add('bonusArmor');
+labels.bonusMR='ボーナス魔法耐性';labels.bonusArmor='ボーナスArmor';
 const priority=['critChance','critRed','mr','dodge','cdr','mcr'];
 const full=[...priority,...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','abilityLevels','maxHP','armor','int','critDamage','lightning','allDamage','damage','healthy','injured','elite','as','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
 const armorSlots=new Set(['head','shoulder','chest','gloves','legs','boots']);
