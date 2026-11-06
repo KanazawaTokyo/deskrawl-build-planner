@@ -1,7 +1,7 @@
 'use strict';
 const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('node:vm');
 const source=file=>fs.readFileSync(__dirname+'/'+file,'utf8');
-const doc={};const ctx={window:null,console,Math,Date,JSON,Set,Number,String,Array,Map};
+const ctx={window:null,console,Math,Date,JSON,Set,Number,String,Array,Map};
 ctx.window=ctx;vm.createContext(ctx);
 for(const f of ['master.js','pets.js','calc.js','combat.js','combat-ui.js'])vm.runInContext(source(f),ctx,{filename:f});
 const B=ctx.DBPCombat,UI=ctx.DBPCombatUI;
