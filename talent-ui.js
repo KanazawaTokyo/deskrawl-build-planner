@@ -85,7 +85,8 @@ function render(settings,selected,stats){
  '<div class="talent-point-track"><i style="width:'+(100*s/T.MAX)+'%"></i></div><span>使用済み '+s+'pt / 最大70pt</span></div></div>'+
  legacy+warning+
  '<div class="talent-toolbar"><div><b>ゲーム内ゴールド（参考）</b><span>1pt返却 '+number(T.refundCost(s))+' G ・ 全振り直し '+number(T.resetCost(s))+' G</span></div>'+
- '<button type="button" class="btn outline" data-action="talent-reset"'+(data.legacy||s===0?' disabled':'')+'>全ポイント振り直し</button></div>'+
+ '<label class="talent-aura-label"><input type="checkbox" data-change="aura"'+(settings.aura?' checked':'')+'> Flame Aura</label>'+
+ '<div class="talent-toolbar-actions"><button type="button" class="btn outline" data-action="talent-history-preset">履歴の70pt案</button><button type="button" class="btn outline" data-action="talent-reset"'+(data.legacy||s===0?' disabled':'')+'>全ポイント振り直し</button></div></div>'+
  '<div class="talent-layout"><section class="talent-tree-scroll" aria-label="ソーサラーの戦闘タレントツリー"><div class="talent-tree">'+
  T.ROWS.map(r=>row(r,ranks,selectedDef.id,data.legacy)).join('')+
  '<div class="talent-tree-footnote">横にスクロールしてタレントを確認できます。キャップストーンは同じ段階で1つだけ習得できます。</div>'+
