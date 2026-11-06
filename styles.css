@@ -50,3 +50,17 @@
 .saved-set-delete{min-width:33px}
 @media(max-width:760px){.saved-set-strip{flex-direction:column;align-items:stretch;gap:10px}.saved-set-label{min-width:0}.saved-set-controls{width:100%;flex-wrap:wrap}.saved-set-controls select{flex:1;width:160px}.saved-set-controls .text-btn{padding:8px 10px}}
 @media(max-width:460px){.saved-set-controls select{width:100%;flex-basis:100%;min-width:0}.saved-set-controls .text-btn{flex:1}.saved-set-label small{white-space:normal}}
+
+/* Per-OP required markers: gold chips distinguish essential affixes from full gear locks. */
+.affix-row.affix-lockable{grid-template-columns:29px minmax(0,1fr) 56px 130px}
+.affix-row.op-is-locked{border-color:rgba(196,158,85,.55);background:#201e1d}
+.affix-row.op-is-locked .affix-index{color:#d5ad64}
+.affix-row.op-is-locked select:disabled{opacity:.78;color:#dfc69d;border-color:#69573b;cursor:not-allowed}
+.op-lock-toggle{display:flex;justify-content:center;align-items:center;flex-direction:column;gap:3px;cursor:pointer;font-size:10px;color:#89939b;user-select:none}
+.op-lock-toggle input{accent-color:#c6a061;width:16px;height:16px;margin:0;cursor:pointer}
+.op-lock-toggle:has(input:checked){color:#dbb97d;font-weight:700}
+.op-lock-toggle:has(input:disabled){opacity:.38;cursor:not-allowed}
+.slot-required{font-size:9px!important;color:#c8a96e!important;font-weight:650}
+.candidate-required-label{font-size:9px;color:#d0ac75;font-weight:600;margin-left:5px}
+@media(max-width:1050px){.affix-row.affix-lockable{grid-template-columns:24px minmax(0,1fr) 52px 104px}}
+@media(max-width:460px){.affix-row.affix-lockable{grid-template-columns:18px minmax(0,1fr) 44px 72px;gap:5px;padding:8px 6px}.affix-row.affix-lockable select{padding:6px 3px;font-size:10px}.affix-row.affix-lockable .affix-value small{display:none}.op-lock-toggle{font-size:9px}}
