@@ -26,7 +26,7 @@ function bar(percent){
 function attackTable(a,stats){
  const name={ability:'skillPercent',primary:'int',element:B.types[a.settings.damageType][1],critical:'critDamage',conditional:'conditional',attack:B.attacks[a.settings.attackType][1],vulnerable:'vulnerable'};
  const rows=a.layers.map(l=>{
-  const keys=l.key==='element'?[B.types[a.settings.damageType][1],'allDamage']:l.key==='critical'?['critChance','critDamage']:l.key==='primary'?['int']:l.key==='conditional'?a.conditions.filter(x=>x.active&&x.value).map(x=>x.key):l.key==='attack'?[B.attacks[a.settings.attackType][1]]:[];
+  const keys=l.key==='element'?[B.types[a.settings.damageType][1],'allDamage']:l.key==='critical'?['critChance','critDamage',...(a.settings.attackType==='basic'?['basicCritChance']:[]),...(a.settings.damageType==='lightning'&&a.settings.lightningAbility?['lightningAbilityCritDamage']:[]),...(a.settings.frozen?['frozenCritChance','frozenCritDamage']:[])]:l.key==='primary'?['int']:l.key==='conditional'?a.conditions.filter(x=>x.active&&x.value).map(x=>x.key):l.key==='attack'?[B.attacks[a.settings.attackType][1]]:[];
   const notes=keys.flatMap(key=>(stats.breakdown[key]||[]).map(x=>'<div class="combat-source"><span>'+safe(x.source)+'</span><b>+'+safe(C.format(key,x.value))+'</b></div>'));
   return '<div class="combat-layer">'+
     '<div class="combat-layer-top"><strong>'+safe(l.label)+'</strong><span class="combat-layer-values"><b>'+fx(l.factor)+'</b><em>'+(l.value>=0?'+':'')+pct(l.value)+'</em></span></div>'+
@@ -89,7 +89,7 @@ function render(stats,settings){
  const targetOptions=[
   check('elite','Elite / Boss',q.elite),check('vulnerable','脆弱',q.vulnerable),
   check('burned','燃焼',q.burned),check('slowed','減速',q.slowed),
-  check('stunned','スタン',q.stunned),check('immobilized','移動不能',q.immobilized),
+  check('stunned','スタン',q.stunned),check('immobilized','移動不能',q.immobilized),check('frozen','凍結 Frozen',q.frozen),check('lightningAbility','雷アビリティのCrit補正',q.lightningAbility),
   check('distant','遠距離',q.distant),check('bleeding','出血',q.bleeding),check('poisoned','毒状態',q.poisoned)
  ].join('');
  const targetDefenses=[
