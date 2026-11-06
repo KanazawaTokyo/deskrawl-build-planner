@@ -4,7 +4,7 @@
 (function(){'use strict';
 const T=window.DBPTalents,C=window.DBPCalc;
 const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c]));
-const number=n=>Number(n).toLocaleString('ja-J',{maximumFractionDigits:1});
+const number=n=>Number(n).toLocaleString('ja-JP',{maximumFractionDigits:1});
 const symbol={arcane:'✦',fire:'✹',cold:'❄',lightning:'ϟ'};
 const color={arcane:'arcane',fire:'fire',cold:'cold',lightning:'lightning'};
 function effectText(def,rank){
