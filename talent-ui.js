@@ -19,7 +19,7 @@ function effectText(def,rank){
 }
 function node(def,ranks,selected,canUse){
  const n=ranks[def.id]||0;
- const ready=canUse&&!n?T.lowerSpent(ranks,def.row)>=def.row:true;
+ const ready=canUse&&(n>0||T.lowerSpent(ranks,def.row)>=def.row);
  const add=T.canAdd(ranks,def.id),remove=T.canRemove(ranks,def.id);
  const title=escape(def.name+'\n'+def.description+'\n現在 '+n+'/'+def.max);
  return '<div class="talent-node '+color[def.element]+(def.cap?' talent-capstone':'')+(n?' picked':'')+(!ready?' locked':'')+(selected===def.id?' focused':'')+'">'+
@@ -66,7 +66,6 @@ function detail(def,ranks,legacy,chosen){
 }
 function summary(data,stats){
  const rows=Object.entries(stats.breakdown||{}).flatMap(([key,src])=>src.filter(x=>x.source.startsWith('タレント ·')||x.source.startsWith('タレント：')).map(x=>({key,label:C.labels[key]||key,...x})));
- const effects=T.effects(data.ranks,{aura:true,mana:100}).special;
  const specials=data.ranks?T.defs.filter(x=>x.cap&&data.ranks[x.id]):[];
  return '<section class="card talent-summary"><div class="card-heading"><div><h2>取得済みの補正・固有効果</h2><span>取得元をステータスタブでも確認できます</span></div></div>'+
  (rows.length?'<div class="talent-summary-stats">'+rows.map(x=>'<div class="talent-summary-stat"><span>'+escape(x.label)+'</span><b>+'+escape(C.format(x.key,x.value))+'</b><small>'+escape(x.source)+'</small></div>').join('')+'</div>':'<p class="helper">ポイントを振るとステータス効果がここに表示されます。</p>')+
