@@ -31,6 +31,7 @@ const petGearAffixes=petGearPrimary;
 function petPassiveList(id){return petCatalog.find(p=>p.id===id)?.passives||[];}
 const slots=[['weapon','武器'],['head','頭'],['neck','首飾り'],['shoulder','肩'],['chest','胸'],['gloves','手袋'],['belt','ベルト'],['legs','脚'],['boots','ブーツ'],['ring1','指輪①'],['ring2','指輪②']];
 const affixes={
+armor:['Armor',782,'flat','ペット装備用の固定Armor'],
 basicAttack:["基本攻撃ダメージ",109.5,"pct","通常攻撃系"],
 strongAttack:["強攻撃ダメージ",109.5,"pct","Strong Attack系"],
 fire:["炎ダメージ",125.1,"pct","炎属性"],
