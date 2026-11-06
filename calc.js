@@ -1,12 +1,13 @@
 (function(){'use strict';
 const D=window.DBP;const {affixes,definitions,limits}=D;
-const extraStats=["basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","lifeKill","regen","xp","potionFind","potionCharges","armorBonus"];
+const extraStats=['stunned','regenBonus',"basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","lifeKill","regen","xp","potionFind","potionCharges","armorBonus"];
 const stats=[...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','goldFind','abilityLevels','int','damage','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','mr','armor','maxHP','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
 const labels={weaponDamage:'武器ダメージ',weaponSpeed:'武器速度',weaponDps:'武器基礎DPS',strongAttack:'強攻撃ダメージ',goldFind:'Gold Find',abilityLevels:'全アビリティレベル',int:'知力',damage:'固定ダメージ',lightning:'雷ダメージ',allDamage:'全ダメージ',healthy:'対健康ダメージ',injured:'対負傷ダメージ',elite:'対エリートダメージ',critChance:'Crit率',critDamage:'Critダメージ',critRed:'Critダメ軽減',cdr:'CDR',mcr:'MCR',as:'ASボーナス',dodge:'Dodge',mr:'Magic Resist',armor:'Armor',maxHP:'最大HP',bonusHP:'Bonus HP',mana:'最大Mana',move:'ボーナス移動速度',loh:'Life on Hit',itemFind:'Item Find',manaKill:'Mana on Kill',physicalDR:'物理軽減',coldDR:'冷気軽減',fireDR:'炎軽減',arcane:'アルケインダメージ',physical:'物理ダメージ',poison:'毒ダメージ',fire:'炎ダメージ',cold:'冷気ダメージ',str:'力',dex:'敏捷',thorns:'棘ダメージ',arcaneDR:'アルケイン軽減',poisonDR:'毒軽減',lightningDR:'雷軽減'};
 Object.assign(labels,{"basicAttack":"基本攻撃ダメージ","strongAttack":"強攻撃ダメージ","fire":"炎ダメージ","cold":"冷気ダメージ","slowed":"減速状態へのダメージ","immobilized":"移動不能状態へのダメージ","vulnerable":"脆弱状態へのダメージ","distant":"遠距離の敵へのダメージ","dot":"継続ダメージ","burned":"燃焼状態へのダメージ","lifeKill":"撃破時HP回復","lightningDR":"雷ダメージ軽減","arcaneDR":"アルケインダメージ軽減","regen":"HP自然回復","xp":"経験値獲得","potionFind":"ポーション発見率","potionCharges":"追加ポーション所持数","armorBonus":"ボーナスArmor","specialDamage":"特殊攻撃ダメージ"});
 const percent=new Set(['strongAttack','goldFind','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','bonusHP','move','itemFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','arcaneDR','poisonDR','lightningDR']);
 for(const key of ["basicAttack","specialDamage","slowed","immobilized","vulnerable","distant","dot","burned","xp","potionFind","armorBonus"])percent.add(key);
 percent.add('bonusMR');percent.add('bonusArmor');
+labels.stunned='スタン状態へのダメージ';labels.regenBonus='HP自然回復ボーナス';percent.add('stunned');percent.add('regenBonus');
 labels.bonusMR='ボーナス魔法耐性';labels.bonusArmor='ボーナスArmor';
 const priority=['critChance','critRed','mr','dodge','cdr','mcr'];
 const full=[...priority,...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','abilityLevels','maxHP','armor','int','critDamage','lightning','allDamage','damage','healthy','injured','elite','as','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
@@ -79,8 +80,38 @@ function calc(doc,build,sub={}){
     if(p.as)add('as',p.as,'Paragon AS（旧形式）','history');
   }
   if(s.aura){add('critChance',10,'Flame Aura · Crit率','history');if((s.talents||{}).flameWard){add('bonusMR',80,'炎の加護 · MR +80%','history');add('bonusArmor',80,'炎の加護 · Armor +80%','history');}}
-  if(s.pet?.id==='raptor'){const lvl=Number(s.pet.level||0);if(lvl>=10)add('critChance',6,'ラプター +10','history');else if(lvl>=4)add('critChance',4.2,'ラプター +4','history');}
-  if(s.pet?.id==='wyrm'){add('bonusMR',Number(s.pet.level||0)>=10?150:100,'汚された古竜（未検証）','estimated');}
+  // Pet passive skills and minion XP level are distinct. Only verified +10 values
+  // are modeled; active timed abilities are not permanent character stats.
+  const pet=s.pet||{},main=D.petCatalog.find(x=>x.id===pet.id);
+  if(main){
+    const level=Number(pet.level??10),skill=Number(pet.passiveLevel??10);
+    if(level>=10&&skill===10){
+      for(const [stat,label,value] of main.passives)add(stat,value,main.name+' · '+label+' +10','verified');
+    }else pending.push(main.name+'：パッシブはLv10未満のため、Lv10効果を計算対象外');
+  }else if(pet.id&&pet.id!=='unknown')pending.push('ペット：旧形式または未登録のミニオンは未計算');
+  if(pet.inheritId){
+    const inherited=D.petCatalog.find(x=>x.id===pet.inheritId);
+    const index=Number(pet.inheritIndex??0);
+    if(!inherited||!inherited.passives[index])pending.push('継承スキル：未登録または不正な選択');
+    else if(inherited.id===pet.id)pending.push('継承スキル：メインペット自身からは継承できません');
+    else if(Number(pet.level??10)<10)pending.push('継承スキル：メインペットLv10が必要');
+    else{
+      const [stat,label,value]=inherited.passives[index];
+      add(stat,value,'継承 · '+inherited.name+' · '+label+' +10','verified');
+    }
+  }
+  if(pet.gear?.enabled){
+    if(Number(pet.level??10)<5)pending.push('ペット装備：メインペットLv5未満のため無効');
+    else if(pet.gear.type==='blackmist'){
+      const ids=Array.isArray(pet.gear.affixes)?pet.gear.affixes:[];
+      const seen=new Set();
+      for(const id of ids.slice(0,3)){
+        if(!id)continue;
+        if(!D.petGearPrimary.includes(id)||seen.has(id)){pending.push('ペット装備：不正または重複したOPを除外');continue}
+        seen.add(id);add(id,D.affixes[id][1],'Black Mist · Saddle of the Golden Khan · '+D.affixes[id][0],'verified');
+      }
+    }else pending.push('ペット装備：通常Legendaryのロール値は未登録のため未計算');
+  }
   const potion={swift:{as:20},vitality:{bonusHP:15},resistance:{bonusMR:20},wind:{dodge:5},focus:{cdr:10},efficiency:{mcr:10},cruel:{critChance:10}}[s.potion];
   if(potion)Object.entries(potion).forEach(([k,v])=>add(k,v,'使用ポーション','history'));
   if(s.food==='crab')add('allDR',10,'灰殻のカニ','history');

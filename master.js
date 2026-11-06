@@ -22,8 +22,16 @@ function paragonAllocation(settings){
  }
  return {points,total,legacy,issues};
 }
+// Level +10 passive catalog: values are passive skill levels, not minion XP levels.
+// WikiLy minion pages verified 2026-11-06; temporary abilities are descriptive only.
+const petCatalog=[{"id":"flying-fish-king","name":"トビウオ王","passives":[["mcr","Ocean's Providence",15]],"ability":"Mana Monsoon：+40 Mana Regen / 5秒、CD 14秒"},{"id":"lord-of-the-cinder","name":"灰燼の王","passives":[["cdr","Cinder Sovereign",20]],"ability":"Ashen Wrath：Critダメージ+175% / 5秒、CD 10秒"},{"id":"tidewrath-crab-king","name":"怒濤の蟹王","passives":[["critDamage","Massive Crab Claws",80],["coldDR","Thicker Shell",40],["fireDR","Heatproof Shell",40]]},{"id":"defiled-wyrm","name":"汚された古竜","passives":[["regenBonus","Everliving Blood",150],["bonusMR","Sepulchral Scales",150]]},{"id":"ogre","name":"オーガ","passives":[["stunned","Damage to Stunned III",80],["physicalDR","Iron Hide",30]]},{"id":"redrock-lord","name":"赤岩の領主","passives":[["strongAttack","Strong Attack Damage III",60]],"ability":"Power of Redrock Lord：物理ダメージ+100% / 6秒、CD 12秒"}];
+const petGearPrimary=['damage','critDamage','as','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','maxHP','mana','cdr','armor','mr','dodge','armorBonus','lightningDR','arcaneDR','thorns','bonusHP','physicalDR','coldDR','poisonDR','mcr','fireDR','critRed','potionCharges','critChance','allDamage','int','fire','cold','lightning','distant','dot','burned'];
+const petGearAffixes=petGearPrimary;
+
+function petPassiveList(id){return petCatalog.find(p=>p.id===id)?.passives||[];}
 const slots=[['weapon','武器'],['head','頭'],['neck','首飾り'],['shoulder','肩'],['chest','胸'],['gloves','手袋'],['belt','ベルト'],['legs','脚'],['boots','ブーツ'],['ring1','指輪①'],['ring2','指輪②']];
 const affixes={
+armor:['Armor',782,'flat','ペット装備用の固定Armor'],
 basicAttack:["基本攻撃ダメージ",109.5,"pct","通常攻撃系"],
 strongAttack:["強攻撃ダメージ",109.5,"pct","Strong Attack系"],
 fire:["炎ダメージ",125.1,"pct","炎属性"],
@@ -113,5 +121,5 @@ const seedConfigs=[
 ];
 function uid(prefix){return prefix+'-'+(globalThis.crypto&&crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2))}
 function makeSeed(){const items=[],loadout={};for(const [slot,definitionId,primary,secondary,note] of seedConfigs){const it={id:uid('item'),definitionId,slot,primary:[...primary],secondary:secondary||'',upgrade:0,upgradeKnown:false,overrides:{},gems:[],nickname:'',memo:note,source:'history',owned:null,createdAt:new Date().toISOString()};items.push(it);loadout[slot]=it.id;}const old={id:uid('item'),definitionId:'unyielding',slot:'chest',primary:['healthy','injured','bonusHP','coldDR'],secondary:'loh',upgrade:8,upgradeKnown:true,overrides:{},gems:[],nickname:'旧・LoH胸',memo:'以前の+8試用装備',source:'history',owned:null,createdAt:new Date().toISOString()};items.push(old);const build={id:uid('build'),name:'Stormcaller 通常',loadout,settings:{aura:true,enemyLevel:70,paragonPoints:{maxMana:15},paragonLevel:null,talents:{flameWard:8,arcaneReservoir:8},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{},notes:'会話履歴による初期下書き。実測値・強化段階は確認が必要。'},createdAt:new Date().toISOString()};return {schemaVersion:1,masterVersion:'conversation-draft-2026-11-06',items,builds:[build],activeBuildId:build.id,measurements:[{id:uid('measurement'),at:'2026-11-04',buildId:build.id,reference:true,values:{critChance:83.2,cdr:76.6,armor:9416,mr:2909,as:1.2,mana:130,stormCost:21},notes:'旧装備のAura発動中の会話上の記録。現在構成の確定値ではない。'}]};}
-window.DBP={paragonStats,paragonAllocation,slots,affixes,rules,definitions,gems,gemSocketLimits,gemSocketGroup,gemEffect,makeSeed,uid,limits:{critChance:85,critRed:100,dodge:85,cdr:80,mcr:85},version:'black-mist-affixes-2026-11-06'};
+window.DBP={petCatalog,petGearAffixes,petGearPrimary,petPassiveList,paragonStats,paragonAllocation,slots,affixes,rules,definitions,gems,gemSocketLimits,gemSocketGroup,gemEffect,makeSeed,uid,limits:{critChance:85,critRed:100,dodge:85,cdr:80,mcr:85},version:'black-mist-affixes-2026-11-06'};
 })();

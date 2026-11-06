@@ -28,8 +28,8 @@ function modify(fn){fn();save()}
 function render(){const b=build();if(!b)return;app.innerHTML=`<div class="shell"><header class="topbar"><div class="brand"><div class="brand-symbol">✧</div><div><div class="brand-title">DESKRAWL <span>BUILD PLANNER</span></div><div class="brand-sub">SORCERER <span class="dot">·</span> STORMCALLER <span class="dot">·</span> v0.1</div></div></div><div class="header-right"><span class="sync-status ${ui.status}"><i></i>${{local:'ローカル保存',saving:'同期中',synced:'クラウド同期済み',error:'同期失敗',conflict:'競合を検知'}[ui.status]||'ローカル保存'}</span><button class="icon-btn" data-action="backup" title="JSONバックアップ">⇩</button><button class="icon-btn" data-action="import" title="JSONバックアップから復元">⇧</button><button class="icon-btn" data-action="cloud" title="同期・ログイン">☁</button></div></header>
 <div class="profile-strip"><div class="profile-control"><span class="field-legend">ACTIVE BUILD</span><select id="buildSelect" class="profile-select">${state.builds.map(x=>opt(x.id,x.name,x.id===b.id?x.id:'' )).join('')}</select></div><div class="profile-buttons"><button class="text-btn" data-action="new-build">＋ 新規</button><button class="text-btn" data-action="duplicate-build">複製</button><button class="text-btn" data-action="rename-build">名前変更</button><button class="icon-btn subtle" data-action="delete-build" title="ビルド削除">⌫</button><button class="text-btn" data-action="compare-builds">ビルド比較</button></div></div>
 ${renderLockedSets()}
-<nav class="mainnav"><button class="navbtn ${ui.tab==='equipment'?'active':''}" data-action="tab-equipment"><span>◈</span> 装備 <small>EQUIPMENT</small></button><button class="navbtn ${ui.tab==='stats'?'active':''}" data-action="tab-stats"><span>▦</span> ステータス <small>CHARACTER STATS</small></button><div class="navhint">装備候補と計算結果を分けて管理</div></nav>
-${ui.tab==='equipment'?renderEquipment():renderStats()}
+<nav class="mainnav"><button class="navbtn ${ui.tab==='equipment'?'active':''}" data-action="tab-equipment"><span>◈</span> 装備 <small>EQUIPMENT</small></button><button class="navbtn ${ui.tab==='pets'?'active':''}" data-action="tab-pets"><span>♧</span> ペット <small>MINIONS</small></button><button class="navbtn ${ui.tab==='stats'?'active':''}" data-action="tab-stats"><span>▦</span> ステータス <small>CHARACTER STATS</small></button><div class="navhint">装備候補と計算結果を分けて管理</div></nav>
+${ui.tab==='equipment'?renderEquipment():ui.tab==='pets'?renderPets():renderStats()}
 <footer class="footer"><span>GAME DATA · ${E(D.version)}</span><span>Divine固定OP・Tier 6宝石を登録済み · 強化後の端数・固有効果はゲーム内表示と照合してください</span></footer></div>${renderModal()}`;}
 function renderLockedSets(){
  const sets=lockedSets(),selected=selectedLockedSet(),ready=canSaveLockedSet(),fixed=fixedSlots(),total=D.slots.length;
@@ -86,6 +86,40 @@ function renderGemComparison(current,candidate){
  return rows.join('')||'<div class="data-row"><span class="muted">宝石の構成は同じです。</span></div>';
 }
 function slotIcon(x){return {weapon:'⚔',head:'♜',neck:'◇',shoulder:'◆',chest:'▣',gloves:'✦',belt:'▬',legs:'◫',boots:'⌁',ring1:'◌',ring2:'◌'}[x]||'◆'}
+function renderPets(){
+ const b=build(),p=b.settings?.pet||{},main=D.petCatalog.find(x=>x.id===p.id);
+ const lv=Number(p.level??10),passive=Number(p.passiveLevel??10),inherit=D.petCatalog.find(x=>x.id===p.inheritId);
+ const inherited=inherit?.passives[Number(p.inheritIndex??0)];
+ const gear=p.gear||{},ids=Array.isArray(gear.affixes)?gear.affixes:[];
+ const choice=(key,value,label,items)=>`<label class="field"><span>${label}</span><select data-change="${key}">${items.map(([id,name])=>opt(id,name,value)).join('')}</select></label>`;
+ const petChoices=[['','未設定'],...D.petCatalog.map(x=>[x.id,x.name])];
+ const inheritChoices=[['','継承なし'],...D.petCatalog.filter(x=>x.id!==p.id).flatMap(x=>x.passives.map((passive,i)=>[x.id+':'+i,x.name+' · '+passive[1]+' (+10 '+C.format(passive[0],passive[2])+')']))];
+ const selected=p.inheritId?p.inheritId+':'+(p.inheritIndex??0):'';
+ const options=[['','未設定'],...D.petGearPrimary.map(id=>[id,D.affixes[id][0]+' +'+C.format(id,D.affixes[id][1])])];
+ const gearRows=[0,1,2].map(index=>`<label class="field"><span>Black Mist OP ${index+1}</span><select data-change="petGearAffix" data-index="${index}">${options.map(([id,name])=>opt(id,name,ids[index]||'')).join('')}</select></label>`).join('');
+ const active=main&&lv>=10&&passive===10;
+ const r=C.calc(state,b);
+ const effects=[...(active?main.passives.map(x=>main.name+'：'+x[1]+' +'+C.format(x[0],x[2])):[]),...(inherited&&lv>=10?[inherit.name+'（継承）：'+inherited[1]+' +'+C.format(inherited[0],inherited[2])]:[]),...(gear.enabled&&gear.type==='blackmist'&&lv>=5?ids.filter(Boolean).map(id=>'Saddle：'+(D.affixes[id]?.[0]||id)+' +'+C.format(id,D.affixes[id]?.[1]||0)):[])];
+ return `<main class="workspace stats-workspace"><section class="stats-main"><div class="page-heading"><div class="eyebrow">MINION BUILD</div><h1>ペット</h1><p>メインペット・継承スキル・専用装備を組み合わせ、キャラクターのステータスに反映します。</p></div>
+ <div class="card pet-editor"><div class="card-heading"><div><h2>メインペット</h2><span>育成レベルとパッシブ強化レベルは別々に管理</span></div></div>
+ ${choice('petId',p.id||'', '使用するペット',petChoices)}
+ <div class="pet-fields"><label class="field"><span>ペット育成Lv (0〜10)</span><input type="number" min="0" max="10" step="1" data-change="petLevel" value="${E(lv)}"></label><label class="field"><span>パッシブ強化Lv (0〜10)</span><input type="number" min="0" max="10" step="1" data-change="petPassiveLevel" value="${E(passive)}"></label></div>
+ ${main?`<div class="notice gentle">${main.passives.map(x=>E(x[1]+' +10：+'+C.format(x[0],x[2]))).join(' / ')}${active?' · ステータス反映中':' · +10効果は未反映'}${main.ability?'<p>アクティブ：'+E(main.ability)+'（常時加算なし）</p>':''}</div>`:''}
+ </div>
+ <div class="card pet-editor"><div class="card-heading"><div><h2>継承パッシブ</h2><span>メインペットLv10で解放・別ペットのLv10スキルを1枠継承</span></div></div>
+ ${choice('petInherit',selected,'継承元とスキル',inheritChoices)}
+ ${inherited?`<div class="notice gentle">継承効果：+${E(C.format(inherited[0],inherited[2]))} ${E(C.labels[inherited[0]]||inherited[1])}${lv<10?' · メインLv10未満のため未反映':''}</div>`:''}
+ </div>
+ <div class="card pet-editor"><div class="card-heading"><div><h2>ペット装備</h2><span>Lv5以上で1枠・Black Mist Saddleは850最大値の3OP</span></div></div>
+ <label class="checkbox-row"><input type="checkbox" data-change="petGearEnabled" ${gear.enabled?'checked':''}/> ペット装備枠を使用</label>
+ ${choice('petGearType',gear.type||'blackmist','装備種別',[['blackmist','Black Mist · Saddle of the Golden Khan'],['legendary','通常Legendary · 数値未登録']])}
+ ${gear.type!=='legendary'?gearRows:'<div class="notice">通常Legendaryはロール値が可変です。未確認の数値は加算しません。</div>'}
+ <p class="helper">同一OPの重複は不可。ペット装備は強化・宝石ソケットなし。</p></div>
+ <div class="card pet-editor"><div class="card-heading"><div><h2>組み合わせ結果</h2><span>現在のビルドのステータスへ自動反映</span></div></div>
+ ${effects.length?effects.map(x=>`<div class="data-row"><strong>${E(x)}</strong></div>`).join(''):'<div class="notice">反映対象のLv10パッシブ・継承・装備がありません。</div>'}
+ <div class="notice gentle">実効CDR ${E(C.format('cdr',r.effective.cdr))} / MCR ${E(C.format('mcr',r.effective.mcr))} / Critダメージ ${E(C.format('critDamage',r.effective.critDamage))}</div>
+ <button class="btn" data-action="tab-stats">ステータス内訳を見る</button></div></section></main>`;
+}
 function renderStats(){const b=build(),r=C.calc(state,b);return `<main class="workspace stats-workspace"><section class="stats-main"><div class="page-heading"><div class="eyebrow">CHARACTER OVERVIEW</div><h1>キャラクターステータス</h1><p>装備・Paragon・タレント・バフの取得元を確認できます。</p></div><div class="quickbar"><label class="toggle"><input type="checkbox" data-change="aura" ${b.settings?.aura?'checked':''}/><span class="toggle-track"></span><span>Flame Aura <strong>${b.settings?.aura?'ON':'OFF'}</strong></span></label><label class="inline-select">ポーション <select data-change="quickpotion">${potionOptions(b.settings?.potion)}</select></label><button class="btn outline" data-action="settings"><span>⚙</span> ビルド設定</button></div><div class="section-label"><span>重要ステータス</span><span class="muted small">KEY METRICS</span></div><div class="stat-tiles">${C.priority.map(k=>statTile(k,r)).join('')}</div><div class="notice gentle">表示数値は登録されている項目の<b>部分計算</b>です。Divine固定OPは加算済みですが、強化値・基礎値・外部補正の未登録分や、条件付きの固有効果は未計算のため、ゲーム内の完全な最終値ではありません。<button class="inline-link" data-action="measurement">実測値を記録</button></div><div class="section-label extra-space"><span>すべてのステータス</span><span class="muted small">ALL STATISTICS</span></div>${[['攻撃',['int','str','dex','damage','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','distant','dot','burned','lightning','arcane','physical','fire','cold','poison','thorns','allDamage','critChance','critDamage','as','cdr']],['防御',['maxHP','bonusHP','armor','armorBonus','mr','critRed','dodge','physicalDR','coldDR','fireDR','lightningDR','arcaneDR','poisonDR']],['リソース・補助',['mana','mcr','move','loh','lifeKill','regen','itemFind','goldFind','potionFind','xp','potionCharges','manaKill']]].map(([name,keys])=>`<section class="stat-group"><h3>${name}</h3><div class="stat-rows">${keys.map(k=>`<button data-action="stat" data-value="${k}" class="stat-row ${ui.selectedStat===k?'chosen':''}"><span>${E(C.labels[k])}</span><b>${E(C.format(k,r.effective[k]))}</b><span class="stat-arrow">›</span></button>`).join('')}</div></section>`).join('')}<section class="card snapshot"><div class="card-heading"><div><h2>実測記録</h2><span>過去の測定値は現在の合計に足しません</span></div><button class="text-btn" data-action="measurement">＋ 登録</button></div>${state.measurements.filter(x=>x.buildId===b.id).slice(-3).reverse().map(m=>`<div class="snapshot-row"><strong>${E(m.at)}</strong><span>${Object.entries(m.values||{}).map(([k,v])=>`${C.labels[k]||k}: ${v}`).join(' · ')}</span><small>${E(m.notes||'')}</small></div>`).join('')||'<p class="muted">実測記録はまだありません。</p>'}</section></section><aside class="stats-side ${ui.settingsOpen?'show-settings':''}">${ui.settingsOpen?renderSettings():renderBreakdown(r)}</aside></main>`;}
 function statTile(k,r){const val=r.effective[k];const cap=D.limits[k];return `<button class="stat-tile ${ui.selectedStat===k&&!ui.settingsOpen?'chosen':''}" data-action="stat" data-value="${k}"><span class="stat-label">${E(C.labels[k])}</span><strong>${E(C.format(k,val))}</strong><span class="stat-hint">${cap?`上限 ${cap}%${r.raw[k]>cap?' · 超過 '+C.format(k,r.raw[k]-cap):''}`:k==='mr'?'Armorとは別計算':'実効値・部分合計'}</span>${cap?`<div class="progress"><i style="width:${Math.min(100,Math.max(0,(val||0)/cap*100))}%"></i></div>`:''}</button>`}
 function renderBreakdown(r){const k=ui.selectedStat,list=r.breakdown[k]||[],raw=r.raw[k],eff=r.effective[k];return `<div class="side-panel"><div class="side-title"><div><small>STAT BREAKDOWN</small><h2>${E(C.labels[k]||k)}</h2></div><button class="icon-btn" data-action="settings" title="設定パネル">⚙</button></div><div class="side-total"><span>登録データからの計算値</span><strong>${E(C.format(k,eff))}</strong>${raw!==eff?`<small>上限適用前 ${E(C.format(k,raw))}</small>`:''}</div><h3>取得元内訳</h3>${list.length?list.map(x=>`<div class="break-row"><div><span>${E(x.source)}</span><small>${E(qualityOf(x.quality))}</small></div><strong>+${E(C.format(k,x.value))}</strong></div>`).join(''):'<div class="notice">この項目の取得元は未登録です。ビルド設定か装備を入力してください。</div>'}${k==='mr'||k==='armor'?`<div class="mitigation"><span>敵Lv ${E(build().settings?.enemyLevel||70)} の推定軽減率</span><strong>${E(r.mitigations[k].toFixed(1))}%</strong><small>式：防御値 ÷（防御値 + 50 × 敵Lv）。登録値のみで計算した参考値。</small></div>`:''}<button class="btn outline wide" data-action="settings">設定を編集 <span>→</span></button><p class="side-note">${r.pending.length}件の未校正項目があります。確度の低い数値を最終値として扱わないでください。</p></div>`;}
@@ -112,7 +146,7 @@ function renderParagonSettings(s){
 }
 function renderSettings(){const b=build(),s=b.settings||{},t=s.talents||{},pet=s.pet||{};let body='';if(ui.settingsTab==='paragon')body=renderParagonSettings(s);
 else if(ui.settingsTab==='talents')body=`<p class="helper">習得レベルはビルドごとに保存。AuraのON/OFFは上のショートカットと同期します。</p>${settingNumber('talents.flameWard','炎の加護（0〜8）',t.flameWard||0,0,8)}${settingNumber('talents.arcaneReservoir','魔力の貯蔵（0〜8）',t.arcaneReservoir||0,0,8)}<label class="checkbox-row"><input type="checkbox" data-change="aura" ${s.aura?'checked':''}/> Flame Aura発動中</label><label class="field"><span>敵レベル（軽減率用）</span><input type="number" min="1" max="999" data-change="enemyLevel" value="${E(s.enemyLevel||70)}"></label>`;
-else if(ui.settingsTab==='pet')body=`<label class="field"><span>使用ミニオン</span><select data-change="petId">${[['unknown','未確認／未設定'],['raptor','ラプター'],['emberfang','炎牙'],['wyrm','汚された古竜'],['naga','浅瀬のナーガ'],['other','その他']].map(x=>opt(x[0],x[1],pet.id||'unknown')).join('')}</select></label>${settingNumber('pet.level','強化レベル（0〜10）',pet.level||0,0,10)}<label class="field"><span>継承スキル（任意）</span><select data-change="inherit">${[['','なし／未確認'],['ember','炎牙の燃焼ブレス'],['strong','強攻撃ダメージ'],['vulnerable','脆弱付与'],['other','その他']].map(x=>opt(x[0],x[1],pet.inherit||'')).join('')}</select></label><div class="notice">ミニオン効果の一部は未検証です。固有効果・継承は保存できますが、計算対象外の項目があります。</div>`;
+else if(ui.settingsTab==='pet')body='<p class="helper">ペットは独立した「ペット」タブで設定できます。</p><button class="btn" data-action="tab-pets">ペット設定へ</button>';
 else if(ui.settingsTab==='consumables')body=`<label class="field"><span>戦闘ポーション</span><select data-change="quickpotion">${potionOptions(s.potion)}</select></label><label class="field"><span>料理</span><select data-change="food">${[['none','なし'],['crab','灰殻のカニ'],['other','その他']].map(x=>opt(x[0],x[1],s.food||'none')).join('')}</select></label><label class="field"><span>ユーティリティ</span><select data-change="utility">${[['none','なし'],['speed','移動速度'],['exp','獲得経験値'],['gold','ゴールド']].map(x=>opt(x[0],x[1],s.utility||'none')).join('')}</select></label>`;
 else if(ui.settingsTab==='base')body=`<p class="helper">装備外の基礎値のみ入力してください。ゲーム内の最終値を入れると二重計上になります。わからない項目は空欄のままで大丈夫です。</p>${[['int','知力（装備外）'],['mr','Magic Resist（装備外）'],['armor','Armor（装備外）'],['maxHP','最大HP（装備外）'],['critChance','Crit率（装備外）'],['critRed','CritRed（装備外）'],['cdr','CDR（装備外）'],['mcr','MCR（装備外）'],['dodge','Dodge（装備外）'],['mana','最大Mana（装備外）']].map(([k,label])=>settingNumber('base.'+k,label,s.base?.[k]??'')).join('')}`;
 return `<div class="side-panel settings-panel"><div class="side-title"><div><small>BUILD CONFIGURATION</small><h2>ビルド設定</h2></div><button class="icon-btn" data-action="close-settings">×</button></div><label class="field"><span>設定項目</span><select id="settingsCategory">${[['paragon','Paragon'],['talents','タレント'],['pet','ミニオン・継承'],['consumables','ポーション・料理'],['base','装備外の基礎値']].map(x=>opt(x[0],x[1],ui.settingsTab)).join('')}</select></label><div class="setting-form">${body}</div><div class="notice gentle">設定変更はこのビルドだけに反映。共有装備は別ビルドでも使用できます。</div></div>`;}
@@ -123,7 +157,7 @@ if(ui.modal==='compare-builds'){const x=state.builds.find(y=>y.id===ui.compareBu
 return `<div class="modal-backdrop" data-action="modal-close"><div class="modal-panel" role="dialog" aria-modal="true">${content}</div></div>`;}
 // ---------- mutations ----------
 function act(action,id,value,el){const b=build();switch(action){
-case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;
+case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-pets':ui.tab='pets';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;
 case 'slot':ui.slot=value;ui.itemId=null;ui.detail='edit';render();break;
 case 'mode-edit':ui.detail='edit';render();break;case 'mode-compare':ui.detail='compare';if(!ui.itemId){const other=state.items.find(i=>i.slot===ui.slot&&i.id!==b.loadout[ui.slot]);ui.itemId=other?.id||b.loadout[ui.slot]}render();break;
 case 'select-item':ui.itemId=id;render();break;
@@ -150,7 +184,7 @@ case 'measurement':ui.modal='measurement';render();break;
 case 'measurement-save':{const fields=['critChance','critRed','cdr','mcr','dodge','mr','armor','maxHP','as','mana'];let values={};for(const key of fields){const v=document.getElementById('measure-'+key)?.value;if(v!=='')values[key]=Number(v)}if(!Object.keys(values).length){flash('数値を少なくとも1つ入力してください');return}modify(()=>{state.measurements.push({id:D.uid('measurement'),at:document.getElementById('measurementDate').value,buildId:b.id,values,notes:document.getElementById('measurementMemo').value,loadout:{...b.loadout},settings:JSON.parse(JSON.stringify(b.settings)),createdAt:new Date().toISOString()});ui.modal=''});flash('実測スナップショットを保存しました');break;}
 }
 }
-function defaultSettings(){return {aura:true,enemyLevel:70,paragonPoints:{},paragonLevel:null,talents:{flameWard:0,arcaneReservoir:0},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{}}}
+function defaultSettings(){return {aura:true,enemyLevel:70,paragonPoints:{},paragonLevel:null,talents:{flameWard:0,arcaneReservoir:0},pet:{id:'unknown',level:10,passiveLevel:10,inherit:'',gear:{enabled:false,type:'blackmist',affixes:[]}},potion:'none',food:'none',utility:'none',base:{}}}
 function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=getItem(id),v=el.type==='checkbox'?el.checked:el.value;
  if(kind==='equalLevel'){ui.equalLevel=Number(v);render();return}
  if(kind==='locked'&&it){modify(()=>{it.locked=Boolean(v)});flash(v?'装備を固定しました':'装備の固定を解除しました');return}
@@ -188,6 +222,26 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
     modify(()=>{b.settings.paragonLevel=num});return;
   }
   if(kind==='setting'){const [group,key]=el.dataset.key.split('.');modify(()=>{b.settings[group]??={};b.settings[group][key]=v===''?'':Number(v)});return}
+ if(['petId','petLevel','petPassiveLevel','petInherit','petGearEnabled','petGearType','petGearAffix'].includes(kind)){
+   const p=b.settings.pet??={};
+   if(kind==='petId'){modify(()=>{p.id=v;p.inheritId=p.inheritId===v?'':p.inheritId;p.level=10;p.passiveLevel=10});return}
+   if(kind==='petLevel'||kind==='petPassiveLevel'){
+     const n=Number(v);if(!Number.isInteger(n)||n<0||n>10){render();flash('ペットLvは0〜10の整数です');return}
+     modify(()=>{p[kind==='petLevel'?'level':'passiveLevel']=n;if(kind==='petLevel'&&Number(p.passiveLevel??10)>n)p.passiveLevel=n});return;
+   }
+   if(kind==='petInherit'){
+     const [source,index]=v?v.split(':'):['',0];if(source&&(!D.petCatalog.some(x=>x.id===source&&x.id!==p.id&&x.passives[Number(index)]))){render();flash('無効な継承スキル');return}
+     modify(()=>{p.inheritId=source;p.inheritIndex=Number(index)||0});return;
+   }
+   if(kind==='petGearEnabled'){modify(()=>{p.gear??={type:'blackmist',affixes:[]};p.gear.enabled=el.checked});return}
+   if(kind==='petGearType'){modify(()=>{p.gear??={affixes:[]};p.gear.type=v});return}
+   if(kind==='petGearAffix'){
+     const idx=Number(el.dataset.index),gear=p.gear??={type:'blackmist',affixes:[]};
+     if(!Number.isInteger(idx)||idx<0||idx>2||v&&!D.petGearPrimary.includes(v)){render();flash('ペット装備OPが無効です');return}
+     if(v&&gear.affixes.some((x,i)=>x===v&&i!==idx)){render();flash('同一OPを重複登録できません');return}
+     modify(()=>{gear.affixes[idx]=v});return;
+   }
+ }
  if(kind==='petId'||kind==='inherit'){modify(()=>{b.settings.pet??={};b.settings.pet[kind==='petId'?'id':'inherit']=v});return}
  if(kind==='food'||kind==='utility')modify(()=>{b.settings[kind]=v});
 }

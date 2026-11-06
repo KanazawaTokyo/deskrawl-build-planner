@@ -30,6 +30,7 @@ jobs:
           node test-required-ops.js
           node test-affix-pools.js
           node test-paragon.js
+          node test-pets.js
       - name: Build website
         run: node scripts/build.js
       - name: Configure GitHub Pages
