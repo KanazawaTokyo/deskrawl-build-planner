@@ -66,6 +66,7 @@ assert.equal(active().settings.paragonPoints.loh,25,'life on hit cap 25 points')
 // Preserve legacy saved values until a Paragon field is edited.
 const legacyDoc=D.makeSeed(),legacyBuild=legacyDoc.builds[0];
 legacyBuild.settings.paragon={bonusMR:12,bonusArmor:20,bonusHP:12.5,maxMana:30,as:4};
+legacyBuild.settings.aura=false; // isolate Paragon bonuses from Flame Aura (+80% defensive bonuses)
 delete legacyBuild.settings.paragonPoints;
 const legacyCalc=C.calc(legacyDoc,legacyBuild);
 assert.equal(legacyCalc.sum.mana>=30,true);
