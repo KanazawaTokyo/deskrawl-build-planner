@@ -26,6 +26,7 @@ jobs:
           node test-gems.js
           node test-cloud.js
           node test-lock.js
+          node test-sets.js
       - name: Build website
         run: node scripts/build.js
       - name: Configure GitHub Pages
