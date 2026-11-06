@@ -31,6 +31,7 @@ jobs:
           node test-affix-pools.js
           node test-paragon.js
           node test-pets.js
+          node test-combat.js
       - name: Build website
         run: node scripts/build.js
       - name: Configure GitHub Pages
