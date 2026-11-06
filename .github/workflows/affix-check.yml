@@ -1,0 +1,23 @@
+name: Black Mist affix verification
+on:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Validate all equipment and build features
+        run: |
+          node --version
+          node test-affix-pools.js
+          node test.js
+          node test-gems.js
+          node test-cloud.js
+          node test-lock.js
+          node test-sets.js
+          node test-required-ops.js
+          node scripts/build.js
