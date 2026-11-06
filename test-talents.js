@@ -64,6 +64,25 @@ const manaR=C.calc(manabuild,{loadout:{},settings:s});
 assert.equal(manaR.sum.mana,132);
 assert(Math.abs(manaR.sum.int-112.8)<1e-6,'Arcane Reservoir converts 40% of total 132 mana after flat bonuses');
 assert.equal(C.calc(manabuild,{loadout:{},settings:{aura:true,talentPoints:{coldRetribution:1,arcaneInsight:10},base:{}}}).sum.allDR,10);
+// Combat tab must not treat a lightning-only talent as global Crit damage.
+const baseCombat=ctx.DBPCombat.attack(r,settings(),{damageType:'lightning',attackType:'special',lightningAbility:false});
+const lightningCombat=ctx.DBPCombat.attack(r,settings(),{damageType:'lightning',attackType:'special',lightningAbility:true});
+assert.equal(lightningCombat.critBonus-baseCombat.critBonus,96,'Storm Mastery +96% only for lightning abilities');
+const basicCombat=ctx.DBPCombat.attack({effective:{critChance:5,basicCritChance:15,critDamage:100,weaponDamage:100},breakdown:{}},{base:{critChance:0,critDamage:0,int:0}},
+ {attackType:'basic'});
+assert.equal(basicCombat.critChance,20,'Searing Edge applies only to Basic Attack Crit chance');
+const noBasicCombat=ctx.DBPCombat.attack({effective:{critChance:5,basicCritChance:15,critDamage:100,weaponDamage:100},breakdown:{}},{base:{critChance:0,critDamage:0,int:0}},
+ {attackType:'special'});
+assert.equal(noBasicCombat.critChance,5);
+const frozenPreset={...p,arcaneExposure:0,shatteringIce:1};
+assert(T.valid(frozenPreset));
+const frozenDoc=JSON.parse(JSON.stringify(get()));
+frozenDoc.builds[0].settings.talentPoints=frozenPreset;
+const frozenStats=C.calc(frozenDoc,frozenDoc.builds[0]);
+const normalVsFrozen=ctx.DBPCombat.attack(frozenStats,frozenDoc.builds[0].settings,{frozen:false});
+const frozen=ctx.DBPCombat.attack(frozenStats,frozenDoc.builds[0].settings,{frozen:true});
+assert(frozen.critChance>=normalVsFrozen.critChance,'Shattering Ice +50 Crit chance only vs frozen');
+assert.equal(frozen.critBonus-normalVsFrozen.critBonus,250,'Shattering Ice Crit damage +250 only vs frozen');
 const legacy={aura:true,talents:{flameWard:8,arcaneReservoir:8},base:{}};
 const legacyR=C.calc(manabuild,{loadout:{},settings:legacy});
 assert.equal(legacyR.sum.bonusMR,80,'legacy Aura effects survive unless user explicitly migrates');
