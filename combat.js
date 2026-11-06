@@ -9,11 +9,11 @@ const types={physical:['物理','physical','physicalDR'],fire:['炎','fire','fir
 const attacks={basic:['通常攻撃','basicAttack'],strong:['強攻撃','strongAttack'],special:['特殊攻撃','specialDamage']};
 const defaults=Object.freeze({
  damageType:'lightning',attackType:'special',skillPercent:100,skillFlat:0,heroLevel:70,
- enemyHealth:50,elite:false,vulnerable:false,slowed:false,immobilized:false,stunned:false,burned:false,distant:false,bleeding:false,poisoned:false,
+ enemyHealth:50,elite:false,vulnerable:false,slowed:false,immobilized:false,stunned:false,frozen:false,lightningAbility:false,burned:false,distant:false,bleeding:false,poisoned:false,
  targetArmor:0,targetMR:0,targetTypeDR:0,targetAllDR:0,targetCritRed:0,
  defenseType:'lightning',attackerLevel:70,incomingHit:10000,incomingCrit:false,incomingCritBonus:150
 });
-const boolKeys=new Set(['elite','vulnerable','slowed','immobilized','stunned','burned','distant','bleeding','poisoned','incomingCrit']);
+const boolKeys=new Set(['elite','vulnerable','slowed','immobilized','stunned','frozen','lightningAbility','burned','distant','bleeding','poisoned','incomingCrit']);
 const ranges={
  skillPercent:[0,100000],skillFlat:[0,1e9],heroLevel:[1,1000],enemyHealth:[0,100],
  targetArmor:[0,1e9],targetMR:[0,1e9],targetTypeDR:[0,90],targetAllDR:[0,90],targetCritRed:[0,100],
@@ -47,7 +47,7 @@ function baseline(stats,settings){
  const b=settings?.base||{};
  const missing=k=>b[k]===undefined||b[k]===null||b[k]==='';
  return {
-  int:missing('int')?10:0,
+  int:missing('int')&&!(settings?.talentPoints&&typeof settings.talentPoints==='object')?10:0,
   critChance:missing('critChance')?5:0,
   critDamage:missing('critDamage')?150:0,
   dodge:missing('dodge')?5:0
@@ -58,7 +58,7 @@ function conditional(stats,q){
   ['healthy','対健康',q.enemyHealth>80],
   ['injured','対負傷',q.enemyHealth<30],
   ['slowed','対減速',q.slowed],
-  ['immobilized','対移動不能',q.immobilized||q.stunned],
+  ['immobilized','対移動不能',q.immobilized||q.stunned||q.frozen],
   ['stunned','対スタン',q.stunned],
   ['bleeding','対出血',q.bleeding],
   ['poisoned','対毒状態',q.poisoned],
@@ -83,8 +83,12 @@ function attack(stats,settings,options){
  const weaponDamage=get(stats,'weaponDamage'),flatDamage=get(stats,'damage'),primary=get(stats,'int')+base.int;
  const eleValue=get(stats,element),allValue=get(stats,'allDamage');
  const conditions=conditional(stats,q),conditionValue=conditions.reduce((sum,x)=>sum+x.value,0);
- const atkValue=get(stats,selected),critChance=clamp(get(stats,'critChance')+base.critChance,0,85);
- const critBonus=get(stats,'critDamage')+base.critDamage,targetCritRed=q.targetCritRed;
+ const atkValue=get(stats,selected);
+ const conditionalBasicCrit=q.attackType==='basic'?get(stats,'basicCritChance'):0;
+ const conditionalFrozenCrit=q.frozen?get(stats,'frozenCritChance'):0;
+ const conditionalLightningCrit=q.damageType==='lightning'&&q.lightningAbility?get(stats,'lightningAbilityCritDamage'):0;
+ const critChance=clamp(get(stats,'critChance')+base.critChance+conditionalBasicCrit+conditionalFrozenCrit,0,85);
+ const critBonus=get(stats,'critDamage')+base.critDamage+conditionalLightningCrit+(q.frozen?get(stats,'frozenCritDamage'):0),targetCritRed=q.targetCritRed;
  const critMult=1+(critBonus/100)*(1-targetCritRed/100);
  const elemMult=1+(eleValue+allValue)/100,primaryMult=1+primary/100;
  const condMult=1+conditionValue/100,attackMult=1+atkValue/100;
