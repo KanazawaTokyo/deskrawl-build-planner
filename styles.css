@@ -178,3 +178,95 @@
 @media(max-width:950px){.combat-columns{grid-template-columns:1fr}.combat-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){.combat-fields{grid-template-columns:repeat(2,minmax(0,1fr))}.combat-defense-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.combat-input-card{padding:15px}.combat-metric{padding:13px}.combat-metric strong{font-size:20px}.combat-card{padding:17px}.mainnav .navbtn{padding-left:9px;padding-right:9px;font-size:11px}.mainnav .navbtn small{display:none}}
 @media(max-width:430px){.combat-fields{grid-template-columns:1fr}.combat-metric strong{font-size:18px}.combat-check{padding:7px 8px}}
+
+
+/* Sorcerer 70pt talent board. The tree deliberately scrolls rather than shrinking
+   the nodes below a usable touch target on narrow/mobile displays. */
+.talent-workspace{display:flex;flex-direction:column;gap:18px}
+.talent-top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px}
+.talent-top h1{margin:8px 0 6px}
+.talent-top p{font-size:11px;color:var(--muted);line-height:1.7;max-width:680px}
+.talent-points-card{flex:0 0 220px;padding:14px 17px;border:1px solid #4d665c;background:linear-gradient(130deg,#1b3333,#132228);border-radius:12px;display:flex;flex-direction:column;gap:4px}
+.talent-points-card small{color:#a0c6b6;font-size:10px}
+.talent-points-card>strong{font-size:29px;letter-spacing:-.8px;font-variant-numeric:tabular-nums;color:#e0f9ec}
+.talent-points-card>strong span{font-size:14px;color:#8ea69d}
+.talent-points-card>span{color:#8ea69d;font-size:10px}
+.talent-point-track{height:6px;background:#314a46;border-radius:99px;overflow:hidden;margin:5px 0}
+.talent-point-track i{display:block;height:100%;background:linear-gradient(90deg,#72d8bd,#c5f8d9);border-radius:99px}
+.talent-toolbar{background:#121a24;border:1px solid var(--line);padding:13px 15px;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:12px}
+.talent-toolbar>div{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.talent-toolbar b{font-size:11px;color:#cbd9dd}
+.talent-toolbar span{font-size:10px;color:var(--muted)}
+.talent-legacy{margin-top:0}
+.talent-legacy p{margin:6px 0}
+.talent-legacy>small{display:block;margin:10px 0 0;font-size:10px;color:#b8c8bf}
+.talent-migrate-actions{display:flex;flex-wrap:wrap;gap:9px;margin:11px 0}
+.talent-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(275px,310px);gap:17px;align-items:start}
+.talent-tree-scroll{border:1px solid #32404d;border-radius:14px;background:radial-gradient(ellipse at 50% 0%,#202d37 0%,#101721 68%);overflow-x:auto;scrollbar-color:#405559 #131d26;scrollbar-width:thin;padding:15px 11px}
+.talent-tree{min-width:660px;display:flex;flex-direction:column;gap:11px}
+.talent-tier{border-bottom:1px solid #2e3a45;padding:3px 5px 15px;position:relative}
+.talent-tier:last-child{border-bottom:0}
+.talent-tier>header{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:0 0 9px}
+.talent-tier-heading{display:flex;align-items:center;gap:10px}
+.talent-tier-heading b{background:#2c3945;border:1px solid #476071;border-radius:7px;padding:5px 8px;font-size:11px;color:#e3ecf2;min-width:40px;text-align:center}
+.talent-tier-heading span{color:#bcc8d4;font-size:10px}
+.talent-tier>header small{font-size:10px;color:#82929e}
+.talent-tier.is-locked{opacity:.55}
+.talent-tier.is-locked:hover{opacity:.86}
+.talent-tier-items{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.talent-tier-items.is-cap{grid-template-columns:repeat(4,minmax(0,1fr))}
+.talent-node{min-width:0;display:flex;flex-direction:column;gap:4px;--element:#8798ad;--elementBg:#202a35;--elementBorder:#455464}
+.talent-node.arcane{--element:#bd9cfc;--elementBg:#272036;--elementBorder:#584578}
+.talent-node.fire{--element:#f0ab76;--elementBg:#332822;--elementBorder:#77503e}
+.talent-node.cold{--element:#9bdaf5;--elementBg:#1b303e;--elementBorder:#46768b}
+.talent-node.lightning{--element:#e4d27d;--elementBg:#303124;--elementBorder:#797246}
+.talent-tile{width:100%;min-height:125px;border:1px solid var(--elementBorder);background:linear-gradient(155deg,var(--elementBg),#151e28);border-radius:9px;color:var(--text);padding:10px 7px 7px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:5px;position:relative}
+.talent-tile:hover{filter:brightness(1.18)}
+.talent-node.picked .talent-tile{border-color:var(--element);box-shadow:inset 0 0 18px #0004,0 0 10px #0005}
+.talent-node.focused .talent-tile{outline:2px solid var(--mint);outline-offset:2px}
+.talent-capstone .talent-tile{background:linear-gradient(140deg,#342d21,var(--elementBg) 65%,#18232c);border-width:2px}
+.talent-node.locked .talent-tile{filter:saturate(.45)}
+.talent-symbol{font-size:26px;line-height:1;color:var(--element);text-shadow:0 0 16px currentColor}
+.talent-name{font-size:10px;line-height:1.35;font-weight:650;flex:1;display:flex;align-items:center;justify-content:center;overflow-wrap:anywhere}
+.talent-rank{font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--element);font-variant-numeric:tabular-nums}
+.talent-gauge{height:3px;border-radius:2px;background:#293846;width:100%;overflow:hidden}
+.talent-gauge i{display:block;height:100%;background:var(--element)}
+.talent-cap-mark{position:absolute;top:5px;right:5px;font-size:6px;letter-spacing:.7px;color:#efc885}
+.talent-locked-mark{position:absolute;top:4px;left:5px;font-size:11px}
+.talent-node-actions{display:grid;grid-template-columns:29px minmax(0,1fr) 29px;gap:4px;align-items:center;min-height:28px}
+.talent-node-actions button{width:29px;height:27px;background:#25313d;border:1px solid #445564;border-radius:6px;color:#d5e3eb;font-size:16px;line-height:1}
+.talent-node-actions button:not(:disabled):hover{background:#31584e;color:var(--mint)}
+.talent-node-actions button:disabled{opacity:.29;cursor:not-allowed}
+.talent-node-actions span{text-align:center;color:var(--faint);font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.talent-tree-footnote{font-size:10px;color:#8598a8;padding:2px 5px 7px}
+.talent-side{position:sticky;top:12px}
+.talent-detail-panel{background:#151e2a;border:1px solid #394655;border-radius:13px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.talent-detail-identity{display:flex;gap:12px;align-items:center}
+.talent-detail-symbol{width:54px;height:54px;border:1px solid #526273;border-radius:12px;background:#223040;display:flex;align-items:center;justify-content:center;font-size:34px;flex:none}
+.talent-detail-identity.arcane .talent-detail-symbol{color:#c3a9ff}
+.talent-detail-identity.fire .talent-detail-symbol{color:#f3b079}
+.talent-detail-identity.cold .talent-detail-symbol{color:#a3e0ff}
+.talent-detail-identity.lightning .talent-detail-symbol{color:#e9df9a}
+.talent-detail-identity h2{font-size:15px;line-height:1.4;margin:5px 0}
+.talent-detail-rank{color:var(--mint);font-size:12px;font-variant-numeric:tabular-nums}
+.talent-description{font-size:12px;line-height:1.7;color:#c0cdd7}
+.talent-detail-stat{border:1px solid #31414d;background:#101923;border-radius:8px;padding:11px;display:flex;flex-direction:column;gap:6px}
+.talent-detail-stat small{font-size:10px;color:var(--muted)}
+.talent-detail-stat strong{font-size:12px;font-weight:650;line-height:1.5;color:#e0edf0}
+.talent-detail-buttons{display:flex;flex-direction:column;gap:8px}
+.talent-cost-line,.talent-lock-message{font-size:10px;line-height:1.5;color:#ccad7a}
+.talent-side-help{padding:15px;margin-top:12px;border:1px dashed #364956;border-radius:10px;font-size:10px;color:var(--muted);line-height:1.8}
+.talent-side-help b{color:#cedde2;font-size:11px}
+.talent-side-help p{margin-top:7px}
+.talent-summary{padding:20px}
+.talent-summary-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.talent-summary-stat{padding:12px;border:1px solid var(--line);border-radius:9px;background:#101923;display:flex;flex-direction:column;gap:5px}
+.talent-summary-stat>span{color:var(--muted);font-size:10px}
+.talent-summary-stat b{color:var(--mint);font-size:16px;font-variant-numeric:tabular-nums}
+.talent-summary-stat small{color:var(--faint);font-size:9px;line-height:1.5}
+.talent-summary-special{margin-top:17px;border-top:1px solid var(--line);padding-top:13px;font-size:11px;color:#bfced6;line-height:1.8}
+.talent-summary-special p{margin-top:8px;font-size:10px}
+.talent-reference{font-size:11px;margin-bottom:11px}
+@media(max-width:1080px){.talent-layout{grid-template-columns:minmax(0,1fr) 255px}.talent-detail-panel{padding:14px}}
+@media(max-width:810px){.talent-layout{grid-template-columns:minmax(0,1fr)}.talent-side{position:static}.talent-top{flex-wrap:wrap}.talent-points-card{flex-basis:100%;max-width:370px}.talent-summary-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.talent-tree-scroll{padding:11px 7px}.talent-toolbar{flex-direction:column;align-items:stretch}.talent-summary-stats{grid-template-columns:1fr}.talent-points-card{max-width:none}.talent-top h1{font-size:20px}}
