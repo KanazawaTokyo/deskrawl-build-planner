@@ -1,0 +1,83 @@
+(function(){'use strict';
+const D=window.DBP;const {affixes,definitions,limits}=D;
+const stats=['weaponDamage','weaponSpeed','weaponDps','strongAttack','goldFind','abilityLevels','int','damage','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','mr','armor','maxHP','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
+const labels={weaponDamage:'武器ダメージ',weaponSpeed:'武器速度',weaponDps:'武器基礎DPS',strongAttack:'強攻撃ダメージ',goldFind:'Gold Find',abilityLevels:'全アビリティレベル',int:'知力',damage:'固定ダメージ',lightning:'雷ダメージ',allDamage:'全ダメージ',healthy:'対健康ダメージ',injured:'対負傷ダメージ',elite:'対エリートダメージ',critChance:'Crit率',critDamage:'Critダメージ',critRed:'Critダメ軽減',cdr:'CDR',mcr:'MCR',as:'ASボーナス',dodge:'Dodge',mr:'Magic Resist',armor:'Armor',maxHP:'最大HP',bonusHP:'Bonus HP',mana:'最大Mana',move:'移動速度',loh:'Life on Hit',itemFind:'Item Find',manaKill:'Mana on Kill',physicalDR:'物理軽減',coldDR:'冷気軽減',fireDR:'炎軽減',arcane:'アルケインダメージ',physical:'物理ダメージ',poison:'毒ダメージ',fire:'炎ダメージ',cold:'冷気ダメージ',str:'力',dex:'敏捷',thorns:'棘ダメージ',arcaneDR:'アルケイン軽減',poisonDR:'毒軽減',lightningDR:'雷軽減'};
+const percent=new Set(['strongAttack','goldFind','lightning','allDamage','healthy','injured','elite','critChance','critDamage','critRed','cdr','mcr','as','dodge','bonusHP','move','itemFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','arcaneDR','poisonDR','lightningDR']);
+const priority=['critChance','critRed','mr','dodge','cdr','mcr'];
+const full=[...priority,'weaponDamage','weaponSpeed','weaponDps','strongAttack','abilityLevels','maxHP','armor','int','critDamage','lightning','allDamage','damage','healthy','injured','elite','as','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
+const armorSlots=new Set(['head','shoulder','chest','gloves','belt','legs','boots']);
+function multiplier(level,pos=0,count=6){const n=Math.max(0,Math.min(12,Number(level)||0));const steps=2*Math.min(n,10);const awarded=Math.floor(steps/count)+(pos<steps%count?1:0);return 1+.05*awarded+(n>=11?.05:0)+(n>=12?.05:0);}
+function factor(item,idx,level){const hasArmor=armorSlots.has(item.slot);const count=hasArmor?6:5;const pos=idx==='armor'?0:(idx==='s'?(hasArmor?5:4):(Number(idx)+(hasArmor?1:0)));return multiplier(level,pos,count)}
+function valueOf(item,affixId,idx,level){const a=affixes[affixId];if(!a)return null;const selected=level===undefined?item.upgrade:level;const key=affixId+':'+idx+':'+selected;const over=item.overrides?.[key];if(over!==undefined&&over!==null&&over!=='')return {value:Number(over),status:'actual'};return {value:Number((a[1]*factor(item,idx,selected)).toFixed(2)),status:selected===0?'history':'calculated'};}
+function itemTotal(item,level){
+const out=[];const def=definitions.find(x=>x.id===item.definitionId);const selected=level===undefined?item.upgrade:level;
+if(def?.rarity==='Divine'){
+  // Fixed tooltip-order values. An upgrade awards 2 x 5%-steps per level,
+  // distributed cyclically across speed/damage/Armor and fixed attributes.
+  // Enlightenment I/II adds 5% to each number (baseline additive).
+  const fixed=def.fixed||[];const round=n=>Number(n.toFixed(2));
+  fixed.forEach(([stat,base],idx)=>{
+    const overrideKey='div:'+stat+':'+idx+':'+selected;
+    const override=item.overrides?.[overrideKey];
+    out.push({stat,value:override!==undefined&&override!==null&&override!==''?Number(override):round(base*multiplier(selected,idx,fixed.length)),status:override!==undefined&&override!==null&&override!==''?'actual':selected===0?'verified':'calculated',slot:'fixed'+idx,item:item.id});
+  });
+  if(def.id==='grandmother'){
+    const speed=out.find(x=>x.stat==='weaponSpeed')?.value||0;
+    const dmg=out.find(x=>x.stat==='weaponDamage')?.value||0;
+    out.push({stat:'weaponDps',value:round(speed*dmg),status:'calculated',slot:'derived',item:item.id});
+  }
+  // Unique passive powers are displayed and counted separately; they are not
+  // treated as a normal upgradable affix until game rules establish otherwise.
+  for(const [stat,value] of (def.powerStats||[]))out.push({stat,value,status:'verified',slot:'unique',item:item.id});
+  return out;
+}
+if(armorSlots.has(item.slot)&&def?.rarity==='Black Mist')out.push({stat:'armor',value:Number((782*factor(item,'armor',selected)).toFixed(2)),status:'calculated',slot:'baseArmor',item:item.id});
+for(let i=0;i<(item.primary||[]).length;i++){const id=item.primary[i];const v=valueOf(item,id,i,level);if(id&&v)out.push({stat:id,...v,slot:'primary'+i,item:item.id});}
+if(item.secondary){const v=valueOf(item,item.secondary,'s',level);if(v)out.push({stat:item.secondary,...v,slot:'secondary',item:item.id});}
+return out;
+}
+function calc(doc,build,sub={}){
+  const sum={};const breakdown={};const pending=[];const add=(key,value,source,quality='history')=>{if(!Number.isFinite(Number(value)))return;sum[key]=(sum[key]||0)+Number(value);(breakdown[key]??=[]).push({source,value:Number(value),quality});};
+  const chosen=build.loadout||{};
+  for(const [slot,id] of Object.entries(chosen)){
+    const effectiveId=(sub.slot===slot)?sub.itemId:id;
+    const item=doc.items.find(x=>x.id===effectiveId);if(!item)continue;
+    const def=definitions.find(x=>x.id===item.definitionId);
+    const stage=sub.equalLevel!==undefined?sub.equalLevel:item.upgrade;
+    if(def?.rarity==='Divine'&&!(def.fixed?.length))pending.push(slot+'：Divine固定数値が未登録');
+    if(!item.upgradeKnown&&sub.equalLevel===undefined)pending.push(slot+'：強化段階未確認');
+    for(const e of itemTotal(item,stage))add(e.stat,e.value,(def?.name||item.nickname||slot)+' · '+labels[e.stat],e.status);
+    for(const [index,gem] of (item.gems||[]).entries()){
+      const effect=D.gemEffect(gem?.type,slot);
+      if(effect)add(effect.stat,effect.value,`${def?.name||slot} · ソケット${index+1} · ${D.gems[gem.type].name}（Tier 6）`,'verified');
+      else if(gem?.type)pending.push(`${slot} · ソケット${index+1}：旧形式・未対応の宝石は集計外`);
+    }
+  }
+  const s=build.settings||{};const base=s.base||{};
+  for(const [k,v] of Object.entries(base))if(v!==''&&v!==null&&v!==undefined)add(k,Number(v),'登録済みの装備外基礎値','manual');
+  const p=s.paragon||{};
+  if(p.bonusMR)add('bonusMR',p.bonusMR,'Paragon Bonus MR','history');if(p.bonusArmor)add('bonusArmor',p.bonusArmor,'Paragon Bonus Armor','history');if(p.bonusHP)add('bonusHP',p.bonusHP,'Paragon Bonus HP','history');if(p.maxMana)add('mana',p.maxMana,'Paragon Max Mana','history');if(p.as)add('as',p.as,'Paragon AS','history');
+  if(s.aura){add('critChance',10,'Flame Aura · Crit率','history');if((s.talents||{}).flameWard){add('bonusMR',80,'炎の加護 · MR +80%','history');add('bonusArmor',80,'炎の加護 · Armor +80%','history');}}
+  if(s.pet?.id==='raptor'){const lvl=Number(s.pet.level||0);if(lvl>=10)add('critChance',6,'ラプター +10','history');else if(lvl>=4)add('critChance',4.2,'ラプター +4','history');}
+  if(s.pet?.id==='wyrm'){add('bonusMR',Number(s.pet.level||0)>=10?150:100,'汚された古竜（未検証）','estimated');}
+  const potion={swift:{as:20},vitality:{bonusHP:15},resistance:{bonusMR:20},wind:{dodge:5},focus:{cdr:10},efficiency:{mcr:10},cruel:{critChance:10}}[s.potion];
+  if(potion)Object.entries(potion).forEach(([k,v])=>add(k,v,'使用ポーション','history'));
+  if(s.food==='crab')add('allDR',10,'灰殻のカニ','history');
+  if((s.talents||{}).arcaneReservoir){const mana=sum.mana;if(base.mana!==undefined && base.mana!=='' && base.mana!==null && mana)add('int',mana*.4,'魔力の貯蔵8/8 · Mana由来INT','calculated');else pending.push('装備外の基礎Mana未登録につき魔力の貯蔵のINT換算は未計算');}
+  // Magic Resist and Armor are affected by bonus percentages. Baseline remains unknown unless explicitly entered.
+  const rawMR=(sum.mr||0)+(sum.int||0);const rawArmor=sum.armor||0;
+  const effective={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+(sum.bonusArmor||0)/100)};
+  breakdown.mr=[...(breakdown.mr||[]),...(breakdown.int||[]).map(x=>({...x,source:x.source+' → INT由来MR'}))];
+  for(const k of ['critChance','critRed','cdr','mcr','dodge'])if(effective[k]!==undefined)effective[k]=Math.min(limits[k],effective[k]);
+  const raw={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+(sum.bonusArmor||0)/100)};
+  // Max HP represents fixed HP multiplied by Bonus HP; absent base means partial sum.
+  effective.maxHP=(sum.maxHP||0)*(1+(sum.bonusHP||0)/100);
+  raw.maxHP=effective.maxHP;
+  const enemy=Math.max(1,Number(s.enemyLevel||70));
+  const mitigations={armor:raw.armor/(raw.armor+50*enemy)*100,mr:raw.mr/(raw.mr+50*enemy)*100};
+  return {sum,raw,effective,breakdown,pending,mitigations,estimated:true};
+}
+function format(k,v){if(v===undefined||v===null||!Number.isFinite(v))return '—';const n=Math.round(v*100)/100;return n.toLocaleString('ja-JP',{maximumFractionDigits:2})+(percent.has(k)?'%':'');}
+function delta(k,from,to){if(from===undefined&&to===undefined)return null;return (to||0)-(from||0);}
+window.DBPCalc={stats,labels,percent,priority,full,multiplier,valueOf,itemTotal,calc,format,delta};
+})();
