@@ -24,6 +24,43 @@ approx(hit.layers.reduce((sum,x)=>sum+x.share,0),100,'log contributions sum to 1
 assert(hit.conditions.find(x=>x.key==='healthy').active);
 assert(!B.attack(stats,setting,{...opts,enemyHealth:80}).conditions.find(x=>x.key==='healthy').active,'healthy is >80 only');
 assert(!B.attack(stats,setting,{...opts,enemyHealth:30}).conditions.find(x=>x.key==='injured').active,'injured is <30 only');
+// Schrodinger's Ring explicitly overrides both HP-exclusive statuses.
+const vsStats={effective:{weaponDamage:100,int:0,critChance:0,critDamage:0,healthy:100,injured:80},breakdown:{}};
+const health50={attackType:'basic',skillPercent:100,damageType:'physical',enemyHealth:50};
+const ordinary=B.attack(vsStats,setting,health50);
+assert.equal(ordinary.conditionValue,0,'50% target is neither Healthy nor Injured normally');
+const ringEffect={schrodingerRing:true};
+const ringHit=B.attack(vsStats,setting,health50,ringEffect);
+assert.equal(ringHit.conditionValue,180,'ring must enable both Healthy +100 and Injured +80 at 50% HP');
+approx(ringHit.condMult,2.8,'same additive damage-vs bucket for both conditions');
+assert(ringHit.normal.final>ordinary.normal.final,'damage must rise with ring-enabled conditional bonuses');
+assert(ringHit.conditions.find(x=>x.key==='healthy').active);
+assert(ringHit.conditions.find(x=>x.key==='injured').active);
+assert.equal(ringHit.conditions.find(x=>x.key==='healthy').reason,'指輪により成立');
+const manualHit=B.attack(vsStats,setting,{...health50,forceHealthy:true,forceInjured:true});
+assert.equal(manualHit.conditionValue,180,'manual Healthy/Injured override must also work together');
+assert.equal(B.attack(vsStats,setting,{...health50,forceHealthy:true}).conditionValue,100,'manual Healthy only');
+assert.equal(B.attack(vsStats,setting,{...health50,forceInjured:true}).conditionValue,80,'manual Injured only');
+assert.equal(B.attack(vsStats,setting,{...health50,enemyHealth:90},ringEffect).conditionValue,180,'ring also forces Injured on Healthy targets');
+assert.equal(B.attack(vsStats,setting,{...health50,enemyHealth:20},ringEffect).conditionValue,180,'ring also forces Healthy on Injured targets');
+assert.equal(B.attack(vsStats,setting,{...health50,enemyHealth:80}).conditionValue,0,'80% is neither in the normal model');
+assert.equal(B.validateInput('forceHealthy',true),true);
+assert.equal(B.validateInput('forceInjured',false),false);
+const equippedDoc={items:[{id:'r',definitionId:'schrodinger'},{id:'x',definitionId:'sage'}]};
+assert.equal(B.equippedEffects(equippedDoc,{loadout:{ring1:'r'}}).schrodingerRing,true,'equipped primary ring');
+assert.equal(B.equippedEffects(equippedDoc,{loadout:{ring2:'r'}}).schrodingerRing,true,'equipped secondary ring');
+assert.equal(B.equippedEffects(equippedDoc,{loadout:{ring1:'x',ring2:''}}).schrodingerRing,false,'unequipped ring has no effect');
+assert.equal(B.equippedEffects(equippedDoc,{loadout:{ring1:'missing'}}).schrodingerRing,false,'do not infer from missing items');
+const ringRender=UI.render(vsStats,{...setting,combat:health50},ringEffect);
+assert(ringRender.includes('シュレーディンガーの指輪を装備中'));
+assert(ringRender.includes('data-key="forceHealthy" checked disabled'));
+assert(ringRender.includes('data-key="forceInjured" checked disabled'));
+assert(ringRender.includes('対健康 · 成立（指輪により成立）'));
+assert(ringRender.includes('対負傷 · 成立（指輪により成立）'));
+const noRingRender=UI.render(vsStats,{...setting,combat:health50});
+assert(noRingRender.includes('data-key="forceHealthy"'));
+assert(!noRingRender.includes('data-key="forceHealthy" checked disabled'));
+
 const status=B.attack({effective:{...stats.effective,immobilized:90,stunned:70},breakdown:{}},setting,
  {...opts,stunned:true,immobilized:true}).conditions;
 assert.equal(status.find(x=>x.key==='immobilized').value,90,'stunned and immobilized do not double-count same vs-immobilized stat');
@@ -86,6 +123,11 @@ const change=(key,value,type='number')=>events.change({target:{id:'',type,checke
 click('tab-combat');
 assert.equal(ctx.DBPApp.getUI().tab,'combat');
 assert(app.innerHTML.includes('倍率グループの内訳'));
+assert(app.innerHTML.includes('シュレーディンガーの指輪を装備中'),'seed has equipped Divine ring');
+assert(app.innerHTML.includes('data-key="forceHealthy" checked disabled'));
+assert(app.innerHTML.includes('data-key="forceInjured" checked disabled'));
+assert(B.equippedEffects(ctx.DBPApp.getState(),ctx.DBPApp.getState().builds[0]).schrodingerRing);
+
 const active=()=>ctx.DBPApp.getState().builds[0].settings.combat;
 change('elite',true,'checkbox');change('vulnerable',true,'checkbox');change('attackType','strong','select-one');
 change('skillPercent',220);change('enemyHealth',85);
@@ -100,4 +142,16 @@ click('combat-defense-type','physical');
 assert.equal(active().defenseType,'physical');
 assert.equal(ctx.DBPApp.getState().schemaVersion,1,'same schema and cloud JSON payload');
 assert.equal(JSON.parse(local.deskrawl_planner_v01).builds[0].settings.combat.defenseType,'physical');
+// A new build without the ring can opt into special cases independently.
+click('new-build');
+click('tab-combat');
+assert(!app.innerHTML.includes('シュレーディンガーの指輪を装備中'));
+change('forceHealthy',true,'checkbox');
+change('forceInjured',true,'checkbox');
+let newest=ctx.DBPApp.getState().builds.at(-1);
+assert.equal(newest.settings.combat.forceHealthy,true);
+assert.equal(newest.settings.combat.forceInjured,true);
+assert(app.innerHTML.includes('data-key="forceHealthy" checked'));
+assert(app.innerHTML.includes('data-key="forceInjured" checked'));
+assert.equal(JSON.parse(local.deskrawl_planner_v01).builds.at(-1).settings.combat.forceInjured,true,'cloud-ready persistence');
 console.log('PASS: damage group math, target conditions, 6 mitigation types, caps, UI and per-build cloud-ready scenario');
