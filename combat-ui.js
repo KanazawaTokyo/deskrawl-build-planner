@@ -14,8 +14,8 @@ function number(key,label,value,note){
  return '<label class="field"><span>'+safe(label)+'</span><input type="number" inputmode="decimal" step="any" min="'+min+'" max="'+max+'" value="'+safe(value)+'" data-change="combat" data-key="'+key+'">'+
  (note?'<small>'+safe(note)+'</small>':'')+'</label>';
 }
-function check(key,label,value){
- return '<label class="combat-check"><input type="checkbox" data-change="combat" data-key="'+key+'"'+(value?' checked':'')+'><span>'+safe(label)+'</span></label>';
+function check(key,label,value,disabled=false){
+ return '<label class="combat-check'+(disabled?' combat-forced':'')+'"><input type="checkbox" data-change="combat" data-key="'+key+'"'+(value?' checked':'')+(disabled?' disabled':'')+'><span>'+safe(label)+'</span></label>';
 }
 function metric(label,value,desc){
  return '<div class="combat-metric"><small>'+safe(label)+'</small><strong>'+safe(value)+'</strong><span>'+safe(desc)+'</span></div>';
@@ -39,7 +39,7 @@ function attackTable(a,stats){
 function conditionTable(a){
  const relevant=a.conditions.filter(x=>x.stored>0||x.active);
  if(!relevant.length)return '<p class="helper">現在、条件付きダメージの対象項目は未登録です。</p>';
- return '<div class="combat-conditions">'+relevant.map(x=>'<div class="combat-condition '+(x.active?'on':'off')+'"><span>'+safe(x.label)+(x.active?' · 成立':' · 不成立')+'</span><b>+'+pct(x.value)+'</b></div>').join('')+'</div>';
+ return '<div class="combat-conditions">'+relevant.map(x=>'<div class="combat-condition '+(x.active?'on':'off')+'"><span>'+safe(x.label)+(x.active?' · 成立'+(x.reason?'（'+safe(x.reason)+'）':''):' · 不成立')+'</span><b>+'+pct(x.value)+'</b></div>').join('')+'</div>';
 }
 function trace(a){
  if(!a.normal)return '<div class="notice">武器ダメージを登録すると通常ヒット・クリティカル・期待値を計算できます。倍率の内訳は引き続き確認できます。</div>';
@@ -74,8 +74,9 @@ function defenseLayers(d){
   '<div class="combat-d-line-right"><b>−'+pct(Math.max(0,x.cutFromBase))+'</b><span>元の被ダメ比</span></div></div>'
  ).join('')+'</div>';
 }
-function render(stats,settings){
- const q=B.scenario(settings.combat),a=B.attack(stats,settings,q),d=B.defense(stats,settings,q);
+function render(stats,settings,context={}){
+ const q=B.scenario(settings.combat),a=B.attack(stats,settings,q,context),d=B.defense(stats,settings,q);
+ const schrodinger=Boolean(context.schrodingerRing);
  const types=Object.entries(B.types).map(([key,data])=>[key,data[0]]);
  const attacks=Object.entries(B.attacks).map(([key,data])=>[key,data[0]]);
  const attackFields=[
@@ -84,9 +85,10 @@ function render(stats,settings){
   number('skillPercent','スキルの武器倍率（%）',q.skillPercent,'スキル説明にある数値。100% = ×1'),
   number('skillFlat','スキル固定ダメージ',q.skillFlat),
   number('heroLevel','自分のレベル',q.heroLevel,'敵のArmor/MR計算に使用'),
-  number('enemyHealth','敵の残HP（%）',q.enemyHealth,'健康 >80%、負傷 <30%')
+  number('enemyHealth','敵の残HP（%）',q.enemyHealth,'通常は健康 >80%、負傷 <30%。指輪・手動指定は例外')
  ].join('');
  const targetOptions=[
+  check('forceHealthy','健康扱い（対健康）',q.forceHealthy||schrodinger,schrodinger),check('forceInjured','負傷扱い（対負傷）',q.forceInjured||schrodinger,schrodinger),
   check('elite','Elite / Boss',q.elite),check('vulnerable','脆弱',q.vulnerable),
   check('burned','燃焼',q.burned),check('slowed','減速',q.slowed),
   check('stunned','スタン',q.stunned),check('immobilized','移動不能',q.immobilized),check('frozen','凍結 Frozen',q.frozen),check('lightningAbility','雷アビリティのCrit補正',q.lightningAbility),
@@ -116,7 +118,10 @@ function render(stats,settings){
  ' 実ゲームでの命中ダメージは乱数 ±10%・端数処理などで変動します。</div>'+
  '<section class="combat-section"><div class="section-label"><span>01 / 与ダメージの計算</span><span class="muted small">INFLICTED DAMAGE</span></div>'+
  '<div class="combat-input-card"><h3>攻撃・スキル条件</h3><div class="combat-fields">'+attackFields+'</div><div class="combat-form-title">敵の状態（命中する直前）</div>'+
- '<div class="combat-checks">'+targetOptions+'</div><details class="combat-advanced"><summary>敵側の防御値を入力（任意）</summary><div class="combat-fields">'+targetDefenses+'</div></details></div>'+
+ '<div class="combat-checks">'+targetOptions+'</div>'+
+ (schrodinger?'<p class="combat-ring-notice"><strong>シュレーディンガーの指輪を装備中</strong>：敵のHPに関係なく「健康」「負傷」が両方成立します。チェックは指輪効果として固定されています。</p>':
+ '<p class="combat-ring-note">健康・負傷は通常、敵HPから自動判定します。指輪の効果や特殊条件を手動で再現するときは、上の2項目を個別にチェックしてください。</p>')+
+ '<details class="combat-advanced"><summary>敵側の防御値を入力（任意）</summary><div class="combat-fields">'+targetDefenses+'</div></details></div>'+
  '<div class="combat-metrics">'+
  metric('通常ヒット',a.normal?num(a.normal.final):'—','Critなし・平均乱数')+
  metric('クリティカル',a.critical?num(a.critical.final):'—','Crit率 '+pct(a.critChance))+
