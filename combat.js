@@ -9,11 +9,11 @@ const types={physical:['物理','physical','physicalDR'],fire:['炎','fire','fir
 const attacks={basic:['通常攻撃','basicAttack'],strong:['強攻撃','strongAttack'],special:['特殊攻撃','specialDamage']};
 const defaults=Object.freeze({
  damageType:'lightning',attackType:'special',skillPercent:100,skillFlat:0,heroLevel:70,
- enemyHealth:50,elite:false,vulnerable:false,slowed:false,immobilized:false,stunned:false,frozen:false,lightningAbility:false,burned:false,distant:false,bleeding:false,poisoned:false,
+ enemyHealth:50,forceHealthy:false,forceInjured:false,elite:false,vulnerable:false,slowed:false,immobilized:false,stunned:false,frozen:false,lightningAbility:false,burned:false,distant:false,bleeding:false,poisoned:false,
  targetArmor:0,targetMR:0,targetTypeDR:0,targetAllDR:0,targetCritRed:0,
  defenseType:'lightning',attackerLevel:70,incomingHit:10000,incomingCrit:false,incomingCritBonus:150
 });
-const boolKeys=new Set(['elite','vulnerable','slowed','immobilized','stunned','frozen','lightningAbility','burned','distant','bleeding','poisoned','incomingCrit']);
+const boolKeys=new Set(['forceHealthy','forceInjured','elite','vulnerable','slowed','immobilized','stunned','frozen','lightningAbility','burned','distant','bleeding','poisoned','incomingCrit']);
 const ranges={
  skillPercent:[0,100000],skillFlat:[0,1e9],heroLevel:[1,1000],enemyHealth:[0,100],
  targetArmor:[0,1e9],targetMR:[0,1e9],targetTypeDR:[0,90],targetAllDR:[0,90],targetCritRed:[0,100],
@@ -53,10 +53,18 @@ function baseline(stats,settings){
   dodge:missing('dodge')?5:0
  };
 }
-function conditional(stats,q){
+function equippedEffects(doc,build){
+ const rings=['ring1','ring2'];
+ const ids=rings.map(slot=>build?.loadout?.[slot]).filter(Boolean);
+ return {schrodingerRing:ids.some(id=>(doc?.items||[]).some(item=>item.id===id&&item.definitionId==='schrodinger'))};
+}
+function conditional(stats,q,context={}){
+ const ring=Boolean(context.schrodingerRing);
+ const healthy=q.enemyHealth>80||q.forceHealthy||ring;
+ const injured=q.enemyHealth<30||q.forceInjured||ring;
  const checks=[
-  ['healthy','対健康',q.enemyHealth>80],
-  ['injured','対負傷',q.enemyHealth<30],
+  ['healthy','対健康',healthy,ring?'指輪により成立':q.forceHealthy?'手動指定':'HP判定'],
+  ['injured','対負傷',injured,ring?'指輪により成立':q.forceInjured?'手動指定':'HP判定'],
   ['slowed','対減速',q.slowed],
   ['immobilized','対移動不能',q.immobilized||q.stunned||q.frozen],
   ['stunned','対スタン',q.stunned],
@@ -67,7 +75,7 @@ function conditional(stats,q){
   ['elite','対エリート/Boss',q.elite],
   ['vulnerable','対脆弱',q.vulnerable]
  ];
- return checks.map(([key,label,active])=>({key,label,active,value:active?get(stats,key):0,stored:get(stats,key)}));
+ return checks.map(([key,label,active,reason])=>({key,label,active,value:active?get(stats,key):0,stored:get(stats,key),reason:reason||'状態による判定'}));
 }
 function resistanceCut(amount,attackerLevel){
  const r=Math.max(0,num(amount)),level=Math.max(1,num(attackerLevel,70));
@@ -78,11 +86,11 @@ function share(layers){
  const total=pos.reduce((n,x)=>n+Math.log(x.factor),0);
  return layers.map(x=>({...x,share:total>0&&x.factor>1?Math.log(x.factor)/total*100:0}));
 }
-function attack(stats,settings,options){
+function attack(stats,settings,options,context={}){
  const q=scenario(options),base=baseline(stats,settings),element=types[q.damageType][1],selected=attacks[q.attackType][1];
  const weaponDamage=get(stats,'weaponDamage'),flatDamage=get(stats,'damage'),primary=get(stats,'int')+base.int;
  const eleValue=get(stats,element),allValue=get(stats,'allDamage');
- const conditions=conditional(stats,q),conditionValue=conditions.reduce((sum,x)=>sum+x.value,0);
+ const conditions=conditional(stats,q,context),conditionValue=conditions.reduce((sum,x)=>sum+x.value,0);
  const atkValue=get(stats,selected);
  const conditionalBasicCrit=q.attackType==='basic'?get(stats,'basicCritChance'):0;
  const conditionalFrozenCrit=q.frozen?get(stats,'frozenCritChance'):0;
@@ -127,7 +135,7 @@ function attack(stats,settings,options){
  return {settings:q,base,weaponDamage,flatDamage,primary,eleValue,allValue,conditionValue,conditions,
  atkValue,critChance,critBonus,targetCritRed,critMult,elemMult,primaryMult,condMult,attackMult,
  armorCut,typeCut,allCut,vulnMult,resistMult,skillMult,layers,normal,critical,expected,
- hasWeapon:weaponDamage>0,estimated:true};
+ hasWeapon:weaponDamage>0,equippedEffects:context,estimated:true};
 }
 function defenseFor(stats,settings,options,type){
  const q=scenario(options),base=baseline(stats,settings);
@@ -163,5 +171,5 @@ function defense(stats,settings,options){
  const byType=Object.keys(types).map(type=>defenseFor(stats,settings,q,type));
  return {settings:q,byType,selected:byType.find(x=>x.key===q.defenseType)};
 }
-window.DBPCombat={types,attacks,defaults,ranges,validateInput,scenario,baseline,resistanceCut,conditional,attack,defense};
+window.DBPCombat={types,attacks,defaults,ranges,validateInput,scenario,baseline,resistanceCut,equippedEffects,conditional,attack,defense};
 })();
