@@ -95,7 +95,7 @@ assert.equal(ctx.DBPApp.getUI().tab,'talent');
 assert(app.innerHTML.includes('戦闘タレント'));
 assert(app.innerHTML.includes('70pt'));
 assert(app.innerHTML.includes('データ')||app.innerHTML.includes('タレント'));
-assert(app.innerHTML.includes('CAPSTONE'));
+assert(app.innerHTML.includes('キャップストーン'));
 const nav=app.innerHTML.match(/<nav class="mainnav">([\s\S]*?)<\/nav>/)?.[1]||'';
 assert(nav.indexOf('装備')<nav.indexOf('タレント')&&nav.indexOf('タレント')<nav.indexOf('ペット')&&nav.indexOf('ペット')<nav.indexOf('ステータス'));
 click('talent-add','stormConduit');
