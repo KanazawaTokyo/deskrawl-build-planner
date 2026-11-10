@@ -34,10 +34,10 @@ function render({settings,result,E,opt}){
   const actives=main?.abilities?.length?main.abilities.map(x=>'<div class="pet-action"><b>'+E(x.label)+'</b><small>'+E(x.at10)+'</small></div>').join(''):'';
   const inheritEnabled=pet.inheritUnlocked&&rank===10;
   const gearEnabled=pet.equipmentUnlocked&&rank>=5;
-  return '<main class="workspace pet-workspace"><div class="page-heading"><div class="eyebrow">MINION BUILD</div><h1>ペット・継承・装備</h1>'+
+  return '<main class="workspace pet-workspace"><div class="page-heading"><div class="eyebrow">ペット・装備の設定</div><h1>ペット・継承・装備</h1>'+
     '<p>Lv10パッシブ・継承スキル1枠・ペット専用装備1枠を組み合わせる</p></div>'+
     '<div class="pet-layout"><section class="pet-main">'+
-    '<div class="card pet-card"><div class="card-heading"><div><h2>① メインペット</h2><span>アクティブにできるのは1体だけ</span></div><span class="tag green">MAX +10</span></div>'+
+    '<div class="card pet-card"><div class="card-heading"><div><h2>① メインペット</h2><span>アクティブにできるのは1体だけ</span></div><span class="tag green">最大＋10</span></div>'+
     '<label class="field"><span>ペット（'+P.minions.length+'体）</span><select data-change="petMain">'+opt('unknown','未選択',pet.id||'unknown')+
     P.minions.map(m=>m.unobtainable?'<option value="'+E(m.id)+'" disabled>'+E(m.name+' · '+(window.DBPJP?.rarity(m.rarity)||m.rarity)+'（入手不可）')+'</option>':opt(m.id,m.name+' · '+(window.DBPJP?.rarity(m.rarity)||m.rarity),main?.id)).join('')+'</select></label>'+
     '<label class="field pet-level"><span>成長レベル +0〜+10</span><input type="number" data-change="petRank" min="0" max="10" step="1" inputmode="numeric" value="'+E(rank)+'"/></label>'+
@@ -62,7 +62,7 @@ function render({settings,result,E,opt}){
     '<p class="helper">ペット装備は強化不可・ソケットなし。<a href="https://wikily.gg/deskrawl/equipment/saddle-of-the-golden-khan" target="_blank" rel="noopener noreferrer">装備・OP候補データ</a></p></div>'+
     '</section><aside class="pet-side"><div class="card"><div class="card-heading"><h2>ペット由来ステータス</h2></div>'+
     (contribution.length?contribution.map(x=>'<div class="data-row"><div><strong>'+E(C.labels[x.stat]||x.stat)+'</strong><span>'+E(x.source)+'</span></div><b>+'+E(C.format(x.stat,x.value))+'</b></div>').join(''):'<div class="notice">現在有効な常時補正はありません。</div>')+
-    '<p class="helper">装備・Paragon等との合計と上限超過は「ステータス」タブで確認できます。装備数値はゲーム内で確認した実測値を入力してください。</p></div></aside></div></main>';
+    '<p class="helper">装備・パラゴン等との合計と上限超過は「ステータス」タブで確認できます。装備数値はゲーム内で確認した実測値を入力してください。</p></div></aside></div></main>';
 }
 function change(el,{settings,modify,flash,render}){
   const kind=el.dataset.change,v=el.type==='checkbox'?el.checked:el.value;
@@ -104,8 +104,8 @@ function change(el,{settings,modify,flash,render}){
       pet.equipment.rolls[idx]={stat:v,value:null};pet.progressionVersion=1});return;
   }
   if(kind==='petGearValue'){
-    if(eq.id==='saddle-of-the-golden-khan')return reject('Black Mistの最大値は自動反映されます');
-    const stat=eq.rolls?.[idx]?.stat,cap=(type.rarity==='Rare'?P.rare850Max:P.max850)[stat],num=Number(v);
+    if(eq.id==='saddle-of-the-golden-khan')return reject('ブラックミストの最大値は自動反映されます');
+    const stat=eq.rolls?.[idx]?.stat,cap=(type.rarity==='レア'?P.rare850Max:P.max850)[stat],num=Number(v);
     if(!stat||v!==''&&(!Number.isFinite(num)||num<0||Number.isFinite(cap)&&num>cap))return reject('装備数値がアイテムレベル850の最大値を超えています');
     modify(()=>{pet.equipment.rolls[idx].value=v===''?null:num;pet.progressionVersion=1});return;
   }
