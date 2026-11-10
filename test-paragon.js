@@ -10,7 +10,7 @@ const document={
 };
 const ctx={window:{},document,localStorage:{getItem:key=>local[key]??null,setItem:(key,v)=>local[key]=v,removeItem:key=>delete local[key]},console,Date,JSON,Math,Set,Number,String,URL,URLSearchParams,Blob,Map,crypto:require('node:crypto').webcrypto,setTimeout:()=>0,clearTimeout:()=>{},confirm:()=>true,prompt:()=> 'test',fetch:()=>Promise.reject(Error('disabled')),history:{replaceState(){}},location:{hash:'',pathname:'/',search:'',origin:'file://'}};
 ctx.window=ctx;ctx.window.addEventListener=()=>{};vm.createContext(ctx);
-for(const path of ['master.js','calc.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+path,'utf8'),ctx,{filename:path});
+for(const path of ['master.js','calc.js','combat.js','stats-view.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+path,'utf8'),ctx,{filename:path});
 const D=ctx.DBP,C=ctx.DBPCalc,get=()=>ctx.DBPApp.getState(),active=()=>get().builds.find(b=>b.id===get().activeBuildId);
 const expected={
  str:[1,null],dex:[1,null],int:[1,null],move:[.5,50],maxMana:[2,50],
