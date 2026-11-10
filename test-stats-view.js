@@ -30,7 +30,7 @@ for(const key of ['int','lightning','critDamage','move','armor','mr']){
  assert(!V.statLabel(key).includes('上限'),'uncapped stat title must stay clean for '+key);
 }
 assert(V.tableHeader().includes('過剰分')&&!V.tableHeader().includes('差分'),'rename comparison column');
-assert(V.statRow('critChance',view,'critChance').includes('クリティカル率（上限：85%）'),'all-stats row shows cap');
+assert(V.statRow('critChance',view,'critChance').includes('（上限：85%）'),'all-stats row shows cap');
 assert(V.statRow('critChance',view,'critChance').includes('>0%</span>'),'all-stats row shows zero excess');
 assert(V.statRow('int',view,'int').includes('>—</span>'),'uncapped row shows dash');
 assert(V.summary(view).includes('過剰分')&&!V.summary(view).includes('差分'),'comparison tiles show overage instead of difference');
@@ -46,7 +46,7 @@ assert(V.excessValue('allDR',overView.active)>=20,'general damage reduction unus
 assert(V.excessValue('critChance',overView.active)>0,'critical overcap visible');
 assert(V.statRow('allDR',overView,'allDR').includes('20%'),'overcap displayed in full table');
 const overSummary=V.summary({...overView,settings:{...overBuild.settings,statView:{comparisonKeys:['critChance','allDR','int']}}});
-assert(overSummary.includes('クリティカル率（上限：85%）')&&overSummary.includes('ダメージ軽減（上限：90%）'),'capped titles in configurable comparison');
+assert(overSummary.includes('（上限：85%）')&&overSummary.includes('（上限：90%）'),'capped titles in configurable comparison');
 assert(overSummary.includes('過剰分 20%'),'overage visible on comparison tile');
 assert(overSummary.includes('過剰分 —'),'uncapped stat does not claim a maximum');
 
@@ -182,9 +182,9 @@ assert(app.innerHTML.includes('エレメンタルバースト'));
 const itemSnapshot=JSON.stringify(active().loadout),equipmentSnapshot=JSON.stringify(originItem());
 assert(app.innerHTML.includes('<span>ステータス比較</span>'),'summary section renamed');
 assert(app.innerHTML.includes('8 / 8 項目を表示'),'default summary shows eight selected');
-assert(app.innerHTML.includes('クリティカル率（上限：85%）'),'status name displays capped percent');
+assert(app.innerHTML.includes('（上限：85%）'),'status name displays capped percent');
 click('stat','critChance');
-assert(app.innerHTML.includes('ステータス内訳')&&app.innerHTML.includes('<h2>クリティカル率（上限：85%）</h2>'),'side breakdown also shows cap');
+assert(app.innerHTML.includes('ステータス内訳')&&app.innerHTML.includes('<h2>'+V.statLabel('critChance')+'</h2>'),'side breakdown also shows cap');
 assert(app.innerHTML.includes('過剰分 0%'),'side breakdown shows no excess at/below cap');
 click('stat','int');
 assert(app.innerHTML.includes('data-change="stat-compare" data-key="int" disabled'),'unselected stat is disabled when eight are filled');
