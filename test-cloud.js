@@ -22,7 +22,7 @@ const ctx={document:doc,localStorage:{getItem:k=>store[k]??null,setItem:(k,v)=>s
  }
 };
 ctx.window=ctx;ctx.window.addEventListener=()=>{};vm.createContext(ctx);
-for (const file of ['master.js','calc.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+file,'utf8'),ctx,{filename:file});
+for (const file of ['master.js','calc.js','combat.js','stats-view.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+file,'utf8'),ctx,{filename:file});
 remoteState=ctx.DBP.makeSeed();remoteState.builds[0].name='REMOTE DO NOT OVERWRITE';
 const localState=ctx.DBP.makeSeed();localState.builds[0].name='LOCAL UNSYNCED';
 store.deskrawl_planner_v01=JSON.stringify(localState);
