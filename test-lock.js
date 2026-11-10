@@ -6,7 +6,7 @@ const app={innerHTML:'',addEventListener:(name,cb)=>callbacks[name]=cb};
 const doc={getElementById:id=>id==='app'?app:id==='toast'?toast:null,createElement:()=>({style:{},click(){}}),body:{appendChild(){}},addEventListener() {}};
 const ctx={document:doc,window:null,localStorage:{getItem:k=>saved[k]||null,setItem:(k,v)=>saved[k]=v,removeItem:k=>delete saved[k]},Date,JSON,Math,Set,Number,String,URL,URLSearchParams,Blob,Map,crypto:require('node:crypto').webcrypto,console,location:{hash:'',pathname:'/deskrawl-build-planner/',search:'',origin:'https://kanazawatokyo.github.io'},history:{replaceState(){}},setTimeout:()=>0,clearTimeout:()=>{},confirm:()=>true,prompt:()=> 'テスト',fetch:()=>Promise.reject(Error('disabled'))};
 ctx.window=ctx;ctx.addEventListener=()=>{};vm.createContext(ctx);
-for(const file of ['master.js','calc.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+file,'utf8'),ctx,{filename:file});
+for(const file of ['master.js','calc.js','combat.js','stats-view.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+file,'utf8'),ctx,{filename:file});
 const click=(action,id)=>callbacks.click({target:{closest:()=>({dataset:{action,id}})}});
 const change=(kind,id,val,type='text')=>callbacks.change({target:{dataset:{change:kind,id},value:String(val),checked:Boolean(val),type}});
 let s=ctx.DBPApp.getState(),item=s.items.find(x=>x.slot==='chest'&&x.id===s.builds[0].loadout.chest);const old=item.upgrade;
