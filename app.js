@@ -193,7 +193,17 @@ case 'measurement-save':{const fields=['critChance','critRed','cdr','mcr','dodge
 function defaultSettings(){return {aura:true,enemyLevel:70,paragonPoints:{},paragonLevel:null,talentPoints:{},talents:{flameWard:0,arcaneReservoir:0},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{}}}
 function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=getItem(id),v=el.type==='checkbox'?el.checked:el.value;
  if(PU?.isChange(kind)){PU.change(el,{settings:b.settings,modify,flash,render});return}
- if(kind==='combat'){const key=el.dataset.key,raw=el.type==='checkbox'?el.checked:el.value;const verified=window.DBPCombat?.validateInput(key,raw);if(verified===null||verified===undefined){flash('計算条件の入力範囲を確認してください');render();return}modify(()=>{b.settings.combat??={};b.settings.combat[key]=verified});return}
+ if(kind==='combat'){const key=el.dataset.key,raw=el.type==='checkbox'?el.checked:el.value;const verified=window.DBPCombat?.validateInput(key,raw);if(verified===null||verified===undefined){flash('計算条件の入力範囲を確認してください');render();return}modify(()=>{
+ b.settings.combat??={};
+ b.settings.combat[key]=verified;
+ if(key==='abilityId'&&verified==='lightningStorm'){
+  b.settings.combat.attackType='strong';
+  b.settings.combat.damageType='lightning';
+ }
+ if((key==='attackType'&&verified!=='strong'||key==='damageType'&&verified!=='lightning')&&b.settings.combat.abilityId==='lightningStorm'){
+  b.settings.combat.abilityId='other';
+ }
+});return}
  if(kind==='equalLevel'){ui.equalLevel=Number(v);render();return}
  if(kind==='locked'&&it){modify(()=>{it.locked=Boolean(v)});flash(v?'装備を固定しました':'装備の固定を解除しました');return}
  if((kind==='op-lock-primary'||kind==='op-lock-secondary')&&it){
