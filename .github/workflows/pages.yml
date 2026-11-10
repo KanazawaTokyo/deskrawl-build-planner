@@ -36,6 +36,7 @@ jobs:
           node test-talents.js
           node test-unique-effects.js
           node test-stats-view.js
+          node test-japanese.js
       - name: Build website
         run: node scripts/build.js
       - name: Configure GitHub Pages
