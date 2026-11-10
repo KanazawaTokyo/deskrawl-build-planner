@@ -105,7 +105,7 @@ function change(el,{settings,modify,flash,render}){
   }
   if(kind==='petGearValue'){
     if(eq.id==='saddle-of-the-golden-khan')return reject('ブラックミストの最大値は自動反映されます');
-    const stat=eq.rolls?.[idx]?.stat,cap=(type.rarity==='レア'?P.rare850Max:P.max850)[stat],num=Number(v);
+    const stat=eq.rolls?.[idx]?.stat,cap=(type.rarity==='Rare'?P.rare850Max:P.max850)[stat],num=Number(v);
     if(!stat||v!==''&&(!Number.isFinite(num)||num<0||Number.isFinite(cap)&&num>cap))return reject('装備数値がアイテムレベル850の最大値を超えています');
     modify(()=>{pet.equipment.rolls[idx].value=v===''?null:num;pet.progressionVersion=1});return;
   }
