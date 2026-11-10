@@ -28,6 +28,7 @@ function attackTable(a,stats){
  const rows=a.layers.map(l=>{
   const keys=l.key==='element'?[B.types[a.settings.damageType][1],'allDamage']:l.key==='critical'?['critChance','critDamage',...(a.settings.attackType==='basic'?['basicCritChance']:[]),...(a.settings.damageType==='lightning'&&a.settings.lightningAbility?['lightningAbilityCritDamage']:[]),...(a.settings.frozen?['frozenCritChance','frozenCritDamage']:[])]:l.key==='primary'?['int']:l.key==='conditional'?a.conditions.filter(x=>x.active&&x.value).map(x=>x.key):l.key==='attack'?[B.attacks[a.settings.attackType][1]]:[];
   const notes=keys.flatMap(key=>(stats.breakdown[key]||[]).map(x=>'<div class="combat-source"><span>'+safe(x.source)+'</span><b>+'+safe(C.format(key,x.value))+'</b></div>'));
+  for(const e of a.unique.sources.filter(x=>x.key===l.key))notes.push('<div class="combat-source"><span>'+safe(e.name)+' <small>'+safe(e.detail)+'</small></span><b>+'+pct(e.value)+'</b></div>');
   return '<div class="combat-layer">'+
     '<div class="combat-layer-top"><strong>'+safe(l.label)+'</strong><span class="combat-layer-values"><b>'+fx(l.factor)+'</b><em>'+(l.value>=0?'+':'')+pct(l.value)+'</em></span></div>'+
     bar(l.share)+'<div class="combat-layer-sub"><span>増幅への寄与（対数分解）</span><b>'+pct(l.share)+'</b></div>'+
@@ -52,6 +53,7 @@ function trace(a){
  ['条件付きダメージ',fx(a.condMult),a.normal.vsStage],
  ['攻撃種別',fx(a.attackMult),a.normal.attackStage],
  ['脆弱状態',fx(a.vulnMult),a.normal.vulnStage],
+ ['装備固有の独立倍率',fx(a.unique.ironMult),a.normal.uniqueStage],
  ['対象のArmor/MR',fx(1-a.armorCut),a.normal.afterResistance],
  ['対象の属性・共通軽減',fx((1-a.typeCut)*(1-a.allCut)),a.normal.final]
  ];
@@ -74,18 +76,30 @@ function defenseLayers(d){
   '<div class="combat-d-line-right"><b>−'+pct(Math.max(0,x.cutFromBase))+'</b><span>元の被ダメ比</span></div></div>'
  ).join('')+'</div>';
 }
+function uniquePanel(a,context){
+ const rows=a.unique.rows;
+ if(!rows.length)return '<p class="helper">計算対象の装備固有効果は未登録です。装備タブで装備を登録してください。</p>';
+ return '<div class="combat-unique-list">'+rows.map(x=>'<div class="combat-unique-entry '+(x.active?'active':'inactive')+'"><div class="combat-unique-row"><strong>'+safe(x.name)+'</strong><span>'+safe(x.bonus||x.status)+'</span></div><p>'+safe(x.detail)+'</p><small>'+safe(x.status)+(x.active?' · 計上／確認済み':' · 今回の命中に未適用')+'</small></div>').join('')+'</div>';
+}
 function render(stats,settings,context={}){
- const q=B.scenario(settings.combat),a=B.attack(stats,settings,q,context),d=B.defense(stats,settings,q);
+ const q=B.scenario(settings.combat),a=B.attack(stats,settings,q,context),d=B.defense(stats,settings,q,context);
  const schrodinger=Boolean(context.schrodingerRing);
  const types=Object.entries(B.types).map(([key,data])=>[key,data[0]]);
  const attacks=Object.entries(B.attacks).map(([key,data])=>[key,data[0]]);
  const attackFields=[
   select('attackType','攻撃種別',q.attackType,attacks),
   select('damageType','与える属性',q.damageType,types),
+  select('abilityId','使用スキル',q.abilityId,[['other','その他のスキル'],['lightningStorm','Lightning Storm（雷・強攻撃）']]),
   number('skillPercent','スキルの武器倍率（%）',q.skillPercent,'スキル説明にある数値。100% = ×1'),
   number('skillFlat','スキル固定ダメージ',q.skillFlat),
   number('heroLevel','自分のレベル',q.heroLevel,'敵のArmor/MR計算に使用'),
   number('enemyHealth','敵の残HP（%）',q.enemyHealth,'通常は健康 >80%、負傷 <30%。指輪・手動指定は例外')
+ ].join('');
+ const gear=context.items||{};
+ const uniqueInputs=[
+  ...(gear.shoulder==='shoulder'?[select('elementalStacks','ポールドロン発動スタック（6秒）',q.elementalStacks,Array.from({length:6},(_,i)=>[i,i+'スタック（'+(i*20)+'%）']))]:[]),
+  ...(gear.boots==='windcaller'?[check('windcallerActive','風呼び：撃破後4秒の移動速度+50%',q.windcallerActive)]:[]),
+  ...(gear.chest==='unyielding'?[check('unyieldingActive','不屈の胸当て：4秒間の無敵が発動中',q.unyieldingActive)]:[])
  ].join('');
  const targetOptions=[
   check('forceHealthy','健康扱い（対健康）',q.forceHealthy||schrodinger,schrodinger),check('forceInjured','負傷扱い（対負傷）',q.forceInjured||schrodinger,schrodinger),
@@ -113,11 +127,15 @@ function render(stats,settings,context={}){
  return '<main class="workspace combat-workspace">'+
  '<div class="page-heading"><div class="eyebrow">COMBAT MODEL / LAYER BREAKDOWN</div><h1>ダメージ・ダメージ軽減率</h1>'+
  '<p>装備・Paragon・ペット・バフを計算式に代入し、独立倍率と軽減効果を項目別に表示します。</p></div>'+
- '<div class="notice combat-disclaimer">この画面は登録済みステータスの<strong>部分計算・比較モデル</strong>です。スキル固有効果、ルーン・タレントの条件付き発動、DoT、複数ヒットなどは未計算です。'+
+ '<div class="notice combat-disclaimer">この画面は登録済みステータスの<strong>部分計算・比較モデル</strong>です。装備中の確認済み固有効果は条件つきで計算しますが、未登録の固有効果、ルーン・タレントの一部発動、DoT、複数ヒットなどは未計算です。'+
  (baseNotes?'ゲームの初期値を未入力項目に補完：'+safe(baseNotes)+'。':'')+
  ' 実ゲームでの命中ダメージは乱数 ±10%・端数処理などで変動します。</div>'+
  '<section class="combat-section"><div class="section-label"><span>01 / 与ダメージの計算</span><span class="muted small">INFLICTED DAMAGE</span></div>'+
- '<div class="combat-input-card"><h3>攻撃・スキル条件</h3><div class="combat-fields">'+attackFields+'</div><div class="combat-form-title">敵の状態（命中する直前）</div>'+
+ '<div class="combat-input-card"><h3>攻撃・スキル条件</h3><div class="combat-fields">'+attackFields+'</div>'+
+ '<div class="combat-form-title">装備固有効果の発動状態</div>'+
+ (uniqueInputs?'<div class="combat-unique-controls">'+uniqueInputs+'</div>':'<p class="helper">スタック数を指定する装備はありません。</p>')+
+ (gear.shoulder==='shoulder'?'<p class="combat-ring-note">ポールドロンは初期値として最大5スタックを<strong>仮定</strong>しています。6秒以内に強攻撃を5回使えない場合は実際のスタック数に変更してください。</p>':'')+
+ '<div class="combat-form-title">敵の状態（命中する直前）</div>'+
  '<div class="combat-checks">'+targetOptions+'</div>'+
  (schrodinger?'<p class="combat-ring-notice"><strong>シュレーディンガーの指輪を装備中</strong>：敵のHPに関係なく「健康」「負傷」が両方成立します。チェックは指輪効果として固定されています。</p>':
  '<p class="combat-ring-note">健康・負傷は通常、敵HPから自動判定します。指輪の効果や特殊条件を手動で再現するときは、上の2項目を個別にチェックしてください。</p>')+
@@ -128,6 +146,9 @@ function render(stats,settings,context={}){
  metric('期待ダメージ',a.expected!==null?num(a.expected,1):'—','Crit率を加味・単発あたり')+
  metric('増幅倍率の積',fx(totalMult),'対象防御を除く、期待Crit込み')+
  '</div>'+
+ '<section class="card combat-card combat-unique-card"><div class="card-heading"><div><h2>装備固有効果の計算状態</h2><span>現在の装備だけを検出し、発動条件に応じて反映</span></div></div>'+
+ '<p class="helper">ポールドロンの+100%は属性ダメージの加算枠、グリーヴと篭手の+150%はCritダメージの加算枠、鉄兜は独立倍率です。プリズムの心臓はスタック反映後の最高属性ボーナスを25%増加すると仮定しています。</p>'+
+ uniquePanel(a,context)+'</section>'+
  '<div class="combat-columns"><section class="card combat-card"><div class="card-heading"><div><h2>倍率グループの内訳</h2><span>各倍率の加算値（%）、乗算値、相対寄与率</span></div></div>'+attackTable(a,stats)+
  '<div class="notice gentle">寄与率は<strong>log(倍率)</strong>で増幅を100%に分解した比較指標です。「+100%」の倍率を複数足し合わせる意味ではありません。基礎の固定ダメージは寄与率から除外しています。</div></section>'+
  '<section class="card combat-card"><div class="card-heading"><div><h2>条件付きボーナス</h2><span>成立している条件だけが同じグループに加算</span></div></div>'+
@@ -137,7 +158,7 @@ function render(stats,settings,context={}){
  '<div class="combat-detail-line"><span>知力（装備・Paragon・初期値）</span><b>'+num(a.primary)+'</b></div>'+
  '<div class="combat-detail-line"><span>属性ダメージ / Bonus All Damage</span><b>'+pct(a.eleValue)+' / '+pct(a.allValue)+'</b></div>'+
  '<div class="combat-detail-line"><span>クリティカル率 / ダメージ</span><b>'+pct(a.critChance)+' / '+pct(a.critBonus)+'</b></div>'+
- '<div class="combat-detail-line"><span>脆弱：追加独立倍率</span><b>'+fx(a.vulnMult)+'</b></div>'+
+ '<div class="combat-detail-line"><span>脆弱：追加独立倍率</span><b>'+fx(a.vulnMult)+'</b></div>'+'<div class="combat-detail-line"><span>装備固有：独立倍率</span><b>'+fx(a.unique.ironMult)+'</b></div>'+
  '<div class="combat-detail-line"><span>対象の防御による減算</span><b>−'+pct((1-a.resistMult)*100)+'</b></div>'+
  trace(a)+'</section></div></section>'+
  '<section class="combat-section"><div class="section-label"><span>02 / 被ダメージ・軽減率</span><span class="muted small">DAMAGE TAKEN</span></div>'+
