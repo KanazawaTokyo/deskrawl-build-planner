@@ -14,6 +14,42 @@ assert.equal(V.comparisonKeys(build.settings).length,8,'legacy builds default to
 assert.equal(new Set(V.statKeys).size,V.statKeys.length,'valid stats are unique across sections');
 assert(V.statKeys.includes('int')&&V.statKeys.includes('move')&&V.statKeys.includes('lightningStormCritBonus'),'all lower-table stats can be selected');
 assert.equal((V.summary(view).match(/class="stats-compare-tile"/g)||[]).length,8);
+
+const caps={critChance:85,critRed:100,dodge:85,cdr:80,mcr:85,allDR:90,physicalDR:90,fireDR:90,coldDR:90,lightningDR:90,poisonDR:90,arcaneDR:90};
+assert.deepEqual(Object.entries(D.limits).sort().map(([k,v])=>[k,v]),Object.entries(caps).sort().map(([k,v])=>[k,v]),'game stat cap registry matches verified 1.0.2b limits');
+for(const [key,cap] of Object.entries(caps)){
+ assert.equal(V.capOf(key),cap,'cap is shared with calculation registry for '+key);
+ assert(V.statLabel(key).includes('（上限：'+cap+'%）'),'cap appears next to stat name for '+key);
+ assert.equal(V.excessText(key,{raw:{[key]:cap}}),'0%','at cap has no excess for '+key);
+ assert.equal(V.excessText(key,{raw:{[key]:cap+7.25}}),'7.25%','excess shown in percentage points for '+key);
+ assert.equal(V.excessText(key,{raw:{[key]:cap-30}}),'0%','below cap has no excess for '+key);
+}
+for(const key of ['int','lightning','critDamage','move','armor','mr']){
+ assert.equal(V.capOf(key),null,'do not invent an unsupported cap for '+key);
+ assert.equal(V.excessText(key,view.active),'—','no-cap stat has no excess for '+key);
+ assert(!V.statLabel(key).includes('上限'),'uncapped stat title must stay clean for '+key);
+}
+assert(V.tableHeader().includes('過剰分')&&!V.tableHeader().includes('差分'),'rename comparison column');
+assert(V.statRow('critChance',view,'critChance').includes('クリティカル率（上限：85%）'),'all-stats row shows cap');
+assert(V.statRow('critChance',view,'critChance').includes('>0%</span>'),'all-stats row shows zero excess');
+assert(V.statRow('int',view,'int').includes('>—</span>'),'uncapped row shows dash');
+assert(V.summary(view).includes('過剰分')&&!V.summary(view).includes('差分'),'comparison tiles show overage instead of difference');
+const overBuild=JSON.parse(JSON.stringify(build));
+overBuild.settings.base={...overBuild.settings.base,allDR:110,physicalDR:106,critChance:100};
+const overView=V.evaluate(doc,overBuild);
+assert.equal(overView.active.effective.allDR,90,'general damage reduction capped in character calculation');
+assert.equal(overView.active.raw.allDR,110,'raw general DR preserved before cap');
+assert.equal(overView.active.effective.physicalDR,90,'physical damage reduction capped in calculation');
+assert.equal(overView.active.raw.physicalDR>=106,true,'physical damage reduction retains raw sum for excess');
+assert.equal(overView.active.effective.critChance,85,'crit chance cap enforced');
+assert(V.excessValue('allDR',overView.active)>=20,'general damage reduction unused share calculated');
+assert(V.excessValue('critChance',overView.active)>0,'critical overcap visible');
+assert(V.statRow('allDR',overView,'allDR').includes('20%'),'overcap displayed in full table');
+const overSummary=V.summary({...overView,settings:{...overBuild.settings,statView:{comparisonKeys:['critChance','allDR','int']}}});
+assert(overSummary.includes('クリティカル率（上限：85%）')&&overSummary.includes('ダメージ軽減（上限：90%）'),'capped titles in configurable comparison');
+assert(overSummary.includes('過剰分 20%'),'overage visible on comparison tile');
+assert(overSummary.includes('過剰分 —'),'uncapped stat does not claim a maximum');
+
 const fullInitial=V.comparisonKeys(build.settings);
 assert.equal(V.nextComparisonKeys(build.settings,'int',true),null,'cannot add ninth comparison stat');
 assert.equal(V.nextComparisonKeys(build.settings,'move',true).length,8,'re-checking a selected stat is idempotent');
@@ -141,11 +177,15 @@ click('tab-stats');
 assert.equal(ctx.DBPApp.getUI().tab,'stats');
 assert(app.innerHTML.includes('装備のみ'));
 assert(app.innerHTML.includes('補正込み'));
-assert(app.innerHTML.includes('差分'));
+assert(app.innerHTML.includes('過剰分')&&!app.innerHTML.includes('>差分<'),'new stat header uses excess only');
 assert(app.innerHTML.includes('エレメンタルバースト'));
 const itemSnapshot=JSON.stringify(active().loadout),equipmentSnapshot=JSON.stringify(originItem());
 assert(app.innerHTML.includes('<span>ステータス比較</span>'),'summary section renamed');
 assert(app.innerHTML.includes('8 / 8 項目を表示'),'default summary shows eight selected');
+assert(app.innerHTML.includes('クリティカル率（上限：85%）'),'status name displays capped percent');
+click('stat','critChance');
+assert(app.innerHTML.includes('ステータス内訳')&&app.innerHTML.includes('<h2>クリティカル率（上限：85%）</h2>'),'side breakdown also shows cap');
+assert(app.innerHTML.includes('過剰分 0%'),'side breakdown shows no excess at/below cap');
 click('stat','int');
 assert(app.innerHTML.includes('data-change="stat-compare" data-key="int" disabled'),'unselected stat is disabled when eight are filled');
 const beforeFull=JSON.stringify(active().settings.statView||{});
