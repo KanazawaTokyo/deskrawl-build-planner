@@ -77,6 +77,13 @@ function evaluate(doc,build){
  if(unique.gauntletCrit)add('lightningStormCritBonus',unique.gauntletCrit,'ストームコーラーの篭手 · Lightning Storm');
  if(unique.ironMult!==1)add('independentDamageBonus',(unique.ironMult-1)*100,'鉄の暴君の兜 · '+(q.elite?'Elite/Boss':'通常敵'));
  if(unique.invulnerable)add('temporaryInvulnerable',100,'不屈の胸当て · 4秒間の無敵');
+ // Show which damage-vs stats currently contribute. This is an additive
+ // condition bucket, not an independent damage multiplier.
+ for(const condition of B.conditional(active,q,context)){
+  if(condition.active&&condition.value){
+   add('activeConditionalDamage',condition.value,condition.label+' · '+condition.reason);
+  }
+ }
  // A skills-only Crit preview must NOT rewrite generic Crit Damage.
  const bonus=(q.damageType==='lightning'&&q.lightningAbility?(active.effective.lightningAbilityCritDamage||0):0)
   +(q.frozen?(active.effective.frozenCritDamage||0):0)+unique.greavesCrit+unique.gauntletCrit;
@@ -101,9 +108,9 @@ function evaluate(doc,build){
 Object.assign(C.labels,{
  skillCritDamage:'対象スキルCritダメージ',elementalSkillCritBonus:'属性スキル固有Crit補正',
  lightningStormCritBonus:'Lightning Storm固有Crit補正',independentDamageBonus:'装備固有の独立ダメージ増幅',
- temporaryInvulnerable:'無敵発動中（参考）'
+ temporaryInvulnerable:'無敵発動中（参考）',activeConditionalDamage:'現在成立中の条件ダメージ加算'
 });
-for(const key of ['skillCritDamage','elementalSkillCritBonus','lightningStormCritBonus','independentDamageBonus','temporaryInvulnerable'])C.percent.add(key);
+for(const key of ['skillCritDamage','elementalSkillCritBonus','lightningStormCritBonus','independentDamageBonus','temporaryInvulnerable','activeConditionalDamage'])C.percent.add(key);
 function controls(v){
  const sourceHtml=groups.map(([key,label,description])=>
   '<label class="stat-source-toggle"><input type="checkbox" data-change="stat-source" data-key="'+key+'"'+
@@ -131,6 +138,11 @@ function controls(v){
   '<label class="field"><span>対象属性</span><select data-change="combat" data-key="damageType">'+Object.entries(B.types).map(([key,val])=>opt(key,val[0],scen.damageType)).join('')+'</select></label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="lightningAbility"'+(scen.lightningAbility?' checked':'')+'>雷アビリティ用タレント</label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="elite"'+(scen.elite?' checked':'')+'>対象がElite/Boss</label>'+
+  '<label class="field"><span>敵の残HP（%）</span><input type="number" min="0" max="100" step="1" data-change="combat" data-key="enemyHealth" value="'+scen.enemyHealth+'"></label>'+
+  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="forceHealthy"'+(scen.forceHealthy||v.context.schrodingerRing?' checked':'')+(v.context.schrodingerRing?' disabled':'')+'>敵を健康扱い</label>'+
+  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="forceInjured"'+(scen.forceInjured||v.context.schrodingerRing?' checked':'')+(v.context.schrodingerRing?' disabled':'')+'>敵を負傷扱い</label>'+
+  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="vulnerable"'+(scen.vulnerable?' checked':'')+'>敵が脆弱状態</label>'+
+  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="burned"'+(scen.burned?' checked':'')+'>敵が燃焼状態</label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="frozen"'+(scen.frozen?' checked':'')+'>対象がFrozen</label>'+
   perGear+'</div>';
  return '<section class="card stats-sim-panel" aria-label="ステータスの補正ON/OFF設定">'+
