@@ -156,24 +156,6 @@ function controls(v){
   const availableSlot=Object.entries(equipped).some(([slot,power])=>power===id&&v.selection.slots[slot]!==false);
   return '<label class="stat-power-toggle"><input type="checkbox" data-change="stat-power" data-key="'+id+'"'+(checked?' checked':'')+(v.selection.filters.unique&&availableSlot?'':' disabled')+'><span>'+clean(name)+'</span></label>';
  }).join('');
- const opt=(value,title,current)=>'<option value="'+value+'"'+(String(value)===String(current)?' selected':'')+'>'+clean(title)+'</option>';
- const scen=v.q;
- const perGear=[
-  v.selection.slots.shoulder&&equipped.shoulder==='shoulder'?'<label class="field"><span>ポールドロン・スタック数</span><select data-change="combat" data-key="elementalStacks">'+Array.from({length:6},(_,i)=>opt(i,i+' / 5（+'+(20*i)+'%）',scen.elementalStacks)).join('')+'</select></label>':'',
-  v.selection.slots.boots&&equipped.boots==='windcaller'?'<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="windcallerActive"'+(scen.windcallerActive?' checked':'')+'>風呼び：撃破後4秒</label>':'',
-  v.selection.slots.chest&&equipped.chest==='unyielding'?'<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="unyieldingActive"'+(scen.unyieldingActive?' checked':'')+'>不屈：無敵発動中4秒</label>':''
- ].filter(Boolean).join('');
- const scenario='<div class="stats-sim-fields">'+
-  '<label class="field"><span>表示するスキル</span><select data-change="combat" data-key="abilityId">'+B.skillOptions.map(([id,label])=>opt(id,label,scen.abilityId)).join('')+'</select></label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="lightningAbility"'+(scen.lightningAbility?' checked':'')+'>雷アビリティ用タレント</label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="elite"'+(scen.elite?' checked':'')+'>対象がエリート・ボス</label>'+
-  '<label class="field"><span>敵の残HP（%）</span><input type="number" min="0" max="100" step="1" data-change="combat" data-key="enemyHealth" value="'+scen.enemyHealth+'"></label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="forceHealthy"'+(scen.forceHealthy||v.context.schrodingerRing?' checked':'')+(v.context.schrodingerRing?' disabled':'')+'>敵を健康扱い</label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="forceInjured"'+(scen.forceInjured||v.context.schrodingerRing?' checked':'')+(v.context.schrodingerRing?' disabled':'')+'>敵を負傷扱い</label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="vulnerable"'+(scen.vulnerable?' checked':'')+'>敵が脆弱状態</label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="burned"'+(scen.burned?' checked':'')+'>敵が燃焼状態</label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="frozen"'+(scen.frozen?' checked':'')+'>対象が凍結</label>'+
-  perGear+'</div>';
  return '<section class="card stats-sim-panel" aria-label="ステータスの補正ON/OFF設定">'+
  '<div class="card-heading"><div><h2>ステータス計算条件</h2><span>装備の数字だけ／有効な補正込みを比較。各項目はビルド単位で保存。</span></div></div>'+
  '<div class="stats-presets"><button class="btn outline" data-action="stat-preset" data-value="gear">装備のみ</button><button class="btn outline" data-action="stat-preset" data-value="all">補正すべてON</button></div>'+
@@ -181,8 +163,8 @@ function controls(v){
   '<div class="stats-slot-grid">'+slotHtml+'</div>'+
   '<div class="stats-source-grid">'+sourceHtml+'</div>'+
  (available.length?'<details class="stats-power-details" open><summary>装備固有効果を個別に切替（'+available.length+'件）</summary><div class="stats-powers-grid">'+powers+'</div></details>':'')+
- '<details class="stats-power-details" open><summary>発動状態・スキル条件を指定</summary>'+scenario+'</details>'+
- '<p class="helper">「装備のみ」は左側の比較値の定義です。右側の補正は上のON/OFFで変更します。発動効果は現在の状況を仮定した数値で、持続率・実際の発動確率は計算しません。タレント限定クリティカル補正は通常のクリティカルダメージとは別に表示します。</p>'+
+ '<p class="helper">スキル・敵の状態・装備効果の発動条件は「ダメージ・軽減」タブで設定します。条件で変化するステータスは、同タブに保存された設定を参照しています。</p>'+
+ '<p class="helper">「装備のみ」は左側の比較値の定義です。右側の補正は上のON/OFFで変更します。発動効果はダメージ計算画面で指定した状況に基づき、持続率・実際の発動確率は計算しません。タレント限定クリティカル補正は通常のクリティカルダメージとは別に表示します。</p>'+
  '</section>';
 }
 function column(k,v){
