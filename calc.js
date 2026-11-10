@@ -193,7 +193,7 @@ function calc(doc,build,sub={}){
   const effective={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+((sum.bonusArmor||0)+(sum.armorBonus||0))/100)};
   breakdown.mr=[...(breakdown.mr||[]),...(breakdown.int||[]).map(x=>({...x,source:x.source+' → INT由来MR'}))];
   breakdown.armor=[...(breakdown.armor||[]),...(breakdown.str||[]).map(x=>({...x,source:x.source+' → STR由来Armor'}))];
-  for(const k of ['critChance','critRed','cdr','mcr','dodge'])if(effective[k]!==undefined)effective[k]=Math.min(limits[k],effective[k]);
+  for(const [k,cap] of Object.entries(limits))if(effective[k]!==undefined)effective[k]=Math.min(cap,effective[k]);
   const raw={...sum,mr:rawMR*(1+(sum.bonusMR||0)/100),armor:rawArmor*(1+((sum.bonusArmor||0)+(sum.armorBonus||0))/100)};
   // Max HP represents fixed HP multiplied by Bonus HP; absent base means partial sum.
   effective.maxHP=(sum.maxHP||0)*(1+(sum.bonusHP||0)/100);
