@@ -1,14 +1,14 @@
 'use strict';
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const code=file=>fs.readFileSync(__dirname+'/'+file,'utf8');
-const docs=['master.js','pets.js','talents.js','calc.js','combat.js','combat-ui.js','stats-view.js'];
+const docs=['master.js','runes.js','pets.js','talents.js','calc.js','combat.js','combat-ui.js','stats-view.js'];
 const ctx={window:null,console,Date,Math,JSON,Number,String,Array,Map,Set};ctx.window=ctx;vm.createContext(ctx);
 for(const file of docs)vm.runInContext(code(file),ctx,{filename:file});
 const D=ctx.DBP,C=ctx.DBPCalc,B=ctx.DBPCombat,V=ctx.DBPStatsView;
 const doc=D.makeSeed(),build=doc.builds[0];
 const before=JSON.stringify(doc),view=V.evaluate(doc,build);
 assert.equal(JSON.stringify(doc),before,'view calculations must not change saved build/items');
-assert.equal(V.groups.length,9);
+assert.equal(V.groups.length,10);
 assert.equal(view.base.effective.lightning,125.1,'gear-only means equipped OP numeric values only');
 assert.equal(view.base.effective.critChance,52,'gear-only does not include Divine +5 unique Crit chance or Aura');
 assert.equal(view.base.effective.critDamage,387.6);
@@ -169,4 +169,4 @@ assert.equal(disk.statView.groups.talents,true,'per-build category toggle is sav
 assert.equal(disk.statView.slots.chest,true,'presets preserve slot selection');
 assert.equal(disk.combat.elementalStacks,3,'stack scenario is saved');
 assert.equal(ctx.DBPApp.getState().schemaVersion,1,'cloud JSON schema remains compatible');
-console.log('PASS: equipment-only vs buffed stats, 9 groups, per-power switches, conditionals, UI and saved scenarios');
+console.log('PASS: equipment-only vs buffed stats, 10 groups, per-power switches, conditionals, UI and saved scenarios');
