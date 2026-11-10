@@ -148,9 +148,9 @@ function controls(v){
  const equipped=v.equipment.items;
  const available=[...new Set(Object.values(equipped))].filter(x=>B.knownPowers[x]);
  const localized={grandmother:'グランドマザー',iron:'鉄の暴君の兜',schrodinger:'シュレーディンガーの指輪',
-  sage:'長老賢者の遺産',prism:'プリズムの心臓',shoulder:'エレメンタルバーストのポールドロン',
-  unyielding:'不屈の胸当て',gauntlets:'ストームコーラーの篭手',bottomless:'無尽のベルト',
-  greaves:'秘術の刃のグリーヴ',windcaller:'風呼びのブーツ'};
+  sage:'古の賢者の遺骨',prism:'プリズムの心臓',shoulder:'エレメンタルバーストのポールドロン',
+  unyielding:'不屈の胸当て',gauntlets:'ストームコーラーのガントレット',bottomless:'底なしポーションベルト',
+  greaves:'秘術の刃のグリーヴ',windcaller:'ウィンドコーラーのブーツ'};
  const powers=available.map(id=>{
   const name=localized[id]||B.knownPowers[id][0],checked=v.selection.powers[id]!==false;
   const availableSlot=Object.entries(equipped).some(([slot,power])=>power===id&&v.selection.slots[slot]!==false);
@@ -166,13 +166,13 @@ function controls(v){
  const scenario='<div class="stats-sim-fields">'+
   '<label class="field"><span>表示するスキル</span><select data-change="combat" data-key="abilityId">'+B.skillOptions.map(([id,label])=>opt(id,label,scen.abilityId)).join('')+'</select></label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="lightningAbility"'+(scen.lightningAbility?' checked':'')+'>雷アビリティ用タレント</label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="elite"'+(scen.elite?' checked':'')+'>対象がElite/Boss</label>'+
+  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="elite"'+(scen.elite?' checked':'')+'>対象がエリート・ボス</label>'+
   '<label class="field"><span>敵の残HP（%）</span><input type="number" min="0" max="100" step="1" data-change="combat" data-key="enemyHealth" value="'+scen.enemyHealth+'"></label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="forceHealthy"'+(scen.forceHealthy||v.context.schrodingerRing?' checked':'')+(v.context.schrodingerRing?' disabled':'')+'>敵を健康扱い</label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="forceInjured"'+(scen.forceInjured||v.context.schrodingerRing?' checked':'')+(v.context.schrodingerRing?' disabled':'')+'>敵を負傷扱い</label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="vulnerable"'+(scen.vulnerable?' checked':'')+'>敵が脆弱状態</label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="burned"'+(scen.burned?' checked':'')+'>敵が燃焼状態</label>'+
-  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="frozen"'+(scen.frozen?' checked':'')+'>対象がFrozen</label>'+
+  '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="frozen"'+(scen.frozen?' checked':'')+'>対象が凍結</label>'+
   perGear+'</div>';
  return '<section class="card stats-sim-panel" aria-label="ステータスの補正ON/OFF設定">'+
  '<div class="card-heading"><div><h2>ステータス計算条件</h2><span>装備の数字だけ／有効な補正込みを比較。各項目はビルド単位で保存。</span></div></div>'+
