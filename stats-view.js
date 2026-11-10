@@ -111,8 +111,12 @@ function controls(v){
  ).join('');
  const equipped=v.equipment.items;
  const available=[...new Set(Object.values(equipped))].filter(x=>B.knownPowers[x]);
+ const localized={grandmother:'グランドマザー',iron:'鉄の暴君の兜',schrodinger:'シュレーディンガーの指輪',
+  sage:'長老賢者の遺産',prism:'プリズムの心臓',shoulder:'エレメンタルバーストのポールドロン',
+  unyielding:'不屈の胸当て',gauntlets:'ストームコーラーの篭手',bottomless:'無尽のベルト',
+  greaves:'秘術の刃のグリーヴ',windcaller:'風呼びのブーツ'};
  const powers=available.map(id=>{
-  const name=B.knownPowers[id][0],checked=v.selection.powers[id]!==false;
+  const name=localized[id]||B.knownPowers[id][0],checked=v.selection.powers[id]!==false;
   return '<label class="stat-power-toggle"><input type="checkbox" data-change="stat-power" data-key="'+id+'"'+(checked?' checked':'')+(v.selection.filters.unique?'':' disabled')+'><span>'+clean(name)+'</span></label>';
  }).join('');
  const opt=(value,title,current)=>'<option value="'+value+'"'+(String(value)===String(current)?' selected':'')+'>'+clean(title)+'</option>';
