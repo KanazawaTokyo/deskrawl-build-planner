@@ -446,3 +446,50 @@
 .talent-tier.is-unmet>header small{color:#e2bb84}
 @media(max-width:810px){.talent-eligibility-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:500px){.talent-eligibility-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* Readable talent cards: name and effect first, rank and progress anchored below.
+ * Keep each tile wide enough for Japanese text; narrow screens use the existing
+ * horizontal board scrolling instead of squeezing the five-column grid.
+ */
+.talent-tree{min-width:940px}
+.talent-tier-items{gap:12px}
+.talent-tile{
+ box-sizing:border-box;height:200px;min-height:200px;min-width:0;
+ padding:15px 12px 12px;gap:8px;align-items:stretch;text-align:left;
+ overflow:hidden;
+}
+.talent-name{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:3;
+ flex:0 0 auto;align-items:initial;justify-content:initial;
+ width:100%;max-width:100%;min-width:0;
+ font-size:13px;line-height:1.38;font-weight:750;letter-spacing:0;
+ color:#ecf2f6;text-align:left;white-space:normal;
+ overflow:hidden;overflow-wrap:anywhere;word-break:normal;
+}
+.talent-effect{
+ display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;
+ width:100%;max-width:100%;min-width:0;min-height:0;
+ overflow:hidden;overflow-wrap:anywhere;word-break:normal;white-space:normal;
+ font-size:10.5px;line-height:1.47;font-weight:450;color:#bdccd6;
+}
+.talent-rank{
+ margin-top:auto;flex:0 0 auto;align-self:flex-end;
+ font-size:12px;line-height:1.2;letter-spacing:.3px;text-align:right;
+}
+.talent-gauge{height:5px;width:100%;flex:0 0 auto;background:#263643}
+.talent-capstone .talent-tile{padding-top:23px}
+.talent-node:not(.picked) .talent-tile{
+ background:linear-gradient(155deg,#111821,#0d131c);
+ border-color:#2c3944;box-shadow:none;
+}
+.talent-node:not(.picked) .talent-name{color:#8391a1}
+.talent-node:not(.picked) .talent-effect{color:#718091}
+.talent-node:not(.picked) .talent-rank{color:#768696}
+.talent-node:not(.picked) .talent-gauge{background:#1d2934}
+.talent-node:not(.picked) .talent-tile:hover{filter:brightness(1.14)}
+.talent-node.picked .talent-name{color:#f0f5fa}
+.talent-node.picked .talent-effect{color:#bfd0de}
+@media(max-width:500px){
+ .talent-tree{min-width:940px}
+ .talent-tile{height:200px;min-height:200px;padding-left:12px;padding-right:12px}
+}
