@@ -36,7 +36,7 @@ assert.equal(seed.settings.paragonPoints.maxMana,15,'seed: +30 max mana must be 
 assert.equal(C.calc(get(),seed).sum.mana>=30,true);
 events.click({target:{closest:()=>({dataset:{action:'tab-stats'}})}});
 events.click({target:{closest:()=>({dataset:{action:'settings'}})}});
-assert(app.innerHTML.includes('Paragonレベル'));
+assert(app.innerHTML.includes('パラゴンレベル'));
 assert(app.innerHTML.includes('data-change="paragonPoint"'));
 for(const key of Object.keys(expected))assert(app.innerHTML.includes('data-key="'+key+'"'),key+' missing from UI');
 const change=(kind,key,value)=>events.change({target:{id:'',dataset:{change:kind,key},type:'number',value:String(value)}});
