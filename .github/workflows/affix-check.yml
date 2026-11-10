@@ -19,6 +19,7 @@ jobs:
           node test-combat.js
           node test-talents.js
           node test-unique-effects.js
+          node test-stats-view.js
           node test.js
           node test-gems.js
           node test-cloud.js
