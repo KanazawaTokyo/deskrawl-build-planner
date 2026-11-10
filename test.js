@@ -12,5 +12,5 @@ const b=state.builds[0];let chest=state.items.find(x=>x.id===b.loadout.chest);le
 events.click({target:{closest:()=>({dataset:{action:'new-item'}})}});state=ctx.DBPApp.getState();assert(state.items.length===13);let cand=state.items.at(-1);assert.strictEqual(cand.slot,'chest');
 events.click({target:{closest:()=>({dataset:{action:'equip',id:cand.id}})}});state=ctx.DBPApp.getState();assert.strictEqual(state.builds[0].loadout.chest,cand.id);assert(state.items.find(x=>x.id===chest.id));
 events.click({target:{closest:()=>({dataset:{action:'duplicate-build'}})}});state=ctx.DBPApp.getState();assert.strictEqual(state.builds.length,2);assert.strictEqual(state.builds[0].loadout.chest,state.builds[1].loadout.chest);
-events.click({target:{closest:()=>({dataset:{action:'tab-stats'}})}});assert(app.innerHTML.includes('重要ステータス'));
+events.click({target:{closest:()=>({dataset:{action:'tab-stats'}})}});assert(app.innerHTML.includes('主なステータス比較'));assert(app.innerHTML.includes('装備のみ'));assert(app.innerHTML.includes('補正込み'));
 console.log('PASS: fixed Divine, upgrade calculation, candidate storage, explicit equip, multiple builds, stats tab');
