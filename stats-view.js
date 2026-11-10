@@ -182,7 +182,7 @@ function controls(v){
   '<div class="stats-source-grid">'+sourceHtml+'</div>'+
  (available.length?'<details class="stats-power-details" open><summary>装備固有効果を個別に切替（'+available.length+'件）</summary><div class="stats-powers-grid">'+powers+'</div></details>':'')+
  '<details class="stats-power-details" open><summary>発動状態・スキル条件を指定</summary>'+scenario+'</details>'+
- '<p class="helper">「装備のみ」は左側の比較値の定義です。右側の補正は上のON/OFFで変更します。発動効果は現在の状況を仮定した数値で、持続率・実際の発動確率は計算しません。タレント限定Critは通常Critとは別に表示します。</p>'+
+ '<p class="helper">「装備のみ」は左側の比較値の定義です。右側の補正は上のON/OFFで変更します。発動効果は現在の状況を仮定した数値で、持続率・実際の発動確率は計算しません。タレント限定クリティカル補正は通常のクリティカルダメージとは別に表示します。</p>'+
  '</section>';
 }
 function column(k,v){
