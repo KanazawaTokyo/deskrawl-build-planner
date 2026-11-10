@@ -4,7 +4,7 @@ const format=(n,d=1)=>Number.isFinite(n)?Number(n).toLocaleString('ja-JP',{maxim
 const pct=(n,d=1)=>format(n,d)+'%';
 const num=(n,d=0)=>format(n,d);
 const fx=n=>'×'+format(n,3);
-const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const safe=s=>String(window.DBPJP?.text(s)??s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function select(key,label,selected,values){
  return '<label class="field"><span>'+safe(label)+'</span><select data-change="combat" data-key="'+key+'">'+
  values.map(([value,name])=>'<option value="'+safe(value)+'"'+(String(selected)===String(value)?' selected':'')+'>'+safe(name)+'</option>').join('')+'</select></label>';
@@ -54,13 +54,13 @@ function trace(a){
  ['攻撃種別',fx(a.attackMult),a.normal.attackStage],
  ['脆弱状態',fx(a.vulnMult),a.normal.vulnStage],
  ['装備固有の独立倍率',fx(a.unique.ironMult),a.normal.uniqueStage],
- ['対象のArmor/MR',fx(1-a.armorCut),a.normal.afterResistance],
+ ['対象のアーマー・魔法耐性',fx(1-a.armorCut),a.normal.afterResistance],
  ['対象の属性・共通軽減',fx((1-a.typeCut)*(1-a.allCut)),a.normal.final]
  ];
  return '<details class="combat-trace"><summary>数式への代入・通常ヒットの計算順序を開く</summary>'+
   '<p>基礎 = floor(((武器ダメージ+固定ダメージ)×スキル倍率+スキル固定値)×(1+知力/100))</p>'+
   '<div class="combat-trace-list">'+rows.map(([label,mult,result])=>'<div><span>'+safe(label)+'</span><small>'+safe(mult)+'</small><b>'+num(result)+'</b></div>').join('')+'</div>'+
-  '<p>クリティカルは属性補正後・条件補正前に加算されます。ゲーム内部のfloat32/偶数丸めの差は完全再現していません。</p></details>';
+  '<p>クリティカルは属性補正後・条件補正前に加算されます。ゲーム内部の32ビット浮動小数点・偶数丸めの差は完全再現していません。</p></details>';
 }
 function defenseTable(d){
  const chosen=d.selected;
@@ -109,34 +109,34 @@ function render(stats,settings,context={},options={}){
  ].join('');
  const targetOptions=[
   check('forceHealthy','健康扱い（対健康）',q.forceHealthy||schrodinger,schrodinger),check('forceInjured','負傷扱い（対負傷）',q.forceInjured||schrodinger,schrodinger),
-  check('elite','Elite / Boss',q.elite),check('vulnerable','脆弱',q.vulnerable),
+  check('elite','エリート・ボス',q.elite),check('vulnerable','脆弱',q.vulnerable),
   check('burned','燃焼',q.burned),check('slowed','減速',q.slowed),
-  check('stunned','スタン',q.stunned),check('immobilized','移動不能',q.immobilized),check('frozen','凍結 Frozen',q.frozen),
+  check('stunned','スタン',q.stunned),check('immobilized','移動不能',q.immobilized),check('frozen','凍結',q.frozen),
   check('distant','遠距離',q.distant),check('bleeding','出血',q.bleeding),check('poisoned','毒状態',q.poisoned)
  ].join('');
  const targetDefenses=[
-  number('targetArmor','敵 Armor',q.targetArmor),number('targetMR','敵 Magic Resist',q.targetMR),
+  number('targetArmor','敵のアーマー',q.targetArmor),number('targetMR','敵の魔法耐性',q.targetMR),
   number('targetTypeDR','敵の属性軽減（%）',q.targetTypeDR),number('targetAllDR','敵の共通軽減（%）',q.targetAllDR),
-  number('targetCritRed','敵のCritダメージ軽減（%）',q.targetCritRed)
+  number('targetCritRed','敵のクリティカルダメージ軽減（%）',q.targetCritRed)
  ].join('');
  const incomingFields=[
   select('defenseType','表示する被ダメージ属性',q.defenseType,types),
-  number('attackerLevel','敵のレベル',q.attackerLevel,'Armor / (Armor + 50 × 敵Lv)'),
+  number('attackerLevel','敵のレベル',q.attackerLevel,'アーマー ÷（アーマー ＋ 50 × 敵Lv）'),
   number('incomingHit','軽減前の想定被ダメージ',q.incomingHit,'比較用。回避と固定軽減の効果も計算'),
   number('incomingCritBonus','敵クリティカル追加倍率（%）',q.incomingCritBonus)
  ].join('');
  const totalMult=a.layers.reduce((x,layer)=>x*layer.factor,1);
  const extra=a.base;
  const baseNotes=[
-  extra.int?'知力 +10':'',extra.critChance?'Crit率 +5%':'',extra.critDamage?'Critダメージ +150%':'',extra.dodge?'回避 +5%':''
+  extra.int?'知力 +10':'',extra.critChance?'クリティカル率 +5%':'',extra.critDamage?'クリティカルダメージ +150%':'',extra.dodge?'回避 +5%':''
  ].filter(Boolean).join(' / ');
  return '<main class="workspace combat-workspace">'+
- '<div class="page-heading"><div class="eyebrow">COMBAT MODEL / LAYER BREAKDOWN</div><h1>ダメージ・ダメージ軽減率</h1>'+
- '<p>装備・Paragon・ペット・バフを計算式に代入し、独立倍率と軽減効果を項目別に表示します。</p></div>'+
- '<div class="notice combat-disclaimer">この画面は登録済みステータスの<strong>部分計算・比較モデル</strong>です。装備中の確認済み固有効果は条件つきで計算しますが、未登録の固有効果、ルーン・タレントの一部発動、DoT、複数ヒットなどは未計算です。'+
+ '<div class="page-heading"><div class="eyebrow">ダメージ計算 / 倍率の内訳</div><h1>ダメージ・ダメージ軽減率</h1>'+
+ '<p>装備・パラゴン・ペット・バフを計算式に代入し、独立倍率と軽減効果を項目別に表示します。</p></div>'+
+ '<div class="notice combat-disclaimer">この画面は登録済みステータスの<strong>部分計算・比較モデル</strong>です。装備中の確認済み固有効果は条件つきで計算しますが、未登録の固有効果、ルーン・タレントの一部発動、継続ダメージ、複数ヒットなどは未計算です。'+
  (baseNotes?'ゲームの初期値を未入力項目に補完：'+safe(baseNotes)+'。':'')+
  ' 実ゲームでの命中ダメージは乱数 ±10%・端数処理などで変動します。</div>'+
- '<section class="combat-section"><div class="section-label"><span>01 / 与ダメージの計算</span><span class="muted small">INFLICTED DAMAGE</span></div>'+
+ '<section class="combat-section"><div class="section-label"><span>01 / 与ダメージの計算</span><span class="muted small">与ダメージ</span></div>'+
  '<div class="combat-input-card"><button type="button" class="combat-collapse-btn" data-action="combat-toggle-settings" aria-expanded="'+(options.skillsOpen!==false)+'"><strong>スキル・敵条件</strong><small>'+safe(skill?.label||'')+' · Lv'+num(skill?.level||0)+'</small><span>'+(options.skillsOpen!==false?'▴ 閉じる':'▾ 開く')+'</span></button>'+
  (options.skillsOpen!==false?'<div class="combat-input-content"><div class="combat-fields combat-skill-fields">'+attackFields+'</div>'+skillSummary+
  '<div class="combat-form-title">装備固有効果の発動状態</div>'+
@@ -147,15 +147,15 @@ function render(stats,settings,context={},options={}){
  (schrodinger?'<p class="combat-ring-notice"><strong>シュレーディンガーの指輪を装備中</strong>：敵のHPに関係なく「健康」「負傷」が両方成立します。チェックは指輪効果として固定されています。</p>':
  '<p class="combat-ring-note">健康・負傷は通常、敵HPから自動判定します。指輪の効果や特殊条件を手動で再現するときは、上の2項目を個別にチェックしてください。</p>')+
  '<details class="combat-advanced"><summary>敵側の防御値を入力（任意）</summary><div class="combat-fields">'+targetDefenses+'</div></details>'+
- '<p class="combat-ring-note">一括ON/OFFは脆弱・燃焼・減速・スタン・移動不能・凍結・出血・毒のみ。敵HP・Elite/Boss・遠距離は変更しません。</p></div>':'')+'</div>'+
+ '<p class="combat-ring-note">一括ON/OFFは脆弱・燃焼・減速・スタン・移動不能・凍結・出血・毒のみ。敵HP・エリート・ボス・遠距離は変更しません。</p></div>':'')+'</div>'+
  '<div class="combat-metrics">'+
- metric('通常ヒット',a.normal?num(a.normal.final):'—','Critなし・平均乱数')+
- metric('クリティカル',a.critical?num(a.critical.final):'—','Crit率 '+pct(a.critChance))+
- metric('期待ダメージ',a.expected!==null?num(a.expected,1):'—','Crit率を加味・単発あたり')+
- metric('増幅倍率の積',fx(totalMult),'対象防御を除く、期待Crit込み')+
+ metric('通常ヒット',a.normal?num(a.normal.final):'—','クリティカルなし・平均乱数')+
+ metric('クリティカル',a.critical?num(a.critical.final):'—','クリティカル率 '+pct(a.critChance))+
+ metric('期待ダメージ',a.expected!==null?num(a.expected,1):'—','クリティカル率を加味・単発あたり')+
+ metric('増幅倍率の積',fx(totalMult),'対象防御を除く、期待クリティカル込み')+
  '</div>'+
  '<section class="card combat-card combat-unique-card"><div class="card-heading"><div><h2>装備固有効果の計算状態</h2><span>現在の装備だけを検出し、発動条件に応じて反映</span></div></div>'+
- '<p class="helper">ポールドロンの+100%は属性ダメージの加算枠、グリーヴと篭手の+150%はCritダメージの加算枠、鉄兜は独立倍率です。プリズムの心臓はスタック反映後の最高属性ボーナスを25%増加すると仮定しています。</p>'+
+ '<p class="helper">ポールドロンの+100%は属性ダメージの加算枠、グリーヴと篭手の+150%はクリティカルダメージの加算枠、鉄兜は独立倍率です。プリズムの心臓はスタック反映後の最高属性ボーナスを25%増加すると仮定しています。</p>'+
  uniquePanel(a,context)+'</section>'+runePanel+
  '<div class="combat-columns"><section class="card combat-card"><div class="card-heading"><div><h2>倍率グループの内訳</h2><span>各倍率の加算値（%）、乗算値、相対寄与率</span></div></div>'+attackTable(a,stats)+
  '<div class="notice gentle">寄与率は<strong>log(倍率)</strong>で増幅を100%に分解した比較指標です。「+100%」の倍率を複数足し合わせる意味ではありません。基礎の固定ダメージは寄与率から除外しています。</div></section>'+
@@ -163,13 +163,13 @@ function render(stats,settings,context={},options={}){
  '<p class="combat-inline-formula">条件倍率 = 1 + ('+pct(a.conditionValue)+') = '+fx(a.condMult)+'</p>'+conditionTable(a)+
  '<div class="combat-form-title">計算の主要値</div>'+
  '<div class="combat-detail-line"><span>武器＋固定ダメージ</span><b>'+num(a.weaponDamage)+' + '+num(a.flatDamage)+'</b></div>'+
- '<div class="combat-detail-line"><span>知力（装備・Paragon・初期値）</span><b>'+num(a.primary)+'</b></div>'+
- '<div class="combat-detail-line"><span>属性ダメージ / Bonus All Damage</span><b>'+pct(a.eleValue)+' / '+pct(a.allValue)+'</b></div>'+
+ '<div class="combat-detail-line"><span>知力（装備・パラゴン・初期値）</span><b>'+num(a.primary)+'</b></div>'+
+ '<div class="combat-detail-line"><span>属性ダメージ / 全ダメージボーナス</span><b>'+pct(a.eleValue)+' / '+pct(a.allValue)+'</b></div>'+
  '<div class="combat-detail-line"><span>クリティカル率 / ダメージ</span><b>'+pct(a.critChance)+' / '+pct(a.critBonus)+'</b></div>'+
  '<div class="combat-detail-line"><span>脆弱：追加独立倍率</span><b>'+fx(a.vulnMult)+'</b></div>'+'<div class="combat-detail-line"><span>装備固有：独立倍率</span><b>'+fx(a.unique.ironMult)+'</b></div>'+
  '<div class="combat-detail-line"><span>対象の防御による減算</span><b>−'+pct((1-a.resistMult)*100)+'</b></div>'+
  trace(a)+'</section></div></section>'+
- '<section class="combat-section"><div class="section-label"><span>02 / 被ダメージ・軽減率</span><span class="muted small">DAMAGE TAKEN</span></div>'+
+ '<section class="combat-section"><div class="section-label"><span>02 / 被ダメージ・軽減率</span><span class="muted small">被ダメージ</span></div>'+
  '<div class="combat-input-card"><h3>被ダメージのシミュレーション条件</h3><div class="combat-fields">'+incomingFields+'</div>'+
  '<div class="combat-checks">'+check('incomingCrit','敵の攻撃がクリティカル',q.incomingCrit)+'</div></div>'+
  '<div class="combat-metrics">'+
@@ -183,13 +183,13 @@ function render(stats,settings,context={},options={}){
  '<div class="combat-columns"><section class="card combat-card"><div class="card-heading"><div><h2>'+safe(d.selected.label)+'ダメージの軽減内訳</h2><span>各項の独立した軽減率・元被ダメから減った割合</span></div></div>'+
  defenseLayers(d)+
  '<div class="combat-detail-line"><span>'+ (q.defenseType==='physical'?'Armor':'Magic Resist') + ' 実効値</span><b>'+num(d.selected.resistance)+'</b></div>'+
- '<div class="combat-detail-line"><span>Critダメージ軽減（Crit時のみ）</span><b>'+pct(d.selected.critRed*100)+'</b></div>'+
+ '<div class="combat-detail-line"><span>クリティカルダメージ軽減（Crit時のみ）</span><b>'+pct(d.selected.critRed*100)+'</b></div>'+
  '<div class="combat-detail-line"><span>基準：敵 Lv '+num(q.attackerLevel)+'</span><b>'+num(q.incomingHit)+' ダメージ</b></div>'+
  '</section><section class="card combat-card"><div class="card-heading"><div><h2>軽減率を求める式</h2><span>異なる軽減効果は単純加算しません</span></div></div>'+
  '<div class="combat-formula"><p>Armor / MR 軽減 = R / (R + 50 × 敵Lv)</p>'+
- '<p>命中時被ダメ = 元ダメ × (1 − Armor/MR) × (1 − 属性DR) × (1 − 共通DR) − 固定軽減</p>'+
+ '<p>命中時被ダメ = 元ダメ × (1 − アーマー・魔法耐性) × (1 − 属性DR) × (1 − 共通DR) − 固定軽減</p>'+
  '<p>回避込み期待被ダメ = 命中時被ダメ × (1 − Dodge)</p></div>'+
- '<div class="notice gentle">Armor/MR自体には固定の75%上限はありません。属性軽減・共通軽減はそれぞれ最大90%、回避は85%、Critダメージ軽減は100%です。回避はDoTには適用されません。</div>'+
+ '<div class="notice gentle">アーマー・魔法耐性自体には固定の75%上限はありません。属性軽減・共通軽減はそれぞれ最大90%、回避は85%、クリティカルダメージ軽減は100%です。回避は継続ダメージには適用されません。</div>'+
  '<p class="helper">この計算は直接ヒットの平均値用です。防御側のシールド・無敵・継続ダメージ、敵固有のダメージ補正は含みません。固定軽減が発動した場合、残りダメージは最低1です。</p></section></div></section>'+
  '<div class="combat-sources"><a href="https://wikily.gg/deskrawl/stats/damage-formula" target="_blank" rel="noopener noreferrer">計算式の出典（WikiLy）</a><a href="https://playongg.com/games/deskrawl/calculator" target="_blank" rel="noopener noreferrer">ゲーム計算機（PlayOnGG）</a></div>'+
  '</main>';
