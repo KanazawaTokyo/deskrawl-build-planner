@@ -410,3 +410,14 @@
 .combat-rune-active b{color:var(--mint);white-space:nowrap}
 .combat-rune-active span{color:var(--text)}
 .combat-runes-panel .helper{margin:7px 0 0}
+
+/* Per-build selection of up to eight comparison stats */
+.stats-compare-pick{display:flex;align-items:flex-start;gap:12px;padding:13px 14px;margin:0 0 16px;border:1px solid #35534e;background:#182b2b;border-radius:10px;cursor:pointer}
+.stats-compare-pick input{width:17px;height:17px;margin:2px 0 0;flex:none;accent-color:var(--mint);cursor:pointer}
+.stats-compare-pick span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.stats-compare-pick strong{font-size:12px;color:var(--text)}
+.stats-compare-pick small{font-size:10px;line-height:1.5;color:var(--muted)}
+.stats-compare-pick.at-limit{background:var(--panel2);border-color:var(--line);cursor:not-allowed}
+.stats-compare-pick.at-limit input{cursor:not-allowed}
+.stats-compare-pick.at-limit strong{color:var(--muted)}
+.stats-compare-empty{border:1px dashed var(--line2);border-radius:12px;padding:23px;color:var(--muted);font-size:12px;line-height:1.8;background:var(--panel)}
