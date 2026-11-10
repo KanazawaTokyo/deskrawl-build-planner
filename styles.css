@@ -493,3 +493,11 @@
  .talent-tree{min-width:940px}
  .talent-tile{height:200px;min-height:200px;padding-left:12px;padding-right:12px}
 }
+
+/* AI-analysis snapshot: copy prompt or download independent JSON. */
+.ai-export-open{white-space:nowrap;padding:9px 13px}
+.modal-panel:has(.ai-export-preview){max-width:min(860px,calc(100vw - 24px));max-height:88vh;overflow-y:auto}
+.ai-export-preview{margin-top:15px}
+.ai-export-preview textarea{display:block;width:100%;min-height:230px;max-height:44vh;resize:vertical;font-family:ui-monospace,Consolas,monospace;font-size:11px;line-height:1.5;overflow:auto;white-space:pre;overflow-wrap:normal;background:var(--panel2);color:var(--text)}
+.ai-export-actions{display:flex;flex-wrap:wrap;gap:9px;margin:15px 0}
+@media(max-width:500px){.ai-export-open{width:100%}.ai-export-actions .btn{width:100%}}
