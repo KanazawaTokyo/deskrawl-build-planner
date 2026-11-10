@@ -110,7 +110,7 @@ assert(rendered.includes('data-change="combat" data-key="abilityId"'));
 assert(rendered.includes('data-action="combat-toggle-settings"'));
 assert(rendered.includes('data-action="combat-debuffs" data-value="on"'));
 assert(rendered.includes('data-action="combat-defense-type"'));
-assert(rendered.includes('log(倍率)'));
+assert(rendered.includes('倍率の対数'));
 const events={},local={};
 const app={innerHTML:'',addEventListener:(key,fn)=>events[key]=fn};
 const toast={textContent:'',classList:{add(){},remove(){}}};
