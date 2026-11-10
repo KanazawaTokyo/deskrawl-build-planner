@@ -109,6 +109,18 @@ const stat={
 };
 const rarityJP={Divine:'ディバイン',Legendary:'レジェンダリー',Rare:'レア',Uncommon:'アンコモン',Common:'コモン','Black Mist':'ブラックミスト'};
 const pairs=[
+ ["Iron Tyrant's Helm",'鉄の暴君の兜'],['Iron Tyrant’s Helm','鉄の暴君の兜'],
+ ["Schrödinger's Ring",'シュレーディンガーの指輪'],['Schrödinger’s Ring','シュレーディンガーの指輪'],
+ ['Remnant of the Elder Sage','古の賢者の遺骨'],['The Grandmother','グランドマザー'],
+ ['Prismatic Heart','プリズムの心臓'],['Elemental Burst Pauldron','エレメンタルバーストのポールドロン'],
+ ['Greaves of the Arcane Edge','秘術の刃のグリーヴ'],['Stormcaller Gauntlets','ストームコーラーのガントレット'],
+ ['Bottomless Potion Belt','底なしポーションベルト'],['Unyielding Cuirass','不屈の胸当て'],
+ ['Boots of the Windcaller','ウィンドコーラーのブーツ'],
+ ['INT由来MR','知力による魔法耐性'],['INT由来','知力による'],
+ ['Bonus All Damage','全ダメージボーナス'],['Crit補正','クリティカル補正'],
+ ['HP自然回復','ライフ回復'],['Poison Damage','毒ダメージ'],
+ ['Fire Damage','炎ダメージ'],['Attack Speed','攻撃速度'],['Strength','力'],
+ ['Vitality','生命力'],['Gold Increase','ゴールド増加'],
  ['Saddle of the Golden Khan','黄金のハーンの鞍'],['Fine Saddle','上質な鞍'],
  ['Golden Horseshoe','黄金の蹄鉄'],['Iron Barding','鉄の馬鎧'],
  ['Lightning Storm','ライトニングストーム'],['Flame Lightning','炎雷'],['Lightning Cloud','サンダークラウド'],
@@ -139,7 +151,7 @@ function text(value){if(typeof value!=='string')return value;let s=value;
  for(const [english,jp] of pairs) s=s.split(english).join(jp);return s;}
 function rarity(value){return rarityJP[value]||value;}
 Object.assign(C.labels,stat);
-for(const info of Object.values(D.affixes))if(Array.isArray(info))info[0]=text(info[0]);
+for(const [key,info] of Object.entries(D.affixes))if(Array.isArray(info))info[0]=stat[key]||text(info[0]);
 for(const p of D.paragonStats)p.label=stat[p.stat]||text(p.label);
 for(const d of D.definitions){if(names[d.id])d.name=names[d.id];if(d.effect)d.effect=text(d.effect);}
 for(const [id,arr] of Object.entries(B.abilities))if(skills[id]){
