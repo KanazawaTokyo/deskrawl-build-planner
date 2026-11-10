@@ -370,3 +370,20 @@
 .stat-slot-toggle:has(input:focus-visible){outline:2px solid var(--mint);outline-offset:2px}
 @media(max-width:1200px){.stats-slot-grid{grid-template-columns:repeat(4,minmax(0,1fr))}}
 @media(max-width:480px){.stats-slot-header{align-items:flex-start;flex-direction:column;gap:4px}.stats-slot-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+
+/* Skill-first collapsible combat inputs */
+.combat-collapse-btn{display:flex;align-items:center;gap:12px;width:100%;padding:0;border:0;background:none;color:var(--text);text-align:left;cursor:pointer}
+.combat-collapse-btn strong{font-size:13px}
+.combat-collapse-btn small{flex:1;color:var(--muted);font-size:11px}
+.combat-collapse-btn>span{color:var(--mint);font-size:11px;white-space:nowrap}
+.combat-input-content{padding-top:18px}
+.combat-skill-fields{grid-template-columns:repeat(2,minmax(0,1fr))}
+.combat-skill-summary{display:flex;align-items:center;gap:13px;flex-wrap:wrap;margin-top:12px;border:1px solid #35534e;background:#182c2c;border-radius:10px;padding:12px}
+.combat-skill-summary strong,.combat-skill-summary b{color:var(--mint);font-size:14px}
+.combat-skill-summary span{font-size:11px;color:var(--text)}
+.combat-skill-summary b{margin-left:auto}
+.combat-skill-summary small{flex-basis:100%;color:var(--muted);font-size:10px}
+.combat-debuff-title{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.combat-debuff-title>span:last-child{display:flex;gap:7px}
+.combat-debuff-title .btn{font-size:11px;padding:7px 10px}
+@media(max-width:650px){.combat-skill-fields{grid-template-columns:1fr}.combat-collapse-btn{flex-wrap:wrap}.combat-skill-summary b{margin-left:0}}
