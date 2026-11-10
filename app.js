@@ -101,13 +101,7 @@ function renderCombat(){
 }
 function renderStats(){
  const b=build(),SV=window.DBPStatsView,v=SV.evaluate(state,b),r=v.active;
- const groups=[
-  ['攻撃',['int','str','dex','damage','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','distant','dot','burned','stunned','bleeding','poisoned','lightning','arcane','physical','fire','cold','poison','thorns','thornsBonus','strBonus','allDamage','critChance','critDamage','as','cdr']],
-  ['防御',['maxHP','bonusHP','armor','armorBonus','bonusArmor','mr','bonusMR','critRed','dodge','physicalDR','coldDR','fireDR','lightningDR','arcaneDR','poisonDR','healingReceived']],
-  ['リソース・補助',['mana','manaBonus','manaRegen','mcr','move','loh','lohBonus','lifeKill','regen','regenBonus','itemFind','goldFind','potionFind','materialFind','xp','potionCharges','manaKill']],
-  ['スキル限定・タレント',[...C.talentSpecialStats||[],'skillCritDamage','elementalSkillCritBonus','lightningStormCritBonus']],
-  ['装備固有・条件付き',['activeConditionalDamage','independentDamageBonus','temporaryInvulnerable']]
- ];
+ const groups=SV.sections;
  const details=groups.map(([name,keys])=>'<section class="stat-group"><h3>'+E(name)+'</h3>'+
   SV.tableHeader()+'<div class="stat-rows">'+keys.map(k=>SV.statRow(k,v,ui.selectedStat)).join('')+'</div></section>').join('');
  const snapshots=state.measurements.filter(x=>x.buildId===b.id).slice(-3).reverse().map(m=>
@@ -120,7 +114,7 @@ function renderStats(){
  '<label class="inline-select">ポーション <select data-change="quickpotion">'+potionOptions(b.settings?.potion)+'</select></label>'+
  '<button class="btn outline" data-action="settings"><span>⚙</span> ビルド設定</button></div>'+
  SV.controls(v)+
- '<div class="section-label"><span>主なステータス比較</span><span class="muted small">GEAR ONLY / BUFFED</span></div>'+
+ '<div class="section-label"><span>ステータス比較</span><span class="muted small">'+SV.comparisonKeys(b.settings).length+' / '+SV.comparisonLimit+' 項目を表示</span></div>'+
  SV.summary(v)+
  '<div class="notice gentle">左は<strong>装備OP・固定数値のみ</strong>、右は選択した基礎値・宝石・Paragon・タレント・ペット・Aura・消耗品・装備固有効果込みです。装備自体は書き換えません。'+
  '固有の独立倍率・一時無敵・スキル限定Critは通常OPに混ぜず別項目で表示します。ゲーム内部の計算を完全再現するものではありません。</div>'+
@@ -132,7 +126,28 @@ function renderStats(){
  '<aside class="stats-side '+(ui.settingsOpen?'show-settings':'')+'">'+(ui.settingsOpen?renderSettings():renderBreakdown(r))+'</aside></main>';
 }
 function statTile(k,r){const val=r.effective[k];const cap=D.limits[k];return `<button class="stat-tile ${ui.selectedStat===k&&!ui.settingsOpen?'chosen':''}" data-action="stat" data-value="${k}"><span class="stat-label">${E(C.labels[k])}</span><strong>${E(C.format(k,val))}</strong><span class="stat-hint">${cap?`上限 ${cap}%${r.raw[k]>cap?' · 超過 '+C.format(k,r.raw[k]-cap):''}`:k==='mr'?'Armorとは別計算':'実効値・部分合計'}</span>${cap?`<div class="progress"><i style="width:${Math.min(100,Math.max(0,(val||0)/cap*100))}%"></i></div>`:''}</button>`}
-function renderBreakdown(r){const k=ui.selectedStat,list=r.breakdown[k]||[],raw=r.raw[k],eff=r.effective[k];return `<div class="side-panel"><div class="side-title"><div><small>STAT BREAKDOWN</small><h2>${E(C.labels[k]||k)}</h2></div><button class="icon-btn" data-action="settings" title="設定パネル">⚙</button></div><div class="side-total"><span>登録データからの計算値</span><strong>${E(C.format(k,eff))}</strong>${raw!==eff?`<small>上限適用前 ${E(C.format(k,raw))}</small>`:''}</div><h3>取得元内訳</h3>${list.length?list.map(x=>`<div class="break-row"><div><span>${E(x.source)}</span><small>${E(qualityOf(x.quality))}</small></div><strong>+${E(C.format(k,x.value))}</strong></div>`).join(''):'<div class="notice">この項目の取得元は未登録です。ビルド設定か装備を入力してください。</div>'}${k==='mr'||k==='armor'?`<div class="mitigation"><span>敵Lv ${E(build().settings?.enemyLevel||70)} の推定軽減率</span><strong>${E(r.mitigations[k].toFixed(1))}%</strong><small>式：防御値 ÷（防御値 + 50 × 敵Lv）。登録値のみで計算した参考値。</small></div>`:''}<button class="btn outline wide" data-action="settings">設定を編集 <span>→</span></button><p class="side-note">${r.pending.length}件の未校正項目があります。確度の低い数値を最終値として扱わないでください。</p></div>`;}
+function renderBreakdown(r){
+ const k=ui.selectedStat,list=r.breakdown[k]||[],raw=r.raw[k],eff=r.effective[k],SV=window.DBPStatsView;
+ const selected=SV.comparisonKeys(build().settings),isShown=selected.includes(k),full=selected.length>=SV.comparisonLimit;
+ const toggle='<label class="stats-compare-pick'+(full&&!isShown?' at-limit':'')+'">'+
+  '<input type="checkbox" data-change="stat-compare" data-key="'+E(k)+'"'+
+  (isShown?' checked':'')+(full&&!isShown?' disabled':'')+'>'+
+  '<span><strong>ステータス比較に表示</strong><small>'+selected.length+' / '+SV.comparisonLimit+' 項目を選択中'+
+  (full&&!isShown?' · 追加するには別の項目のチェックを外してください':'')+'</small></span></label>';
+ return '<div class="side-panel"><div class="side-title"><div><small>STAT BREAKDOWN</small><h2>'+E(C.labels[k]||k)+'</h2></div>'+
+  '<button class="icon-btn" data-action="settings" title="設定パネル">⚙</button></div>'+toggle+
+  '<div class="side-total"><span>登録データからの計算値</span><strong>'+E(C.format(k,eff))+'</strong>'+
+  (raw!==eff?'<small>上限適用前 '+E(C.format(k,raw))+'</small>':'')+'</div>'+
+  '<h3>取得元内訳</h3>'+
+  (list.length?list.map(x=>'<div class="break-row"><div><span>'+E(x.source)+'</span><small>'+E(qualityOf(x.quality))+
+  '</small></div><strong>+'+E(C.format(k,x.value))+'</strong></div>').join(''):
+  '<div class="notice">この項目の取得元は未登録です。ビルド設定か装備を入力してください。</div>')+
+  ((k==='mr'||k==='armor')?'<div class="mitigation"><span>敵Lv '+E(build().settings?.enemyLevel||70)+
+  ' の推定軽減率</span><strong>'+E(r.mitigations[k].toFixed(1))+
+  '%</strong><small>式：防御値 ÷（防御値 + 50 × 敵Lv）。登録値のみで計算した参考値。</small></div>':'')+
+  '<button class="btn outline wide" data-action="settings">設定を編集 <span>→</span></button>'+
+  '<p class="side-note">'+r.pending.length+'件の未校正項目があります。確度の低い数値を最終値として扱わないでください。</p></div>';
+}
 function potionOptions(current){return [['none','なし'],['swift','上級迅速（AS）'],['vitality','上級活力（HP）'],['resistance','上級耐性（MR）'],['wind','風（Dodge）'],['focus','上級集中（CDR）'],['efficiency','上級効率（MCR）'],['cruel','上級残酷（Crit）']].map(x=>opt(x[0],x[1],current)).join('')}
 function renderParagonSettings(s){
  const a=D.paragonAllocation(s),level=s.paragonLevel===undefined||s.paragonLevel===null?'':s.paragonLevel;
@@ -255,7 +270,7 @@ case 'duplicate-item':{const src=getItem(id);if(!src)return;modify(()=>{const cp
 case 'equip':{const it=getItem(id);if(!it)return;const previous=getItem(b.loadout[it.slot]);if(previous?.locked&&previous.id!==it.id){flash('現在の装備が固定中です。先に固定を解除してください。');return}if(!confirm('「'+titleOf(it)+'」をこのビルドへ装備しますか？\n以前の装備も保管庫に残ります。'))return;modify(()=>{b.loadout[it.slot]=it.id;ui.itemId=it.id;ui.detail='edit'});flash('このビルドの装備を変更しました');break;}
 case 'delete-item':{const x=getItem(id);if(!x)return;if(x.locked){flash('固定中の装備は削除できません。先に固定を解除してください。');return}const n=countRefs(id);if(n){flash(n+'ビルドで参照中のため削除できません。先に装備を外してください。');return}if(!confirm('この装備候補を削除しますか？ この操作は取り消せません。'))return;modify(()=>{state.items=state.items.filter(z=>z.id!==id);ui.itemId=null});break}
 case 'compare-equal':ui.compareMode='equal';render();break;case 'compare-actual':ui.compareMode='actual';render();break;
-case 'stat':ui.selectedStat=value;ui.settingsOpen=false;render();break;case 'settings':ui.settingsOpen=true;render();break;case 'close-settings':ui.settingsOpen=false;render();break;
+case 'stat':if(!window.DBPStatsView.statKeys.includes(value))return;ui.selectedStat=value;ui.settingsOpen=false;render();break;case 'settings':ui.settingsOpen=true;render();break;case 'close-settings':ui.settingsOpen=false;render();break;
 case 'save-locked-set':{if(!canSaveLockedSet()){flash('全11部位の装備を固定してから保存してください。');return}if(lockedSets().length>=60){flash('固定セットは最大60件です。不要なセットを削除してください。');return}const name=prompt('保存する一式の名前',b.name+' 固定セット');if(!name?.trim())return;modify(()=>{const gear={};D.slots.forEach(([slot])=>{gear[slot]=clone(equipment(slot))});const saved={id:D.uid('set'),name:name.trim().slice(0,100),createdAt:new Date().toISOString(),sourceBuild:b.name,gear,settings:clone(b.settings||defaultSettings())};state.lockedSets??=[];state.lockedSets.push(saved);ui.selectedSetId=saved.id});flash('固定した11部位を一式保存しました');break}
 case 'load-locked-set':{const saved=selectedLockedSet();if(!saved)return;const valid=D.slots.every(([slot])=>saved.gear?.[slot]?.slot===slot&&saved.gear[slot].locked===true);if(!valid){flash('保存セットの装備データが不正です。JSONバックアップを確認してください。');return}if(state.builds.length>=1000||state.items.length+D.slots.length>10000){flash('ビルドまたは装備の保存上限に達しています。');return}if(!confirm('「'+saved.name+'」を新しいビルドとして呼び出しますか？\n現在のビルドと保存済み一式は変更しません。'))return;modify(()=>{const loadout={};D.slots.forEach(([slot])=>{const item=clone(saved.gear[slot]);item.id=D.uid('item');item.locked=true;item.createdAt=new Date().toISOString();item.source='saved-set';state.items.push(item);loadout[slot]=item.id});const id=D.uid('build');state.builds.push({id,name:(saved.name+'（読込）').slice(0,100),loadout,settings:clone(saved.settings||defaultSettings()),createdAt:new Date().toISOString()});state.activeBuildId=id;ui.itemId=null;ui.slot='weapon';ui.detail='edit'});flash('固定セットを新しいビルドとして呼び出しました');break}
 case 'delete-locked-set':{const saved=selectedLockedSet();if(!saved||!confirm('保存した固定セット「'+saved.name+'」を削除しますか？\n既存ビルドと装備には影響しません。'))return;modify(()=>{state.lockedSets=lockedSets().filter(x=>x.id!==saved.id);ui.selectedSetId=state.lockedSets[0]?.id||null});flash('保存済みの固定セットを削除しました');break}
@@ -276,6 +291,13 @@ case 'measurement-save':{const fields=['critChance','critRed','cdr','mcr','dodge
 function defaultSettings(){return {aura:true,enemyLevel:70,paragonPoints:{},paragonLevel:null,talentPoints:{},talents:{flameWard:0,arcaneReservoir:0},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{}}}
 function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=getItem(id),v=el.type==='checkbox'?el.checked:el.value;
  if(PU?.isChange(kind)){PU.change(el,{settings:b.settings,modify,flash,render});return}
+  if(kind==='stat-compare'){
+    const SV=window.DBPStatsView,key=el.dataset.key;
+    const next=SV.nextComparisonKeys(b.settings,key,Boolean(v));
+    if(next===null){render();flash('ステータス比較は最大'+SV.comparisonLimit+'項目です。不要な項目のチェックを外してください。');return}
+    modify(()=>{b.settings.statView??={};b.settings.statView.comparisonKeys=next});
+    return;
+  }
   if(kind==='stat-slot'){
     const key=el.dataset.key;
     if(!D.slots.some(([slot])=>slot===key)){flash('不明な装備部位です');return}
