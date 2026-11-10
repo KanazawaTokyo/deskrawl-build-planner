@@ -64,6 +64,7 @@ return out;
 }
 function calc(doc,build,sub={}){
   const sum={};const breakdown={};const pending=[];const add=(key,value,source,quality='history')=>{if(!Number.isFinite(Number(value)))return;sum[key]=(sum[key]||0)+Number(value);(breakdown[key]??=[]).push({source,value:Number(value),quality});};
+  const enabled=k=>sub.sourceFilters?.[k]!==false;
   const chosen=build.loadout||{};
   for(const [slot,id] of Object.entries(chosen)){
     const effectiveId=(sub.slot===slot)?sub.itemId:id;
@@ -72,8 +73,11 @@ function calc(doc,build,sub={}){
     const stage=sub.equalLevel!==undefined?sub.equalLevel:item.upgrade;
     if(def?.rarity==='Divine'&&!(def.fixed?.length))pending.push(slot+'：Divine固定数値が未登録');
     if(!item.upgradeKnown&&sub.equalLevel===undefined)pending.push(slot+'：強化段階未確認');
-    for(const e of itemTotal(item,stage))add(e.stat,e.value,(def?.name||item.nickname||slot)+' · '+labels[e.stat],e.status);
-    for(const [index,gem] of (item.gems||[]).entries()){
+    for(const e of itemTotal(item,stage)){
+      const category=e.slot==='unique'?'unique':'gear';
+      if(enabled(category)&&!(category==='unique'&&sub.sourceFilters?.powers?.[def?.id]===false))add(e.stat,e.value,(def?.name||item.nickname||slot)+' · '+labels[e.stat],e.status);
+    }
+    if(enabled('gems'))for(const [index,gem] of (item.gems||[]).entries()){
       const effect=D.gemEffect(gem?.type,slot);
       if(effect)add(effect.stat,effect.value,`${def?.name||slot} · ソケット${index+1} · ${D.gems[gem.type].name}（Tier 6）`,'verified');
       else if(gem?.type)pending.push(`${slot} · ソケット${index+1}：旧形式・未対応の宝石は集計外`);
@@ -83,9 +87,10 @@ function calc(doc,build,sub={}){
   const tal=T?T.allocation(s):null;
   // Hero Lv70: known base stats; apply once when using the full talent tree.
   // Legacy builds retain their previous partial-total behavior until explicit migration.
-  if(tal&&!tal.legacy){if(base.mana===undefined||base.mana===null||base.mana==='')add('mana',100,'英雄の基礎最大Mana','verified');if(base.int===undefined||base.int===null||base.int==='')add('int',10,'ソーサラーの基礎知力','verified');}
-  for(const [k,v] of Object.entries(base))if(v!==''&&v!==null&&v!==undefined)add(k,Number(v),'登録済みの装備外基礎値','manual');
+  if(enabled('base')&&tal&&!tal.legacy){if(base.mana===undefined||base.mana===null||base.mana==='')add('mana',100,'英雄の基礎最大Mana','verified');if(base.int===undefined||base.int===null||base.int==='')add('int',10,'ソーサラーの基礎知力','verified');}
+  if(enabled('base'))for(const [k,v] of Object.entries(base))if(v!==''&&v!==null&&v!==undefined)add(k,Number(v),'登録済みの装備外基礎値','manual');
   const allocation=D.paragonAllocation(s);
+  if(enabled('paragon')){
   if(!allocation.legacy){
     for(const stat of D.paragonStats){
       const points=allocation.points[stat.key]||0;
@@ -103,9 +108,10 @@ function calc(doc,build,sub={}){
     if(p.maxMana)add('mana',p.maxMana,'Paragon Max Mana（旧形式）','history');
     if(p.as)add('as',p.as,'Paragon AS（旧形式）','history');
   }
-  if(s.aura){add('critChance',10,'Flame Aura · Crit率','history');if(!tal||tal.legacy){if((s.talents||{}).flameWard){add('bonusMR',80,'炎の加護 · MR +80%（旧設定）','history');add('bonusArmor',80,'炎の加護 · Armor +80%（旧設定）','history');}}}
-  if(tal&&!tal.legacy){
-    const derived=T.effects(tal.ranks,{aura:Boolean(s.aura),mana:0});
+  }
+  if(enabled('aura')&&s.aura){add('critChance',10,'Flame Aura · Crit率','history');if(!tal||tal.legacy){if((s.talents||{}).flameWard){add('bonusMR',80,'炎の加護 · MR +80%（旧設定）','history');add('bonusArmor',80,'炎の加護 · Armor +80%（旧設定）','history');}}}
+  if(enabled('talents')&&tal&&!tal.legacy){
+    const derived=T.effects(tal.ranks,{aura:Boolean(s.aura)&&enabled('aura'),mana:0});
     for(const e of derived.result){
       // The conversion talent depends on the final MaxMana after all flat bonuses.
       if(e.source.includes('Manaの'))continue;
@@ -115,7 +121,7 @@ function calc(doc,build,sub={}){
   }
   // Active minion passives, one inherited +10 skill, and one minion gear.
   // Never treat timed active abilities as permanent hero-stat modifiers.
-  if(P){
+  if(P&&enabled('pet')){
     const pet=s.pet||{}, main=P.lookup(pet.id),rank=Math.max(0,Math.min(10,Number(pet.level)||0));
     if(!pet.progressionVersion){
       // Compatibility: untouched legacy entries keep the previously calculated bonuses.
@@ -165,12 +171,12 @@ function calc(doc,build,sub={}){
     if(sum[bonus])add(key,(sum[key]||0)*sum[bonus]/100,'ペットパッシブ · '+labels[bonus]+'による増加','calculated');
   }
   const potion={swift:{as:20},vitality:{bonusHP:15},resistance:{bonusMR:20},wind:{dodge:5},focus:{cdr:10},efficiency:{mcr:10},cruel:{critChance:10}}[s.potion];
-  if(potion)Object.entries(potion).forEach(([k,v])=>add(k,v,'使用ポーション','history'));
-  if(s.food==='crab')add('allDR',10,'灰殻のカニ','history');
-  if(tal&&!tal.legacy){
+  if(potion&&enabled('potion'))Object.entries(potion).forEach(([k,v])=>add(k,v,'使用ポーション','history'));
+  if(enabled('food')&&s.food==='crab')add('allDR',10,'灰殻のカニ','history');
+  if(enabled('talents')&&tal&&!tal.legacy){
     const level=tal.ranks.arcaneReservoir||0;
     if(level)add('int',(sum.mana||0)*(.05*level),'タレント · 魔力の貯蔵 '+level+'/8 · 最大Manaから知力変換','calculated');
-  }else if((s.talents||{}).arcaneReservoir){
+  }else if(enabled('talents')&&(s.talents||{}).arcaneReservoir){
     const mana=sum.mana;
     if(base.mana!==undefined&&base.mana!==''&&base.mana!==null&&mana)add('int',mana*.4,'魔力の貯蔵8/8 · Mana由来INT（旧設定）','calculated');
     else pending.push('旧タレント：装備外の基礎Mana未登録のため知力変換を保留');

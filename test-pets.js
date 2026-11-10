@@ -5,7 +5,7 @@ const toast={textContent:'',classList:{add(){},remove(){}}};
 const doc={getElementById:id=>id==='app'?app:id==='toast'?toast:null,createElement:()=>({style:{},click(){},files:[]}),body:{appendChild(){}},addEventListener(){}};
 const ctx={document:doc,localStorage:{getItem:k=>store[k]??null,setItem:(k,v)=>store[k]=v,removeItem:k=>delete store[k]},Date,JSON,Math,Set,Number,String,URL,URLSearchParams,Blob,Map,crypto:require('node:crypto').webcrypto,console,setTimeout:()=>0,clearTimeout:()=>{},confirm:()=>true,prompt:()=> 'pet test',fetch:()=>Promise.reject(Error('disabled')),history:{replaceState(){}},location:{hash:'',pathname:'/',search:'',origin:'file://'}};
 ctx.window=ctx;ctx.window.addEventListener=()=>{};vm.createContext(ctx);
-for(const file of ['master.js','pets.js','calc.js','pet-ui.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+file,'utf8'),ctx,{filename:file});
+for(const file of ['master.js','pets.js','calc.js','combat.js','stats-view.js','pet-ui.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+file,'utf8'),ctx,{filename:file});
 const D=ctx.DBP,P=ctx.DBPPets,C=ctx.DBPCalc;
 const get=()=>ctx.DBPApp.getState(),b=()=>get().builds.find(x=>x.id===get().activeBuildId),pet=()=>b().settings.pet,calc=()=>ctx.DBPApp.calc();
 const click=action=>events.click({target:{closest:()=>({dataset:{action}})}});

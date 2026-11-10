@@ -1,6 +1,6 @@
 'use strict';
 const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
-const files=['master.js','pets.js','talents.js','calc.js','combat.js','pet-ui.js','talent-ui.js','combat-ui.js','app.js'];
+const files=['master.js','pets.js','talents.js','calc.js','combat.js','pet-ui.js','talent-ui.js','combat-ui.js','stats-view.js','app.js'];
 const store={},events={},app={innerHTML:'',addEventListener:(e,fn)=>events[e]=fn};
 const toast={textContent:'',classList:{add(){},remove(){}}};
 const doc={getElementById:id=>id==='app'?app:id==='toast'?toast:null,createElement:()=>({style:{},files:[],click(){}}),body:{appendChild(){}},addEventListener(){}};

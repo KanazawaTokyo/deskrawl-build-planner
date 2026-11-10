@@ -116,6 +116,7 @@ Object.assign(ctx,{crypto:require('node:crypto').webcrypto,setTimeout:()=>0,clea
 ctx.window.addEventListener=()=>{};
 vm.runInContext(getSource('pet-ui.js'),ctx,{filename:'pet-ui.js'});
 vm.runInContext(getSource('talent-ui.js'),ctx,{filename:'talent-ui.js'});
+vm.runInContext(getSource('stats-view.js'),ctx,{filename:'stats-view.js'});
 vm.runInContext(getSource('app.js'),ctx,{filename:'app.js'});
 const click=(action,value)=>events.click({target:{closest:()=>({dataset:{action,value}})}});
 const change=(key,value,type='number')=>events.change({target:{id:'',type,checked:type==='checkbox'?value:false,value:String(value),dataset:{change:'combat',key}}});
