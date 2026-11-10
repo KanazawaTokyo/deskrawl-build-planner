@@ -16,6 +16,28 @@ const groups=[
  ['food','料理','選択中の食事'],
  ['unique','装備固有効果','装備ごとの固有パッシブ・発動効果']
 ];
+const sections=[
+  ['攻撃',['int','str','dex','damage','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','distant','dot','burned','stunned','bleeding','poisoned','lightning','arcane','physical','fire','cold','poison','thorns','thornsBonus','strBonus','allDamage','critChance','critDamage','as','cdr']],
+  ['防御',['maxHP','bonusHP','armor','armorBonus','bonusArmor','mr','bonusMR','critRed','dodge','physicalDR','coldDR','fireDR','lightningDR','arcaneDR','poisonDR','healingReceived']],
+  ['リソース・補助',['mana','manaBonus','manaRegen','mcr','move','loh','lohBonus','lifeKill','regen','regenBonus','itemFind','goldFind','potionFind','materialFind','xp','potionCharges','manaKill']],
+  ['スキル限定・タレント',[...C.talentSpecialStats||[],'skillCritDamage','elementalSkillCritBonus','lightningStormCritBonus']],
+  ['装備固有・条件付き',['activeConditionalDamage','independentDamageBonus','temporaryInvulnerable']]
+];
+const statKeys=[...new Set(sections.flatMap(([,keys])=>keys))];
+const comparisonLimit=8;
+const defaultComparisonKeys=['lightning','critDamage','skillCritDamage','critChance','cdr','mr','armor','move'];
+function comparisonKeys(settings={}){
+ const saved=settings?.statView?.comparisonKeys;
+ if(!Array.isArray(saved))return [...defaultComparisonKeys];
+ return [...new Set(saved.filter(key=>typeof key==='string'&&statKeys.includes(key)))].slice(0,comparisonLimit);
+}
+function nextComparisonKeys(settings,key,checked){
+ if(!statKeys.includes(key))return null;
+ const keys=comparisonKeys(settings);
+ if(!checked)return keys.filter(k=>k!==key);
+ if(keys.includes(key))return keys;
+ return keys.length>=comparisonLimit?null:[...keys,key];
+}
 const gearOnlyFilters=Object.fromEntries(groups.map(([id])=>[id,false]));
 const clean=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function config(settings={}){
@@ -182,7 +204,8 @@ function statRow(key,v,selected){
  '</button>';
 }
 function summary(v){
- const keys=['lightning','critDamage','skillCritDamage','critChance','cdr','mr','armor','move'];
+ const keys=comparisonKeys(v.settings);
+ if(!keys.length)return '<div class="stats-compare-empty">比較するステータスが未選択です。下の「すべてのステータス」から項目を開き、右側の「ステータス比較に表示」をチェックしてください。</div>';
  return '<div class="stats-compare-summary">'+keys.map(key=>{
   const change=(v.active.effective[key]||0)-(v.base.effective[key]||0);
   return '<button type="button" data-action="stat" data-value="'+key+'" class="stats-compare-tile">'+
@@ -196,5 +219,5 @@ function summary(v){
 function tableHeader(){
  return '<div class="stats-compare-header"><span>項目</span><span>装備のみ</span><span>補正込み</span><span>差分</span></div>';
 }
-window.DBPStatsView={groups,gearOnlyFilters,config,gearOnly,evaluate,controls,statRow,summary,tableHeader};
+window.DBPStatsView={groups,sections,statKeys,comparisonLimit,defaultComparisonKeys,comparisonKeys,nextComparisonKeys,gearOnlyFilters,config,gearOnly,evaluate,controls,statRow,summary,tableHeader};
 })();
