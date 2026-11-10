@@ -3,7 +3,7 @@ const D=window.DBP,C=window.DBPCalc;
 const PU=window.DBPPetUI||null;
 const LS='deskrawl_planner_v01',CFG='deskrawl_planner_cloud_v01',SESSION='deskrawl_planner_session_v01';
 let state;try{const raw=localStorage.getItem(LS);state=raw?JSON.parse(raw):D.makeSeed();if(!state||state.schemaVersion!==1)throw Error('Invalid saved schema');}catch(e){state=D.makeSeed()}
-let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',settingsOpen:false,settingsTab:'paragon',skillConfigId:'',combatSkillsOpen:true,talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',cloudNote:'',status:'local',dirty:false};
+let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',settingsOpen:false,settingsTab:'paragon',combatSkillsOpen:true,talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',cloudNote:'',status:'local',dirty:false};
 let cloudCfg;try{const builtIn=window.DBP_CLOUD_CONFIG;const local=JSON.parse(localStorage.getItem(CFG)||'null');cloudCfg=builtIn?.url&&builtIn?.key?builtIn:local}catch(e){cloudCfg=window.DBP_CLOUD_CONFIG||null}
 let session;try{session=JSON.parse(localStorage.getItem(SESSION)||'null')}catch(e){session=null}
 let cloudRevision=0,cloudSaveTimer=null,cloudBusy=false,cloudDirty=false,cloudSyncBlocked=false;const app=document.getElementById('app');const toast=document.getElementById('toast');
@@ -155,13 +155,9 @@ function renderParagonSettings(s){
  <p class="helper">参照：DeskrawlのParagonゲーム設定。最大マナ50pt＝+100、CDR50pt＝+10%、移動速度50pt＝+25%。</p>`;
 }
 
-function renderSkillSettings(s){
- const B=window.DBPCombat,R=window.DBPRunes;
- const selected=B.abilities[ui.skillConfigId]?ui.skillConfigId:B.abilities[s.combat?.abilityId]?s.combat.abilityId:'lightningStorm';
- const skill=B.abilities[selected],key=skill[5]||selected;
- const old=s.skillRanks?.[key],rank=Number.isInteger(old)&&old>=1&&old<=10?old:10;
- const config=R.selection(s),stats=window.DBPStatsView.evaluate(state,build()).active;
- const calculated=B.skillRank(s,stats,selected);
+function renderRuneSettings(s){
+ const R=window.DBPRunes;
+ const config=R.selection(s);
  const slots=Array.from({length:6},(_,index)=>{
   const current=config.slots[index],rune=R.catalog[current],usedSetIds=new Set(config.slots.filter((id,i)=>i!==index&&R.catalog[id]?.rarity==='set'));
   const options=rarity=>R.selectable.filter(r=>r.rarity===rarity).map(r=>
@@ -179,24 +175,20 @@ function renderSkillSettings(s){
   return '<div class="rune-set-status"><div class="rune-set-heading"><b>'+E(set.name)+'</b><span>'+count+' / 6</span></div>'+
    bonuses.map(b=>'<div class="rune-set-bonus'+(b.active?' active':'')+'"><strong>'+b.threshold+'セット '+(b.active?'✓':'—')+'</strong><span>'+E(b.label)+'</span></div>').join('')+'</div>';
  }).join('');
- return '<p class="helper">習得Lvだけ設定し、ルーンは6枠から装着します。レジェンド以上のみ表示。ルーンの強化レベルは<strong>全てLv6（MAX）</strong>で固定します。</p>'+
-  '<label class="field"><span>設定するスキル</span><select data-change="skill-config-select">'+B.skillOptions.map(([id,label])=>opt(id,label,selected)).join('')+'</select></label>'+
-  '<label class="field"><span>習得スキルLv（1〜10）</span><select data-change="skill-rank" data-key="'+E(key)+'">'+Array.from({length:10},(_,i)=>opt(i+1,'Lv '+(i+1),rank)).join('')+'</select></label>'+
+ return '<p class="helper">6枠にルーンを装着します。レジェンド以上に対応し、ルーンの強化レベルは<strong>すべてLv6（MAX）</strong>で固定です。</p>'+
   '<div class="form-title"><b>装着中のルーン（6枠）</b><span>'+config.equipped.length+' / 6 装備中</span></div>'+
   '<div class="rune-slot-list">'+slots+'</div>'+
   (config.issues.length?'<p class="notice">'+E(config.issues.join(' / '))+'</p>':'')+
   '<div class="form-title"><b>ルーンセット効果</b><span>2 / 4 / 6 個で発動</span></div>'+
   '<div class="rune-sets-summary">'+summaries+'</div>'+
-  '<div class="notice gentle">実効スキルLv：習得 '+calculated.learned+' ＋ 装備 '+calculated.equip+' ＋ ルーン '+calculated.runeBonus+
-  ' ＝ <strong>Lv'+calculated.level+'</strong>／武器倍率 '+calculated.percent+'%'+(calculated.assumed?'（習得Lvは未登録のため10と仮定）':'')+'</div>'+
   '<p class="helper">セット数値補正はステータスと戦闘計算に反映します。追加弾・追加スキルの効果はセット発動として表示しますが、単発ダメージに無条件で足しません。旧形式のルーンLv入力は自動装着せず保持しています。</p>';
 }
 function renderSettings(){const b=build(),s=b.settings||{},t=s.talents||{},pet=s.pet||{};let body='';if(ui.settingsTab==='paragon')body=renderParagonSettings(s);
-else if(ui.settingsTab==='skills')body=renderSkillSettings(s);
+else if(ui.settingsTab==='runes')body=renderRuneSettings(s);
  else if(ui.settingsTab==='talents')body='<div class="notice">戦闘タレントは独立タブに移動しました。</div><button class="btn" data-action="tab-talent">タレントツリーを開く</button>';
 else if(ui.settingsTab==='consumables')body=`<label class="field"><span>戦闘ポーション</span><select data-change="quickpotion">${potionOptions(s.potion)}</select></label><label class="field"><span>料理</span><select data-change="food">${[['none','なし'],['crab','灰殻のカニ'],['other','その他']].map(x=>opt(x[0],x[1],s.food||'none')).join('')}</select></label><label class="field"><span>ユーティリティ</span><select data-change="utility">${[['none','なし'],['speed','移動速度'],['exp','獲得経験値'],['gold','ゴールド']].map(x=>opt(x[0],x[1],s.utility||'none')).join('')}</select></label>`;
 else if(ui.settingsTab==='base')body=`<p class="helper">装備外の基礎値のみ入力してください。ゲーム内の最終値を入れると二重計上になります。わからない項目は空欄のままで大丈夫です。</p>${[['int','知力（装備外）'],['mr','Magic Resist（装備外）'],['armor','Armor（装備外）'],['maxHP','最大HP（装備外）'],['critChance','Crit率（装備外）'],['critRed','CritRed（装備外）'],['cdr','CDR（装備外）'],['mcr','MCR（装備外）'],['dodge','Dodge（装備外）'],['mana','最大Mana（装備外）']].map(([k,label])=>settingNumber('base.'+k,label,s.base?.[k]??'')).join('')}`;
-return `<div class="side-panel settings-panel"><div class="side-title"><div><small>BUILD CONFIGURATION</small><h2>ビルド設定</h2></div><button class="icon-btn" data-action="close-settings">×</button></div><label class="field"><span>設定項目</span><select id="settingsCategory">${[['paragon','Paragon'],['skills','スキル・ルーン'],['consumables','ポーション・料理'],['base','装備外の基礎値']].map(x=>opt(x[0],x[1],ui.settingsTab)).join('')}</select></label><div class="setting-form">${body}</div><div class="notice gentle">設定変更はこのビルドだけに反映。共有装備は別ビルドでも使用できます。</div></div>`;}
+return `<div class="side-panel settings-panel"><div class="side-title"><div><small>BUILD CONFIGURATION</small><h2>ビルド設定</h2></div><button class="icon-btn" data-action="close-settings">×</button></div><label class="field"><span>設定項目</span><select id="settingsCategory">${[['paragon','Paragon'],['runes','ルーン'],['consumables','ポーション・料理'],['base','装備外の基礎値']].map(x=>opt(x[0],x[1],ui.settingsTab)).join('')}</select></label><div class="setting-form">${body}</div><div class="notice gentle">設定変更はこのビルドだけに反映。共有装備は別ビルドでも使用できます。</div></div>`;}
 function settingNumber(key,label,value,min=0,max=9999){return `<label class="field"><span>${E(label)}</span><input type="number" min="${min}" max="${max}" step="any" data-change="setting" data-key="${E(key)}" value="${E(value)}" /></label>`;}
 function renderModal(){if(!ui.modal)return '';let content='';if(ui.modal==='cloud')content=`<div class="modal-title"><h2>クラウド同期・GitHubログイン</h2><button data-action="modal-close" class="icon-btn">×</button></div><p class="helper">Supabaseの専用プロジェクトを接続すると、GitHubでログインしてPC・スマホのデータを同期できます。接続前もブラウザ内で自動保存されます。</p>${window.DBP_CLOUD_CONFIG?.url?`<div class="notice gentle">専用のSupabaseプロジェクトに接続設定済み · ${E(cloudCfg?.url)}</div>`:`<label class="field"><span>Supabase Project URL</span><input id="cloudUrl" placeholder="https://xxxx.supabase.co" value="${E(cloudCfg?.url||'')}"></label><label class="field"><span>Publishable / anon key（公開用キーのみ）</span><input id="cloudKey" placeholder="sb_publishable_..." value="${E(cloudCfg?.key||'')}"></label>`}<div class="notice"><b>セキュリティ</b><p>service_role・secretキーは絶対に入力しないでください。保存先のテーブルにはRLSが必要です。</p></div><div class="modal-actions">${window.DBP_CLOUD_CONFIG?.url?"":`<button class="btn outline" data-action="cloud-config-save">接続設定を保存</button>`}${session?`<button class="btn" data-action="cloud-signout">ログアウト</button>`:`<button class="btn" data-action="cloud-login" ${!cloudCfg?.url?'disabled':''}>GitHubでログイン</button>`}</div>${session?`<p class="helper">ログイン中 · ${E(session.user?.email||session.user?.id||'認証済み')}</p><button class="text-btn" data-action="cloud-pull">クラウドから再読み込み</button>`:''}`;
 if(ui.modal==='measurement'){const date=new Date().toISOString().slice(0,10);content=`<div class="modal-title"><h2>ゲーム内実測を記録</h2><button data-action="modal-close" class="icon-btn">×</button></div><p class="helper">Aura等の状態と装備構成のスナップショットとして保存。予測値への無条件加算はしません。</p><label class="field"><span>測定日</span><input id="measurementDate" type="date" value="${date}"/></label><div class="measure-grid">${[['critChance','Crit率 %'],['critRed','CritRed %'],['cdr','CDR %'],['mcr','MCR %'],['dodge','Dodge %'],['mr','Magic Resist'],['armor','Armor'],['maxHP','最大HP'],['as','AS'],['mana','最大Mana']].map(([k,l])=>`<label class="field"><span>${l}</span><input type="number" step="any" id="measure-${k}" placeholder="任意"/></label>`).join('')}</div><label class="field"><span>測定メモ</span><input id="measurementMemo" placeholder="Aura ON、ダミー測定など"/></label><div class="modal-actions"><button class="btn" data-action="measurement-save">測定値を保存</button></div>`;}
@@ -214,7 +206,7 @@ case 'stat-preset':{
  }});
  return;
 }
-case 'combat-open-runes':ui.tab='stats';ui.settingsOpen=true;ui.settingsTab='skills';render();break;
+case 'combat-open-runes':ui.tab='stats';ui.settingsOpen=true;ui.settingsTab='runes';render();break;
  case 'combat-toggle-settings':ui.combatSkillsOpen=!ui.combatSkillsOpen;render();break;
  case 'combat-debuffs':{if(value!=='on'&&value!=='off')return;modify(()=>{b.settings.combat??={};for(const key of window.DBPCombat.debuffKeys)b.settings.combat[key]=value==='on'});return;}
  case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-talent':ui.tab='talent';ui.settingsOpen=false;render();break;case 'tab-pet':ui.tab='pet';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;case 'tab-combat':ui.tab='combat';ui.settingsOpen=false;render();break;case 'combat-defense-type':{const type=window.DBPCombat?.validateInput('defenseType',value);if(type)modify(()=>{b.settings.combat??={};b.settings.combat.defenseType=type});break;}
@@ -302,10 +294,6 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
     modify(()=>{b.settings.statView??={};b.settings.statView.powers??={};b.settings.statView.powers[key]=Boolean(v)});
     return;
   }
- if(kind==='skill-config-select'){if(window.DBPCombat.abilities[v]){ui.skillConfigId=v;render()}return}
- if(kind==='skill-rank'){const key=el.dataset.key,lv=Number(v),valid=Object.entries(window.DBPCombat.abilities).some(([id,skill])=>(skill[5]||id)===key);
-  if(!valid||!Number.isInteger(lv)||lv<1||lv>10){render();flash('習得スキルLvは1〜10で設定してください');return}
-  modify(()=>{b.settings.skillRanks??={};b.settings.skillRanks[key]=lv});return}
  if(kind==='rune-slot'){
   const R=window.DBPRunes,index=Number(el.dataset.idx);
   if(!R.canSelect(b.settings,index,v)){render();flash('セットルーンは同じ番号を2枠に装備できません');return}
