@@ -117,10 +117,9 @@ assert.equal(powerOff.active.effective.independentDamageBonus||0,0);
 assert.equal(powerOff.active.effective.move,view.active.effective.move,'disabled Windcaller cannot add +50');
 assert(V.controls(storm).includes('data-change="stat-power" data-key="greaves"'));
 assert(V.controls(storm).includes('data-change="stat-source" data-key="paragon"'));
-assert(V.controls(storm).includes('data-change="combat" data-key="elementalStacks"'));
-assert(V.controls(storm).includes('data-change="combat" data-key="enemyHealth"'));
-assert(V.controls(storm).includes('data-change="combat" data-key="forceHealthy"'));
-assert(V.controls(storm).includes('data-change="combat" data-key="burned"'));
+assert(!V.controls(storm).includes('data-change="combat"'),'combat activation and skill controls belong only in the combat tab');
+assert(!V.controls(storm).includes('発動状態・スキル条件を指定'),'duplicate scenario section was removed');
+assert(V.controls(storm).includes('同タブに保存された設定を参照'),'stats explains combat-state source');
 assert(V.statRow('lightning',storm,'lightning').includes('stats-compare-num'));
 assert(V.summary(storm).includes('補正込み'));
 // Simulate app events; UI controls persist only the per-build scenario and never alter equipment.
