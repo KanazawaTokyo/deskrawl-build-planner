@@ -37,7 +37,7 @@ clone.settings.statView={groups:{unique:false},powers:{}};
 const noUnique=V.evaluate(doc,clone);
 assert.equal(noUnique.active.effective.lightning,165.1,'disabling unique removes Pauldron AND Prism but keeps talents');
 assert.equal(noUnique.unique.greavesCrit,0);
-assert.equal(noUnique.active.effective.critDamage,view.active.effective.critDamage-220,'Divine Grandmother and Sage unique Crit both excluded?');
+assert.equal(noUnique.active.effective.critDamage,view.active.effective.critDamage-120,'Grandmother +120 unique Crit is excluded; Sage Crit +100 is a fixed gear OP');
 clone.settings.statView={groups:{},powers:{shoulder:false}};
 const noShoulder=V.evaluate(doc,clone);
 assert.equal(noShoulder.unique.stacks,0);
