@@ -7,6 +7,48 @@
 const C=window.DBPCalc;
 const types={physical:['物理','physical','physicalDR'],fire:['炎','fire','fireDR'],cold:['冷気','cold','coldDR'],lightning:['雷','lightning','lightningDR'],poison:['毒','poison','poisonDR'],arcane:['アルケイン','arcane','arcaneDR']};
 const attacks={basic:['通常攻撃','basicAttack'],strong:['強攻撃','strongAttack'],special:['特殊攻撃','specialDamage']};
+/* Sorcerer skill tooltip coefficients, skill Lv1 and additive percent points per level.
+ * Updated for game 1.1.0 where Ice Shards / Flame Lightning changed.
+ * Two Flame Lightning entries represent separate fire and lightning hit portions.
+ */
+const abilities={
+ fireBall:['Fire Ball（炎）','basic','fire',75,2.5],
+ iceShards:['Ice Shards（冷気）','basic','cold',125,5,'','frozenBarrage'],
+ electrocute:['Electrocute（雷）','basic','lightning',70,2.5],
+ flameLightningFire:['Flame Lightning（炎成分）','basic','fire',60,2,'flameLightning'],
+ flameLightningLightning:['Flame Lightning（雷成分）','basic','lightning',65,2.5,'flameLightning'],
+ flameBreath:['Flame Breath（炎）','strong','fire',180,6],
+ iceMeteor:['Ice Meteor（冷気／1tick）','strong','cold',65,2],
+ lightningStorm:['Lightning Storm（雷／1hit）','strong','lightning',150,7.5,'','stormcaller'],
+ frostBeam:['Frost Beam（冷気／1tick）','strong','cold',60,2],
+ iceNova:['Ice Nova（冷気）','special','cold',30,1],
+ fireElemental:['Fire Elemental（炎／1hit）','special','fire',80,3,'','infernalCovenant'],
+ iceBlock:['Ice Block（冷気／破砕）','special','cold',500,15],
+ fireMeteor:['Fire Meteor（炎）','special','fire',400,15],
+ lightningCloud:['Lightning Cloud（雷／1hit）','special','lightning',50,2]
+};
+const skillOptions=Object.entries(abilities).map(([id,s])=>[id,s[0]]);
+const debuffKeys=Object.freeze(['vulnerable','burned','slowed','stunned','immobilized','frozen','bleeding','poisoned']);
+const runeNames={frozenBarrage:'Frozen Barrage',stormcaller:'Stormcaller',infernalCovenant:'Infernal Covenant'};
+function skillRunes(id){
+ const s=abilities[id];if(!s)return [];
+ const key=s[5]||id;
+ return [...(id==='iceBlock'?[]:[{key:key+':grand',label:'Grand Rune',base:4},{key:key+':normal',label:'通常 Rune',base:2}]),
+  ...(s[6]?[{key:s[6]+':1',label:runeNames[s[6]]+' (I)',base:4},{key:s[6]+':2',label:runeNames[s[6]]+' (II)',base:4}]:[])];
+}
+function skillRank(settings,stats,id){
+ const s=abilities[id];if(!s)return null;
+ const key=s[5]||id,stored=settings?.skillRanks?.[key],valid=Number.isInteger(stored)&&stored>=1&&stored<=10;
+ const learned=valid?stored:10,equip=Math.max(0,Math.floor(Number(stats?.effective?.abilityLevels)||0));
+ const runes=skillRunes(id).map(r=>{
+  const lv=Number(settings?.runeRanks?.[r.key]||0);
+  return {...r,level:lv,bonus:Number.isInteger(lv)&&lv>=1&&lv<=6?r.base+Math.floor(lv/3):0};
+ });
+ const runeBonus=runes.reduce((sum,r)=>sum+r.bonus,0),level=learned+equip+runeBonus;
+ return {id,key,label:s[0],attackType:s[1],damageType:s[2],learned,assumed:!valid,equip,runeBonus,runes,level,
+ percent:Math.round((s[3]+(level-1)*s[4])*1000)/1000};
+}
+
 const defaults=Object.freeze({
  damageType:'lightning',attackType:'special',abilityId:'other',skillPercent:100,skillFlat:0,heroLevel:70,elementalStacks:5,windcallerActive:false,unyieldingActive:false,
  enemyHealth:50,forceHealthy:false,forceInjured:false,elite:false,vulnerable:false,slowed:false,immobilized:false,stunned:false,frozen:false,lightningAbility:false,burned:false,distant:false,bleeding:false,poisoned:false,
@@ -23,7 +65,7 @@ const num=(x,fallback=0)=>{const n=Number(x);return Number.isFinite(n)?n:fallbac
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 function validateInput(key,value){
  if(key==='attackType')return Object.hasOwn(attacks,value)?value:null;
- if(key==='abilityId')return ['other','lightningStorm'].includes(value)?value:null;
+ if(key==='abilityId')return value==='other'||Object.hasOwn(abilities,value)?value:null;
  if(key==='damageType'||key==='defenseType')return Object.hasOwn(types,value)?value:null;
  if(boolKeys.has(key))return value===true;
  if(Object.hasOwn(ranges,key)){
@@ -164,7 +206,12 @@ function share(layers){
  return layers.map(x=>({...x,share:total>0&&x.factor>1?Math.log(x.factor)/total*100:0}));
 }
 function attack(stats,settings,options,context={}){
- const q=scenario(options),base=baseline(stats,settings),element=types[q.damageType][1],selected=attacks[q.attackType][1];
+ const q=scenario(options),skill=skillRank(settings,stats,q.abilityId);
+ if(skill){
+  q.attackType=skill.attackType;q.damageType=skill.damageType;q.skillPercent=skill.percent;
+  q.skillFlat=0;q.heroLevel=70;q.lightningAbility=skill.damageType==='lightning';
+ }
+ const base=baseline(stats,settings),element=types[q.damageType][1],selected=attacks[q.attackType][1];
  const unique=uniqueBonuses(stats,q,context);
  const weaponDamage=get(stats,'weaponDamage'),flatDamage=get(stats,'damage'),primary=get(stats,'int')+base.int;
  const eleValue=get(stats,element)+unique.stackBonus+unique.prismBonus,allValue=get(stats,'allDamage');
@@ -212,7 +259,7 @@ function attack(stats,settings,options,context={}){
  }
  const normal=hit(false),critical=hit(true),prob=critChance/100;
  const expected=normal&&critical?normal.final*(1-prob)+critical.final*prob:null;
- return {settings:q,base,weaponDamage,flatDamage,primary,eleValue,allValue,conditionValue,conditions,unique,
+ return {settings:q,skill,base,weaponDamage,flatDamage,primary,eleValue,allValue,conditionValue,conditions,unique,
  atkValue,critChance,critBonus,targetCritRed,critMult,elemMult,primaryMult,condMult,attackMult,
  armorCut,typeCut,allCut,vulnMult,resistMult,skillMult,layers,normal,critical,expected,
  hasWeapon:weaponDamage>0,equippedEffects:context,estimated:true};
@@ -254,5 +301,5 @@ function defense(stats,settings,options,context={}){
  const byType=Object.keys(types).map(type=>defenseFor(stats,settings,q,type,context));
  return {settings:q,byType,selected:byType.find(x=>x.key===q.defenseType)};
 }
-window.DBPCombat={types,attacks,defaults,ranges,knownPowers,validateInput,scenario,baseline,resistanceCut,equippedEffects,uniqueBonuses,conditional,attack,defense};
+window.DBPCombat={types,attacks,abilities,skillOptions,skillRunes,skillRank,debuffKeys,defaults,ranges,knownPowers,validateInput,scenario,baseline,resistanceCut,equippedEffects,uniqueBonuses,conditional,attack,defense};
 })();
