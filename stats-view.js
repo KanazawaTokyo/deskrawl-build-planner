@@ -7,6 +7,7 @@ const C=window.DBPCalc,B=window.DBPCombat;
 const groups=[
  ['base','キャラクター基礎値','装備外の入力値・レベル初期値'],
  ['gems','宝石','装備中ソケットの数値'],
+ ['runes','ルーン','6枠のステータス・2/4/6セット効果'],
  ['paragon','Paragon','割り振りポイント'],
  ['talents','タレント','通常効果・スキル限定効果'],
  ['pet','ペット','パッシブ・継承・ペット装備'],
