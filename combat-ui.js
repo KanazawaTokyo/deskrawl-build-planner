@@ -58,7 +58,7 @@ function trace(a){
  ['対象の属性・共通軽減',fx((1-a.typeCut)*(1-a.allCut)),a.normal.final]
  ];
  return '<details class="combat-trace"><summary>数式への代入・通常ヒットの計算順序を開く</summary>'+
-  '<p>基礎 = floor(((武器ダメージ+固定ダメージ)×スキル倍率+スキル固定値)×(1+知力/100))</p>'+
+  '<p>基礎 = 切り捨て(((武器ダメージ+固定ダメージ)×スキル倍率+スキル固定値)×(1+知力/100))</p>'+
   '<div class="combat-trace-list">'+rows.map(([label,mult,result])=>'<div><span>'+safe(label)+'</span><small>'+safe(mult)+'</small><b>'+num(result)+'</b></div>').join('')+'</div>'+
   '<p>クリティカルは属性補正後・条件補正前に加算されます。ゲーム内部の32ビット浮動小数点・偶数丸めの差は完全再現していません。</p></details>';
 }
@@ -158,7 +158,7 @@ function render(stats,settings,context={},options={}){
  '<p class="helper">ポールドロンの+100%は属性ダメージの加算枠、グリーヴと篭手の+150%はクリティカルダメージの加算枠、鉄兜は独立倍率です。プリズムの心臓はスタック反映後の最高属性ボーナスを25%増加すると仮定しています。</p>'+
  uniquePanel(a,context)+'</section>'+runePanel+
  '<div class="combat-columns"><section class="card combat-card"><div class="card-heading"><div><h2>倍率グループの内訳</h2><span>各倍率の加算値（%）、乗算値、相対寄与率</span></div></div>'+attackTable(a,stats)+
- '<div class="notice gentle">寄与率は<strong>log(倍率)</strong>で増幅を100%に分解した比較指標です。「+100%」の倍率を複数足し合わせる意味ではありません。基礎の固定ダメージは寄与率から除外しています。</div></section>'+
+ '<div class="notice gentle">寄与率は<strong>倍率の対数</strong>で増幅を100%に分解した比較指標です。「+100%」の倍率を複数足し合わせる意味ではありません。基礎の固定ダメージは寄与率から除外しています。</div></section>'+
  '<section class="card combat-card"><div class="card-heading"><div><h2>条件付きボーナス</h2><span>成立している条件だけが同じグループに加算</span></div></div>'+
  '<p class="combat-inline-formula">条件倍率 = 1 + ('+pct(a.conditionValue)+') = '+fx(a.condMult)+'</p>'+conditionTable(a)+
  '<div class="combat-form-title">計算の主要値</div>'+
