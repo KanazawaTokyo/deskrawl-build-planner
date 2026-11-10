@@ -156,19 +156,40 @@ function renderParagonSettings(s){
 }
 
 function renderSkillSettings(s){
- const B=window.DBPCombat;
+ const B=window.DBPCombat,R=window.DBPRunes;
  const selected=B.abilities[ui.skillConfigId]?ui.skillConfigId:B.abilities[s.combat?.abilityId]?s.combat.abilityId:'lightningStorm';
  const skill=B.abilities[selected],key=skill[5]||selected;
  const old=s.skillRanks?.[key],rank=Number.isInteger(old)&&old>=1&&old<=10?old:10;
- const runes=B.skillRunes(selected),stats=window.DBPStatsView.evaluate(state,build()).active;
- const level=B.skillRank(s,stats,selected);
- return '<p class="helper">スキルLvは習得Lv・装備の全アビリティLv・登録されたルーンから計算します。</p>'+
- '<label class="field"><span>設定するスキル</span><select data-change="skill-config-select">'+B.skillOptions.map(([id,label])=>opt(id,label,selected)).join('')+'</select></label>'+
- '<label class="field"><span>習得スキルLv（1〜10）</span><select data-change="skill-rank" data-key="'+E(key)+'">'+Array.from({length:10},(_,i)=>opt(i+1,'Lv '+(i+1),rank)).join('')+'</select></label>'+
- '<div class="form-title"><b>装着中のルーン</b><span>Lv0 = 未装備</span></div>'+
- (runes.length?runes.map(r=>'<label class="field"><span>'+E(r.label)+'</span><select data-change="rune-rank" data-key="'+E(r.key)+'">'+Array.from({length:7},(_,lv)=>opt(lv,lv===0?'なし':'Lv '+lv+'（スキルLv +'+(r.base+Math.floor(lv/3))+'）',s.runeRanks?.[r.key]||0)).join('')+'</select></label>').join(''):'<p class="helper">登録済みのLv補正ルーンはありません。</p>')+
- '<div class="notice gentle">習得 '+level.learned+' ＋ 装備 '+level.equip+' ＋ ルーン '+level.runeBonus+' → <strong>実効 Lv'+level.level+'</strong>／武器倍率 '+level.percent+'%'+(level.assumed?'（習得Lvは未登録のためLv10と仮定）':'')+'</div>'+
- '<p class="helper">ルーンは実際に装着したものだけ入力してください。未登録ルーンは加算せず、全スキルLvの装備補正は自動反映します。</p>';
+ const config=R.selection(s),stats=window.DBPStatsView.evaluate(state,build()).active;
+ const calculated=B.skillRank(s,stats,selected);
+ const slots=Array.from({length:6},(_,index)=>{
+  const current=config.slots[index],rune=R.catalog[current],usedSetIds=new Set(config.slots.filter((id,i)=>i!==index&&R.catalog[id]?.rarity==='set'));
+  const options=rarity=>R.selectable.filter(r=>r.rarity===rarity).map(r=>
+   '<option value="'+E(r.id)+'"'+(current===r.id?' selected':'')+(usedSetIds.has(r.id)?' disabled':'')+'>'+E(r.name)+'</option>'
+  ).join('');
+  const details=rune?(rune.skill?'対応スキル +'+rune.level+'Lv'+(rune.stats.length?' / ':''):'')+R.statsText(rune):'未装着';
+  return '<label class="rune-slot-entry"><span class="rune-slot-heading"><b>ルーン '+(index+1)+'</b><small>'+(rune?(rune.rarity==='set'?'セット':'レジェンド'):'空き')+'</small></span>'+
+   '<select data-change="rune-slot" data-idx="'+index+'"><option value=""'+(!current?' selected':'')+'>なし</option>'+
+   '<optgroup label="レジェンド（Grand）">'+options('legendary')+'</optgroup>'+
+   '<optgroup label="セットルーン">'+options('set')+'</optgroup></select>'+
+   '<small class="rune-slot-effect">'+E(details)+'</small></label>';
+ }).join('');
+ const summaries=Object.entries(R.sets).map(([id,set])=>{
+  const count=config.counts[id],bonuses=config.bonuses.filter(b=>b.set===id);
+  return '<div class="rune-set-status"><div class="rune-set-heading"><b>'+E(set.name)+'</b><span>'+count+' / 6</span></div>'+
+   bonuses.map(b=>'<div class="rune-set-bonus'+(b.active?' active':'')+'"><strong>'+b.threshold+'セット '+(b.active?'✓':'—')+'</strong><span>'+E(b.label)+'</span></div>').join('')+'</div>';
+ }).join('');
+ return '<p class="helper">習得Lvだけ設定し、ルーンは6枠から装着します。レジェンド以上のみ表示。ルーンの強化レベルは<strong>全てLv6（MAX）</strong>で固定します。</p>'+
+  '<label class="field"><span>設定するスキル</span><select data-change="skill-config-select">'+B.skillOptions.map(([id,label])=>opt(id,label,selected)).join('')+'</select></label>'+
+  '<label class="field"><span>習得スキルLv（1〜10）</span><select data-change="skill-rank" data-key="'+E(key)+'">'+Array.from({length:10},(_,i)=>opt(i+1,'Lv '+(i+1),rank)).join('')+'</select></label>'+
+  '<div class="form-title"><b>装着中のルーン（6枠）</b><span>'+config.equipped.length+' / 6 装備中</span></div>'+
+  '<div class="rune-slot-list">'+slots+'</div>'+
+  (config.issues.length?'<p class="notice">'+E(config.issues.join(' / '))+'</p>':'')+
+  '<div class="form-title"><b>ルーンセット効果</b><span>2 / 4 / 6 個で発動</span></div>'+
+  '<div class="rune-sets-summary">'+summaries+'</div>'+
+  '<div class="notice gentle">実効スキルLv：習得 '+calculated.learned+' ＋ 装備 '+calculated.equip+' ＋ ルーン '+calculated.runeBonus+
+  ' ＝ <strong>Lv'+calculated.level+'</strong>／武器倍率 '+calculated.percent+'%'+(calculated.assumed?'（習得Lvは未登録のため10と仮定）':'')+'</div>'+
+  '<p class="helper">セット数値補正はステータスと戦闘計算に反映します。追加弾・追加スキルの効果はセット発動として表示しますが、単発ダメージに無条件で足しません。旧形式のルーンLv入力は自動装着せず保持しています。</p>';
 }
 function renderSettings(){const b=build(),s=b.settings||{},t=s.talents||{},pet=s.pet||{};let body='';if(ui.settingsTab==='paragon')body=renderParagonSettings(s);
 else if(ui.settingsTab==='skills')body=renderSkillSettings(s);
@@ -284,9 +305,12 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
  if(kind==='skill-rank'){const key=el.dataset.key,lv=Number(v),valid=Object.entries(window.DBPCombat.abilities).some(([id,skill])=>(skill[5]||id)===key);
   if(!valid||!Number.isInteger(lv)||lv<1||lv>10){render();flash('習得スキルLvは1〜10で設定してください');return}
   modify(()=>{b.settings.skillRanks??={};b.settings.skillRanks[key]=lv});return}
- if(kind==='rune-rank'){const key=el.dataset.key,lv=Number(v),valid=Object.keys(window.DBPCombat.abilities).some(id=>window.DBPCombat.skillRunes(id).some(r=>r.key===key));
-  if(!valid||!Number.isInteger(lv)||lv<0||lv>6){render();flash('ルーンLvは0〜6で設定してください');return}
-  modify(()=>{b.settings.runeRanks??={};b.settings.runeRanks[key]=lv});return}
+ if(kind==='rune-slot'){
+  const R=window.DBPRunes,index=Number(el.dataset.idx);
+  if(!R.canSelect(b.settings,index,v)){render();flash('セットルーンは同じ番号を2枠に装備できません');return}
+  modify(()=>{b.settings.runeSlots=R.selection(b.settings).slots;b.settings.runeSlots[index]=v});
+  return;
+ }
  if(kind==='combat'){const key=el.dataset.key,raw=el.type==='checkbox'?el.checked:el.value;const verified=window.DBPCombat?.validateInput(key,raw);if(verified===null||verified===undefined){flash('計算条件の入力範囲を確認してください');render();return}modify(()=>{
  b.settings.combat??={};
  b.settings.combat[key]=verified;
