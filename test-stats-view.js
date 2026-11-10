@@ -64,7 +64,7 @@ clone.settings.combat={abilityId:'lightningStorm',attackType:'strong',damageType
 const storm=V.evaluate(doc,clone);
 assert.equal(storm.unique.greavesCrit,150);
 assert.equal(storm.unique.gauntletCrit,150);
-assert.equal(storm.active.effective.skillCritDamage-storm.active.effective.critDamage,396,
+assert(Math.abs(storm.active.effective.skillCritDamage-storm.active.effective.critDamage-396)<1e-7,
  'Lightning-only talent +96, Greaves+150 and Gauntlets+150 combine only on selected skill');
 assert.equal(storm.active.effective.critDamage,view.active.effective.critDamage,
  'skill-specific modifiers must NOT change generic CritDamage');
