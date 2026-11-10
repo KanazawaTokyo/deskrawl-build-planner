@@ -46,12 +46,13 @@ function get(stats,key){
 }
 function baseline(stats,settings){
  const b=settings?.base||{};
+ const enabled=settings?.statView?.groups?.base!==false;
  const missing=k=>b[k]===undefined||b[k]===null||b[k]==='';
  return {
-  int:missing('int')&&!(settings?.talentPoints&&typeof settings.talentPoints==='object')?10:0,
-  critChance:missing('critChance')?5:0,
-  critDamage:missing('critDamage')?150:0,
-  dodge:missing('dodge')?5:0
+  int:enabled&&missing('int')&&!(settings?.talentPoints&&typeof settings.talentPoints==='object')?10:0,
+  critChance:enabled&&missing('critChance')?5:0,
+  critDamage:enabled&&missing('critDamage')?150:0,
+  dodge:enabled&&missing('dodge')?5:0
  };
 }
 // Registry for equipped unique powers. Temporary effects are scenario-only.
