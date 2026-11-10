@@ -6,7 +6,7 @@ const toast={textContent:'',classList:{add(){},remove(){}}};
 const doc={getElementById:id=>id==='app'?app:id==='toast'?toast:null,createElement:()=>({style:{},click(){}}),body:{appendChild(){}},addEventListener(){}};
 const ctx={window:null,document:doc,localStorage:{getItem:k=>local[k]||null,setItem:(k,v)=>local[k]=v,removeItem:k=>delete local[k]},Date,JSON,Math,Set,Number,String,URL,URLSearchParams,Blob,Map,crypto:require('node:crypto').webcrypto,console,history:{replaceState(){}},location:{hash:'',pathname:'/',search:'',origin:'https://kanazawatokyo.github.io'},setTimeout:()=>0,clearTimeout:()=>{},confirm:()=>true,prompt:()=>'Test set',fetch:()=>Promise.reject(Error('disabled'))};
 ctx.window=ctx;ctx.addEventListener=()=>{};vm.createContext(ctx);
-for(const f of ['master.js','calc.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+f,'utf8'),ctx,{filename:f});
+for(const f of ['master.js','calc.js','combat.js','stats-view.js','app.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+f,'utf8'),ctx,{filename:f});
 const click=(action,id)=>events.click({target:{closest:()=>({dataset:{action,id}})}});
 const change=(kind,id,val,idx,extra={})=>events.change({target:{dataset:{change:kind,id,...(idx===undefined?{}:{idx:String(idx)}),...extra},value:String(val),checked:val===true,type:typeof val==='boolean'?'checkbox':'text'}});
 const st=ctx.DBPApp.getState();const b=st.builds[0];const item=st.items.find(x=>x.id===b.loadout.chest);
