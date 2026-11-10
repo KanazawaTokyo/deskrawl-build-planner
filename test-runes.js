@@ -79,11 +79,13 @@ Object.assign(ctx,{document,crypto:require('node:crypto').webcrypto,
  fetch:()=>Promise.reject(Error('network unavailable')),location:{hash:'',pathname:'/',search:'',origin:'file://'},
  history:{replaceState(){}}});
 ctx.window.addEventListener=()=>{};vm.runInContext(read('pet-ui.js'),ctx);vm.runInContext(read('talent-ui.js'),ctx);
+// Simulate opening a pre-existing cloud/local build with learned skill ranks.
+disk.deskrawl_planner_v01=JSON.stringify({...doc,builds:doc.builds.map(b=>({...b,settings:{...b.settings,skillRanks:{lightningStorm:7}}}))});
 vm.runInContext(read('app.js'),ctx);
 const click=(action,value)=>events.click({target:{closest:()=>({dataset:{action,value}})}});
 const change=(kind,idx,value)=>events.change({target:{id:'',dataset:{change:kind,idx:String(idx)},type:'select-one',value}});
 const active=()=>ctx.DBPApp.getState().builds[0];
-active().settings.skillRanks={lightningStorm:7}; // Previously stored learned levels remain supported.
+assert.equal(active().settings.skillRanks.lightningStorm,7,'existing learned rank loaded from storage');
 click('tab-stats');click('settings');events.change({target:{id:'settingsCategory',value:'runes',dataset:{}}});
 assert(app.innerHTML.includes('>ルーン</option>'),'settings category is now rune-only');
 assert(!app.innerHTML.includes('data-change="skill-rank"'),'no learned-rank editing in rune UI');
