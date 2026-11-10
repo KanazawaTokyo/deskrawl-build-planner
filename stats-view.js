@@ -171,35 +171,52 @@ function column(k,v){
  const n=v?.effective?.[k];
  return clean(C.format(k,n===undefined?0:n));
 }
-function deltaText(k,a,b){
- const v=(b?.effective?.[k]||0)-(a?.effective?.[k]||0);
- return (v>0?'+':'')+clean(C.format(k,v));
+/** A single cap registry (DBP.limits) is shared by the combat-facing
+ * stat calculation, comparison labels, and unused-point display.
+ * There is no known cap for every other stat; those show a dash.
+ */
+function capOf(key){
+ const cap=window.DBP.limits[key];
+ return Number.isFinite(cap)?cap:null;
+}
+function statLabel(key){
+ const label=C.labels[key]||key,cap=capOf(key);
+ return cap===null?label:label+'（上限：'+cap+'%）';
+}
+function excessValue(key,result){
+ const cap=capOf(key);
+ if(cap===null)return null;
+ const raw=result?.raw?.[key];
+ return Number.isFinite(raw)?Math.max(0,Math.round((raw-cap)*1e6)/1e6):0;
+}
+function excessText(key,result){
+ const amount=excessValue(key,result);
+ return amount===null?'—':C.format(key,amount);
 }
 function statRow(key,v,selected){
- const label=C.labels[key]||key,base=v.base.effective[key]||0,eff=v.active.effective[key]||0;
- const change=eff-base;
+ const extra=excessValue(key,v.active);
  return '<button data-action="stat" data-value="'+clean(key)+'" class="stat-row stats-compare-row'+(selected===key?' chosen':'')+'">'+
- '<span class="stats-compare-name">'+clean(label)+'</span>'+
+ '<span class="stats-compare-name">'+clean(statLabel(key))+'</span>'+
  '<span class="stats-compare-num">'+column(key,v.base)+'</span>'+
  '<b class="stats-compare-num">'+column(key,v.active)+'</b>'+
- '<span class="stats-compare-delta '+(change>0?'positive':change<0?'negative':'neutral')+'">'+deltaText(key,v.base,v.active)+'</span>'+
+ '<span class="stats-compare-delta '+(extra>0?'negative':'neutral')+'">'+excessText(key,v.active)+'</span>'+
  '</button>';
 }
 function summary(v){
  const keys=comparisonKeys(v.settings);
  if(!keys.length)return '<div class="stats-compare-empty">比較するステータスが未選択です。下の「すべてのステータス」から項目を開き、右側の「ステータス比較に表示」をチェックしてください。</div>';
  return '<div class="stats-compare-summary">'+keys.map(key=>{
-  const change=(v.active.effective[key]||0)-(v.base.effective[key]||0);
+  const extra=excessValue(key,v.active);
   return '<button type="button" data-action="stat" data-value="'+key+'" class="stats-compare-tile">'+
-   '<small>'+clean(C.labels[key]||key)+'</small>'+
+   '<small>'+clean(statLabel(key))+'</small>'+
    '<div><span>装備のみ</span><b>'+column(key,v.base)+'</b></div>'+
    '<div><span>補正込み</span><strong>'+column(key,v.active)+'</strong></div>'+
-   '<small class="'+(change>0?'positive':change<0?'negative':'neutral')+'">差分 '+deltaText(key,v.base,v.active)+'</small>'+
+   '<small class="'+(extra>0?'negative':'neutral')+'">過剰分 '+excessText(key,v.active)+'</small>'+
    '</button>';
  }).join('')+'</div>';
 }
 function tableHeader(){
- return '<div class="stats-compare-header"><span>項目</span><span>装備のみ</span><span>補正込み</span><span>差分</span></div>';
+ return '<div class="stats-compare-header"><span>項目</span><span>装備のみ</span><span>補正込み</span><span>過剰分</span></div>';
 }
-window.DBPStatsView={groups,sections,statKeys,comparisonLimit,defaultComparisonKeys,comparisonKeys,nextComparisonKeys,gearOnlyFilters,config,gearOnly,evaluate,controls,statRow,summary,tableHeader};
+window.DBPStatsView={groups,sections,statKeys,comparisonLimit,defaultComparisonKeys,comparisonKeys,nextComparisonKeys,capOf,statLabel,excessValue,excessText,gearOnlyFilters,config,gearOnly,evaluate,controls,statRow,summary,tableHeader};
 })();
