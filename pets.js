@@ -16,14 +16,18 @@ const minions=[
 
 const gearTypes=[
  {id:'',name:'装備なし',rarity:null,slots:0},
- {id:'fine-saddle',name:'Fine Saddle',rarity:'Rare',slots:2},
- {id:'golden-horseshoe',name:'Golden Horseshoe',rarity:'Rare',slots:2},
- {id:'iron-barding',name:'Iron Barding',rarity:'Rare',slots:2},
+ {id:'fine-saddle',name:'Fine Saddle',rarity:'Rare',slots:3},
+ {id:'golden-horseshoe',name:'Golden Horseshoe',rarity:'Rare',slots:3},
+ {id:'iron-barding',name:'Iron Barding',rarity:'Rare',slots:3},
  {id:'saddle-of-the-golden-khan',name:'Saddle of the Golden Khan（Black Mist）',rarity:'Black Mist',slots:3},
  {id:'saddle-of-the-golden-khan-normal',name:'Saddle of the Golden Khan（通常Legendary）',rarity:'Legendary',slots:3}
 ];
 // Pet equipment uses a single combined Sorcerer affix pool, not the hero-slot
 // primary/secondary distinctions. No sockets and no item upgrades.
+// Expose three editable OPs for Rare/Legendary/Black Mist minion equipment.
+// References conflict on Rare rolls (WikiLy: 2; PlayOnGG: 3 primary + 1
+// secondary); user's observed three editable OPs take precedence here.
+// Existing OP values are preserved; never invent extra affixes.
 const gearAffixes=['damage','critDamage','as','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','maxHP','mana','cdr','armor','mr','dodge','armorBonus','lightningDR','arcaneDR','thorns','bonusHP','physicalDR','coldDR','poisonDR','mcr','fireDR','critRed','potionCharges','critChance','allDamage','int','fire','cold','lightning','distant','dot','burned',
 'loh','lifeKill','manaKill','regen','itemFind','goldFind','potionFind','xp','move'];
 const max850={
