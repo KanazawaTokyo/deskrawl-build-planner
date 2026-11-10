@@ -279,3 +279,20 @@
 .combat-ring-notice,.combat-ring-note{margin:10px 0 0;font-size:11px;line-height:1.75;color:var(--muted)}
 .combat-ring-notice{color:#c6e7da}
 .combat-ring-notice strong{color:#abf1da}
+
+/* Equipped legendary/divine powers: activation controls + attribution. */
+.combat-unique-controls{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.combat-unique-controls .field{min-width:215px;max-width:360px;flex:1}
+.combat-unique-controls .combat-check{align-self:flex-end}
+.combat-unique-card{min-width:0}
+.combat-unique-card .helper{line-height:1.8;margin-bottom:12px}
+.combat-unique-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.combat-unique-entry{border:1px solid var(--line);border-radius:10px;background:#101923;padding:13px;display:flex;flex-direction:column;gap:7px;min-width:0}
+.combat-unique-entry.active{border-color:#45695d;background:#142522}
+.combat-unique-entry.inactive{opacity:.72}
+.combat-unique-row{display:flex;justify-content:space-between;align-items:start;gap:8px}
+.combat-unique-row strong{font-size:12px;overflow-wrap:anywhere}
+.combat-unique-row span{font-size:11px;color:var(--mint);font-variant-numeric:tabular-nums;white-space:nowrap}
+.combat-unique-entry p{font-size:11px;color:#b9c7d2;line-height:1.6}
+.combat-unique-entry small{font-size:10px;color:var(--muted)}
+@media(max-width:650px){.combat-unique-list{grid-template-columns:1fr}.combat-unique-controls .field{max-width:none}}
