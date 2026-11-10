@@ -57,6 +57,9 @@ if(def?.rarity==='Divine'){
 if(armorSlots.has(item.slot)&&def?.rarity==='Black Mist')out.push({stat:'armor',value:Number((782*factor(item,'armor',selected)).toFixed(2)),status:'calculated',slot:'baseArmor',item:item.id});
 for(let i=0;i<(item.primary||[]).length;i++){const id=item.primary[i];const v=valueOf(item,id,i,level);if(id&&v)out.push({stat:id,...v,slot:'primary'+i,item:item.id});}
 if(item.secondary){const v=valueOf(item,item.secondary,'s',level);if(v)out.push({stat:item.secondary,...v,slot:'secondary',item:item.id});}
+// Non-scaling unique passive powers (e.g. Bottomless Potion Belt +4 charges).
+// Kept separate from random OPs and never multiplied by upgrade stages.
+for(const [stat,value] of (def?.powerStats||[]))out.push({stat,value,status:'verified',slot:'unique',item:item.id});
 return out;
 }
 function calc(doc,build,sub={}){

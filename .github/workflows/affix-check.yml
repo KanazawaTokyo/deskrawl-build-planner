@@ -18,6 +18,7 @@ jobs:
           node test-pets.js
           node test-combat.js
           node test-talents.js
+          node test-unique-effects.js
           node test.js
           node test-gems.js
           node test-cloud.js
