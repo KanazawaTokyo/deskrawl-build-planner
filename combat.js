@@ -29,22 +29,13 @@ const abilities={
 };
 const skillOptions=Object.entries(abilities).map(([id,s])=>[id,s[0]]);
 const debuffKeys=Object.freeze(['vulnerable','burned','slowed','stunned','immobilized','frozen','bleeding','poisoned']);
-const runeNames={frozenBarrage:'Frozen Barrage',stormcaller:'Stormcaller',infernalCovenant:'Infernal Covenant'};
-function skillRunes(id){
- const s=abilities[id];if(!s)return [];
- const key=s[5]||id;
- return [...(id==='iceBlock'?[]:[{key:key+':grand',label:'Grand Rune',base:4},{key:key+':normal',label:'通常 Rune',base:2}]),
-  ...(s[6]?[{key:s[6]+':1',label:runeNames[s[6]]+' (I)',base:4},{key:s[6]+':2',label:runeNames[s[6]]+' (II)',base:4}]:[])];
-}
 function skillRank(settings,stats,id){
  const s=abilities[id];if(!s)return null;
  const key=s[5]||id,stored=settings?.skillRanks?.[key],valid=Number.isInteger(stored)&&stored>=1&&stored<=10;
  const learned=valid?stored:10,equip=Math.max(0,Math.floor(Number(stats?.effective?.abilityLevels)||0));
- const runes=skillRunes(id).map(r=>{
-  const lv=Number(settings?.runeRanks?.[r.key]||0);
-  return {...r,level:lv,bonus:Number.isInteger(lv)&&lv>=1&&lv<=6?r.base+Math.floor(lv/3):0};
- });
- const runeBonus=runes.reduce((sum,r)=>sum+r.bonus,0),level=learned+equip+runeBonus;
+ const runes=window.DBPRunes?.selection(settings).equipped.filter(r=>r.skill===key)||[];
+ const runeBonus=stats?.sourceFlags?.runes===false?0:runes.reduce((sum,r)=>sum+r.level,0);
+ const level=learned+equip+runeBonus;
  return {id,key,label:s[0],attackType:s[1],damageType:s[2],learned,assumed:!valid,equip,runeBonus,runes,level,
  percent:Math.round((s[3]+(level-1)*s[4])*1000)/1000};
 }
@@ -301,5 +292,5 @@ function defense(stats,settings,options,context={}){
  const byType=Object.keys(types).map(type=>defenseFor(stats,settings,q,type,context));
  return {settings:q,byType,selected:byType.find(x=>x.key===q.defenseType)};
 }
-window.DBPCombat={types,attacks,abilities,skillOptions,skillRunes,skillRank,debuffKeys,defaults,ranges,knownPowers,validateInput,scenario,baseline,resistanceCut,equippedEffects,uniqueBonuses,conditional,attack,defense};
+window.DBPCombat={types,attacks,abilities,skillOptions,skillRank,debuffKeys,defaults,ranges,knownPowers,validateInput,scenario,baseline,resistanceCut,equippedEffects,uniqueBonuses,conditional,attack,defense};
 })();
