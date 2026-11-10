@@ -17,19 +17,73 @@ function effectText(def,rank){
  if(def.special==='iceNovaMana')text='アイスノヴァ：'+rank*12.5+'% で マナ '+(50+rank*10)+' 回復';
  return text||def.description;
 }
+/** Condensed, rank-aware descriptions sized for a five-column talent board.
+ * Inactive tiles preview the effect of one point; active tiles show their
+ * current investment. Detailed descriptions remain available in the sidebar.
+ */
+function tileEffect(def,rank){
+ const n=Math.max(1,rank),pct=v=>number(v)+'%',value=v=>number(v);
+ const descriptions={
+  arcaneInsight:()=> '知力 +'+value(5*n),
+  searingEdge:()=> '基本攻撃のクリティカル率 +'+pct(2.5*n),
+  frostArmor:()=> 'アーマー +'+value(35*n)+'／ボーナスアーマー +'+pct(3*n),
+  arcaneReach:()=> '基本攻撃の射程 +'+pct(6*n),
+  manaFlow:()=> '最大マナ +'+value(4*n),
+  flameWard:()=> '炎ダメージ +'+pct(5*n)+'／魔法耐性ボーナス +'+pct(4*n),
+  manaConduit:()=> '基本攻撃のマナ獲得 +'+value(n),
+  frostMastery:()=> '冷気ダメージ +'+pct(7*n),
+  stormExecutioner:()=> '雷ダメージ +'+pct(4*n)+'／エリートへのダメージ +'+pct(3*n),
+  manaRegeneration:()=> '毎秒マナ回復 +'+value(n),
+  arcaneMomentum:()=> '特殊攻撃後5秒、基本攻撃ダメージ +40%',
+  immolation:()=> 'ファイアボール：15%で燃焼を付与',
+  coldRetribution:()=> '被ダメージ −10%／近接攻撃者に4秒の冷気',
+  thunderstruck:()=> 'ライトニングストーム：15%で1秒スタン',
+  flameBreathCrit:()=> '烈焰吐息のクリティカルダメージ +'+pct(20*n),
+  elementalFury:()=> 'ファイアエレメンタルの攻撃速度 +'+pct(15*n),
+  frostAlacrity:()=> '冷気スキルのクールダウン短縮 +'+pct(4*n),
+  deepChill:()=> '冷気の減速・持続効果 +'+pct(6*n),
+  electricalShield:()=> 'ボーナスアーマー +'+pct(2*n)+'／近接被弾でマナ獲得',
+  arcaneReservoir:()=> '最大マナの'+pct(5*n)+'を知力に加算',
+  conflagration:()=> '燃焼中の敵へのダメージ +'+pct(12*n),
+  iceMeteorCost:()=> 'アイスメテオのマナ消費 −'+pct(4*n),
+  iceShardsDamage:()=> '氷の破片のダメージ +'+pct(10*n),
+  stormMastery:()=> '雷スキルのクリティカルダメージ +'+pct(12*n)+'／雷ダメージ軽減 +'+pct(3*n),
+  ignite:()=> 'クリティカルヒットで確実に燃焼',
+  flashFreeze:()=> '冷気付与時15%で凍結を追加',
+  staticCharge:()=> '雷スキルで確実に静電気を付与',
+  cataclysm:()=> 'ファイアメテオのダメージ +'+pct(15*n)+'／クールダウン +'+pct(2*n),
+  frozenReservoir:()=> 'アイスノヴァ：'+pct(12.5*n)+'でマナ'+value(50+10*n)+'回復',
+  permafrost:()=> '凍結の持続時間 +'+pct(8*n),
+  frozenRenewal:()=> 'アイスブロック中、毎秒最大HPの'+pct(5*n)+'回復',
+  electrocuteMana:()=> '感電のマナ獲得 +'+value(2*n),
+  plasmaConduction:()=> '炎雷：燃焼敵・静電気1重ごとに +'+pct(6*n),
+  auraWard:()=> 'フレイムオーラ中、アーマー・魔法耐性 +'+pct(10*n),
+  frostBeamExpansion:()=> 'フロストビームの幅・射程 +'+pct(10*n),
+  currentTransfer:()=> '静電気状態の敵死亡時、'+pct(20*n)+'で伝搬',
+  lingeringStorm:()=> 'サンダークラウドの持続時間 +'+pct(10*n),
+  arcaneExposure:()=> '強攻撃4回ごとに脆弱／脆弱敵へのダメージ +150%',
+  combustion:()=> '燃焼中の敵に命中時35%で爆発（武器900%）',
+  shatteringIce:()=> '凍結敵へのクリティカル率 +50%／ダメージ +250%',
+  stormConduit:()=> '感電・炎雷で30%追加発動／ライトニングストーム +50%'
+ };
+ const summary=descriptions[def.id]?descriptions[def.id]():def.description;
+ return (rank?'':'1pt時：')+summary;
+}
 function node(def,ranks,selected,canUse){
  const n=ranks[def.id]||0;
  const add=T.canAdd(ranks,def.id),remove=T.canRemove(ranks,def.id);
  const title=escape(def.name+'\n'+def.description+'\n現在 '+n+'/'+def.max);
  return '<div class="talent-node '+color[def.element]+(def.cap?' talent-capstone':'')+(n?' picked':'')+(!canUse?' locked':'')+(selected===def.id?' focused':'')+'">'+
  '<button type="button" class="talent-tile" data-action="talent-add" data-value="'+def.id+'" title="'+title+'" aria-label="'+escape(def.name+' '+n+'/'+def.max+'。クリックで習得、右クリックで返却。')+'">'+
- '<span class="talent-symbol">'+symbol[def.element]+'</span><span class="talent-name">'+escape(def.name)+'</span><span class="talent-rank">'+n+' / '+def.max+'</span>'+
+ '<span class="talent-name">'+escape(def.name)+'</span>'+
+ '<span class="talent-effect" title="'+escape(def.description)+'">'+escape(tileEffect(def,n))+'</span>'+
+ '<span class="talent-rank">'+n+' / '+def.max+'</span>'+
  '<span class="talent-gauge"><i style="width:'+(100*n/def.max)+'%"></i></span>'+
  (def.cap?'<span class="talent-cap-mark">キャップストーン '+['','Ⅰ','Ⅱ','Ⅲ'][def.cap]+'</span>':'')+
  '</button>'+
  '<div class="talent-node-actions">'+
  '<button type="button" data-action="talent-remove" data-value="'+def.id+'"'+(n&&!remove.ok?' disabled title="'+escape(remove.why)+'"':n?'':' disabled')+' aria-label="'+escape(def.name+'を1ポイント返却')+'">−</button>'+
- '<span>'+(n?effectText(def,n).slice(0,24):'クリックで習得')+'</span>'+
+ '<span>'+(n?'習得済み':'未習得')+'</span>'+
  '<button type="button" data-action="talent-add" data-value="'+def.id+'"'+(!add.ok||!canUse?' disabled title="'+escape(add.why||'旧形式の設定を切り替えてください')+'"':'')+' aria-label="'+escape(def.name+'に1ポイント追加')+'">+</button></div>'+
  '</div>';
 }
@@ -114,5 +168,5 @@ function render(settings,selected,stats){
  summary(data,stats)+'<p class="talent-reference"><a href="https://wikily.gg/deskrawl/talents/sorcerer" target="_blank" rel="noopener noreferrer">ゲームデータ出典：ソーサラーの戦闘タレント（WikiLy）</a></p>'+
  '</main>';
 }
-window.DBPTalentUI={render,effectText,eligibilityPanel};
+window.DBPTalentUI={render,effectText,tileEffect,eligibilityPanel};
 })();
