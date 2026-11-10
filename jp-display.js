@@ -176,6 +176,26 @@ if(R){
 }
 if(P){
  const passiveJP={
+ 'ocean-s-providence':'大海の恩寵',
+ 'ocean-providence':'大海の恩寵',
+ 'damage-to-slowed-ii':'減速中の敵へのダメージ II',
+ 'poison-damage-iii':'毒ダメージ III',
+ 'damage-to-stunned-iii':'スタン中の敵へのダメージ III',
+ 'strong-attack-iii':'強攻撃ダメージ III',
+ 'damage-to-bleeding-iii':'出血中の敵へのダメージ III',
+ 'damage-to-injured-iii':'負傷した敵へのダメージ III',
+ 'dodge-ii':'回避 II','strength-i':'力 I','vitality-i':'生命力 I',
+ 'damage-to-bleeding-ii':'出血中の敵へのダメージ II',
+ 'damage-to-poisoned-i':'毒状態の敵へのダメージ I',
+ 'gold-increase-i':'ゴールド増加 I',
+ 'damage-to-injured-ii':'負傷した敵へのダメージ II',
+ 'fire-damage-ii':'炎ダメージ II',
+ 'basic-attack-damage-ii':'基本攻撃ダメージ II',
+ 'critical-hit-chance-i':'クリティカル率 I',
+ 'poison-damage-i':'毒ダメージ I',
+ 'attack-speed-i':'攻撃速度 I',
+ 'thorn-i':'棘 I','physical-damage-i':'物理ダメージ I',
+ 'life-on-hit-i':'命中時ライフ回復 I','mana-i':'マナ I',
  'fast-travel-iii':'高速移動 III','fast-travel-ii':'高速移動 II','fast-travel-i':'高速移動 I',
  'massive-crab-claws':'巨大なカニのハサミ','thicker-shell':'より厚い甲羅','heatproof-shell':'耐火の甲羅',
  'thick-skin-iii':'厚い皮膚 III','thick-skin-ii':'厚い皮膚 II','thick-skin-i':'厚い皮膚 I',
@@ -206,7 +226,11 @@ if(P){
  'harvest-fury':'収穫の怒り','brine-spit':'ブラインスピット','healing-spirit':'癒しの精霊'
  };
  for(const p of P.minions){if(pets[p.id])p.name=pets[p.id];
-  for(const v of p.passives)v.label=passiveJP[v.id]||text(v.label);
+  for(const v of p.passives){
+   const translated=passiveJP[v.id]||text(v.label);
+   const trailing=String(v.label).match(/ (I|II|III)$/)?.[1]||'';
+   v.label=/[A-Za-z]{2,}/.test(translated)?(stat[v.stat]||text(v.label))+(trailing?' '+trailing:''):translated;
+  }
   for(const v of p.abilities){v.label=abilityJP[v.id]||text(v.label);v.at10=text(v.at10);}
  }
  const gearNames={'fine-saddle':'上質な鞍','golden-horseshoe':'黄金の蹄鉄','iron-barding':'鉄の馬鎧',
