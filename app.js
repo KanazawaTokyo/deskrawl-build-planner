@@ -96,8 +96,8 @@ function renderCombat(){
  if(sv.filters.unique)for(const [slot,id] of Object.entries(equipped.items))if(sv.slots[slot]!==false&&sv.powers[id]!==false)items[slot]=id;
  const context={...equipped,items,schrodingerRing:items.ring1==='schrodinger'||items.ring2==='schrodinger'};
  const stats=C.calc(state,b,{sourceFilters:{...sv.filters,powers:sv.powers,slots:sv.slots}});
- const ui=window.DBPCombatUI;
- return ui?ui.render(stats,b.settings||{},context,{skillsOpen:ui.combatSkillsOpen}):'<div class="notice">計算モジュールを読み込めませんでした。再読み込みしてください。</div>';
+ const combatUI=window.DBPCombatUI;
+ return combatUI?combatUI.render(stats,b.settings||{},context,{skillsOpen:ui.combatSkillsOpen}):'<div class="notice">計算モジュールを読み込めませんでした。再読み込みしてください。</div>';
 }
 function renderStats(){
  const b=build(),SV=window.DBPStatsView,v=SV.evaluate(state,b),r=v.active;
