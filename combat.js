@@ -138,32 +138,32 @@ function uniqueBonuses(stats,q,context={}){
  const elementalAbility=['fire','lightning','arcane'].includes(q.damageType);
  const greavesCrit=has('legs','greaves')&&elementalAbility?150:0;
  if(has('legs','greaves')){
-  row('greaves',elementalAbility,elementalAbility?'対象属性':'対象外','火・雷・秘術スキルのCritダメージ+150%',greavesCrit?'+150% Crit':'','critical');
+  row('greaves',elementalAbility,elementalAbility?'対象属性':'対象外','火・雷・秘術スキルのCritダメージ+150%',greavesCrit?'+150% クリティカルダメージ':'','critical');
   if(greavesCrit)sources.push({key:'critical',name:'秘術の刃のグリーヴ',value:150,detail:'火・雷・秘術のスキル限定'});
  }
  const stormSkill=q.abilityId==='lightningStorm'&&q.damageType==='lightning'&&q.attackType==='strong';
  const gauntletCrit=has('gloves','gauntlets')&&stormSkill?150:0;
  if(has('gloves','gauntlets')){
   row('gauntlets',stormSkill,stormSkill?'Lightning Storm':'対象スキル外',
-   'Lightning StormのCritダメージ+150%',gauntletCrit?'+150% Crit':'','critical');
+   'Lightning StormのCritダメージ+150%',gauntletCrit?'+150% クリティカルダメージ':'','critical');
   if(gauntletCrit)sources.push({key:'critical',name:'ストームコーラーの篭手',value:150,detail:'Lightning Storm限定'});
  }
  const ironMult=has('head','iron')?(q.elite?1.4:1.2):1;
  if(has('head','iron')){
-  row('iron',true,q.elite?'Elite / Boss':'通常敵',
+  row('iron',true,q.elite?'エリート・ボス':'通常敵',
    '他の倍率とは独立（'+(q.elite?'40':'20')+'%増加）','×'+fmt(ironMult),'unique');
   sources.push({key:'unique',name:'鉄の暴君の兜',value:(ironMult-1)*100,detail:'独立倍率 ×'+fmt(ironMult)});
  }
  const moving=has('boots','windcaller')&&q.windcallerActive;
  if(has('boots','windcaller'))row('windcaller',moving,moving?'発動中4秒':'未発動',
-  '撃破後の移動速度+50%。ダメージ倍率には含めない',moving?'+50% MS':'','utility');
+  '撃破後の移動速度+50%。ダメージ倍率には含めない',moving?'+50% 移動速度':'','utility');
  const invulnerable=has('chest','unyielding')&&q.unyieldingActive;
  if(has('chest','unyielding'))row('unyielding',invulnerable,invulnerable?'無敵発動中4秒':'未発動',
   'HP30%未満で被弾後に発動（CD25秒）。発動のきっかけとなる被弾は別判定',invulnerable?'被ダメ0':'','defense');
  if(has('ring1','schrodinger')||has('ring2','schrodinger'))row('schrodinger',true,'常時',
  '健康と負傷を同時成立させる（条件付きダメージに反映）','両条件成立','conditional');
- if(has('weapon','grandmother'))row('grandmother',true,'常時','固定Crit補正は装備ステータスで計上済み','重複計上なし','stat');
- if(has('ring1','sage')||has('ring2','sage'))row('sage',true,'常時','アビリティレベル+10はステータスに計上。スキル倍率は自動計算','Lv+10','stat');
+ if(has('weapon','grandmother'))row('grandmother',true,'常時','固定クリティカル補正は装備ステータスで計上済み','重複計上なし','stat');
+ if(has('ring1','sage')||has('ring2','sage'))row('sage',true,'常時','アビリティレベル+10はステータスに計上。スキル倍率は習得レベル・装備・ルーンから自動計算','Lv+10','stat');
  if(has('belt','bottomless'))row('bottomless',true,'常時','ポーション所持数+4はステータスに計上','所持数+4','stat');
  return {stacks,stackBonus,prismBonus,highestElement:highest.key,highestValue:highest.total,
   greavesCrit,gauntletCrit,ironMult,windcallerMove:moving?50:0,invulnerable,rows,sources};
@@ -182,7 +182,7 @@ function conditional(stats,q,context={}){
   ['poisoned','対毒状態',q.poisoned],
   ['burned','対燃焼',q.burned],
   ['distant','対遠距離',q.distant],
-  ['elite','対エリート/Boss',q.elite],
+  ['elite','対エリート・ボス',q.elite],
   ['vulnerable','対脆弱',q.vulnerable]
  ];
  return checks.map(([key,label,active,reason])=>({key,label,active,value:active?get(stats,key):0,stored:get(stats,key),reason:reason||'状態による判定'}));
