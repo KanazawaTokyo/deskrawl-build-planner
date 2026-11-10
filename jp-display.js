@@ -7,7 +7,7 @@
 const D=window.DBP,C=window.DBPCalc,T=window.DBPTalents,B=window.DBPCombat,R=window.DBPRunes,P=window.DBPPets;
 const skills={
  fireBall:'ファイアボール',iceShards:'氷の破片',electrocute:'感電',flameLightning:'炎雷',
- flameLightningFire:'炎雷（炎成分）',flameLightningLightning:'炎雷（雷成分）',
+ flameLightningFire:'炎雷',flameLightningLightning:'炎雷',
  flameBreath:'烈焰吐息',iceMeteor:'アイスメテオ',lightningStorm:'ライトニングストーム',
  frostBeam:'フロストビーム',iceNova:'アイスノヴァ',fireElemental:'ファイアエレメンタル',
  iceBlock:'アイスブロック',fireMeteor:'ファイアメテオ',lightningCloud:'サンダークラウド',flameAura:'フレイムオーラ'
