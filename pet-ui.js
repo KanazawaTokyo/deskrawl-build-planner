@@ -26,7 +26,7 @@ function render({settings,result,E,opt}){
     const value=black?cap:roll.value;
     return '<div class="pet-gear-row"><label class="field"><span>OP '+(i+1)+'</span><select data-change="petGearStat" data-idx="'+i+'">'+
      opt('','未設定',stat)+P.gearAffixes.map(id=>opt(id,C.labels[id]||D.affixes[id]?.[0]||id,stat)).join('')+
-     '</select></label><label class="field"><span>'+(black?'Black Mist 最大ロール':'実測値（アイテムレベル850が上限）')+
+     '</select></label><label class="field"><span>'+(black?'ブラックミストの最大値':'実測値（アイテムレベル850が上限）')+
      '</span><input type="number" inputmode="decimal" min="0" step="any" '+(Number.isFinite(cap)?'max="'+cap+'" ':'')+
      'data-change="petGearValue" data-idx="'+i+'" value="'+E(value??'')+'" placeholder="ゲーム内の実測値" '+(black?'disabled':'')+'/></label>'+
      '<strong class="pet-gear-value">'+(stat&&value!==null&&value!==undefined&&value!==''?'+'+E(C.format(stat,Number(value))):'—')+'</strong></div>';
@@ -39,7 +39,7 @@ function render({settings,result,E,opt}){
     '<div class="pet-layout"><section class="pet-main">'+
     '<div class="card pet-card"><div class="card-heading"><div><h2>① メインペット</h2><span>アクティブにできるのは1体だけ</span></div><span class="tag green">MAX +10</span></div>'+
     '<label class="field"><span>ペット（'+P.minions.length+'体）</span><select data-change="petMain">'+opt('unknown','未選択',pet.id||'unknown')+
-    P.minions.map(m=>m.unobtainable?'<option value="'+E(m.id)+'" disabled>'+E(m.name+' · '+m.rarity+'（入手不可）')+'</option>':opt(m.id,m.name+' · '+m.rarity,main?.id)).join('')+'</select></label>'+
+    P.minions.map(m=>m.unobtainable?'<option value="'+E(m.id)+'" disabled>'+E(m.name+' · '+(window.DBPJP?.rarity(m.rarity)||m.rarity)+'（入手不可）')+'</option>':opt(m.id,m.name+' · '+(window.DBPJP?.rarity(m.rarity)||m.rarity),main?.id)).join('')+'</select></label>'+
     '<label class="field pet-level"><span>成長レベル +0〜+10</span><input type="number" data-change="petRank" min="0" max="10" step="1" inputmode="numeric" value="'+E(rank)+'"/></label>'+
     '<h3 class="pet-subhead">常時パッシブ（個別の強化レベル）</h3><div class="pet-passive-list">'+passives+'</div>'+
     (actives?'<h3 class="pet-subhead">アクティブ能力（常時ステータスには加算しません）</h3>'+actives:'')+
@@ -52,12 +52,12 @@ function render({settings,result,E,opt}){
       '</strong> / '+(inherited.kind==='passive'?'Lv10 +'+E(C.format(inherited.stat,inherited.max)):'Lv10アクティブ：'+E(inherited.at10))+
       ' — '+(inheritEnabled?'スロット有効':'Lv10か継承解放が必要')+'</div>':'')+
     '<p class="helper">継承元スキルはLv10まで強化済みが前提。アクティブ効果は永続ステータスへ加算しません。</p></div>'+
-    '<div class="card pet-card"><div class="card-heading"><div><h2>③ ペット装備</h2><span>Rare・Legendary・Black Mist：3OP</span></div></div>'+
+    '<div class="card pet-card"><div class="card-heading"><div><h2>③ ペット装備</h2><span>レア・レジェンダリー・ブラックミスト：能力値3枠</span></div></div>'+
     '<label class="checkbox-row"><input type="checkbox" data-change="petEquipUnlock" '+(pet.equipmentUnlocked?'checked':'')+'/> 装備枠を購入・解放済み</label>'+
     '<label class="field"><span>ペット装備を選択</span><select data-change="petGearType">'+
-    P.gearTypes.map(x=>opt(x.id,x.name+(x.rarity?' · '+x.rarity:''),eq.id||'')).join('')+'</select></label>'+
+    P.gearTypes.map(x=>opt(x.id,x.name+(x.rarity?' · '+(window.DBPJP?.rarity(x.rarity)||x.rarity):''),eq.id||'')).join('')+'</select></label>'+
     '<div class="pet-gear-rows">'+gearRows+'</div>'+
-    ((gear?.slots||0)?'<div class="notice gentle">'+(gear.id==='saddle-of-the-golden-khan'?'Black MistはIL850最大ロールを自動計算します。':'通常装備は実際の個体値を入力してください。未入力値は合算しません。')+
+    ((gear?.slots||0)?'<div class="notice gentle">'+(gear.id==='saddle-of-the-golden-khan'?'ブラックミストはアイテムレベル850の最大値を自動計算します。':'通常装備は実際の個体値を入力してください。未入力値は合算しません。')+
       ' 装備効果は成長Lv5以上かつ装備枠解放済みで有効です。現在：'+(gearEnabled?'有効':'無効')+'</div>':'')+
     '<p class="helper">ペット装備は強化不可・ソケットなし。<a href="https://wikily.gg/deskrawl/equipment/saddle-of-the-golden-khan" target="_blank" rel="noopener noreferrer">装備・OP候補データ</a></p></div>'+
     '</section><aside class="pet-side"><div class="card"><div class="card-heading"><h2>ペット由来ステータス</h2></div>'+
@@ -106,7 +106,7 @@ function change(el,{settings,modify,flash,render}){
   if(kind==='petGearValue'){
     if(eq.id==='saddle-of-the-golden-khan')return reject('Black Mistの最大値は自動反映されます');
     const stat=eq.rolls?.[idx]?.stat,cap=(type.rarity==='Rare'?P.rare850Max:P.max850)[stat],num=Number(v);
-    if(!stat||v!==''&&(!Number.isFinite(num)||num<0||Number.isFinite(cap)&&num>cap))return reject('装備数値がIL850の最大値を超えています');
+    if(!stat||v!==''&&(!Number.isFinite(num)||num<0||Number.isFinite(cap)&&num>cap))return reject('装備数値がアイテムレベル850の最大値を超えています');
     modify(()=>{pet.equipment.rolls[idx].value=v===''?null:num;pet.progressionVersion=1});return;
   }
 }
