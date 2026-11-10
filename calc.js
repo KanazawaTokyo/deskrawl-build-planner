@@ -85,6 +85,11 @@ function calc(doc,build,sub={}){
     }
   }
   const s=build.settings||{};const base=s.base||{};
+  if(enabled('runes')&&window.DBPRunes){
+    const runes=window.DBPRunes.selection(s);
+    for(const effect of runes.effects)add(effect.stat,effect.value,effect.source,'verified');
+    for(const issue of runes.issues)pending.push('ルーン：'+issue);
+  }
   const tal=T?T.allocation(s):null;
   // Hero Lv70: known base stats; apply once when using the full talent tree.
   // Legacy builds retain their previous partial-total behavior until explicit migration.
@@ -195,7 +200,7 @@ function calc(doc,build,sub={}){
   raw.maxHP=effective.maxHP;
   const enemy=Math.max(1,Number(s.enemyLevel||70));
   const mitigations={armor:raw.armor/(raw.armor+50*enemy)*100,mr:raw.mr/(raw.mr+50*enemy)*100};
-  return {sum,raw,effective,breakdown,pending,mitigations,estimated:true};
+  return {sum,raw,effective,breakdown,pending,mitigations,sourceFlags:{runes:enabled('runes')},estimated:true};
 }
 function format(k,v){if(v===undefined||v===null||!Number.isFinite(v))return '—';const n=Math.round(v*100)/100;return n.toLocaleString('ja-JP',{maximumFractionDigits:2})+(percent.has(k)?'%':'');}
 function delta(k,from,to){if(from===undefined&&to===undefined)return null;return (to||0)-(from||0);}
