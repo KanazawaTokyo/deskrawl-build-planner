@@ -117,6 +117,7 @@ Object.assign(ctx,{document:doc,localStorage:{getItem:k=>local[k]??null,setItem:
  location:{hash:'',pathname:'/',origin:'file://',search:''},history:{replaceState(){}},fetch:()=>Promise.reject(Error('not available'))});
 ctx.window.addEventListener=()=>{};
 vm.runInContext(source('pet-ui.js'),ctx,{filename:'pet-ui.js'});
+vm.runInContext(source('stats-view.js'),ctx,{filename:'stats-view.js'});
 vm.runInContext(source('app.js'),ctx,{filename:'app.js'});
 const click=(action,value)=>events.click({target:{closest:()=>({dataset:{action,value}})}});
 const change=(key,value,type='number')=>events.change({target:{id:'',type,checked:type==='checkbox'?value:false,value:String(value),dataset:{change:'combat',key}}});
