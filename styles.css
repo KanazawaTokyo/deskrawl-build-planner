@@ -387,3 +387,26 @@
 .combat-debuff-title>span:last-child{display:flex;gap:7px}
 .combat-debuff-title .btn{font-size:11px;padding:7px 10px}
 @media(max-width:650px){.combat-skill-fields{grid-template-columns:1fr}.combat-collapse-btn{flex-wrap:wrap}.combat-skill-summary b{margin-left:0}}
+
+/* Six explicit equipped rune slots; rune level is always max (6). */
+.rune-slot-list{display:flex;flex-direction:column;gap:8px}
+.rune-slot-entry{display:flex;flex-direction:column;gap:7px;min-width:0;border:1px solid var(--line);border-radius:9px;background:#121a24;padding:10px}
+.rune-slot-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.rune-slot-heading b{font-size:12px}
+.rune-slot-heading small{font-size:10px;color:var(--mint)}
+.rune-slot-entry select{max-width:100%;min-width:0;width:100%;min-height:36px;background:#0d141d;color:var(--text);border:1px solid var(--line2);border-radius:7px;padding:7px;font-size:12px}
+.rune-slot-effect{font-size:10px;color:var(--muted);line-height:1.5}
+.rune-sets-summary{display:flex;flex-direction:column;gap:9px;margin:0 0 15px}
+.rune-set-status{border:1px solid var(--line);border-radius:10px;background:#111923;padding:10px}
+.rune-set-heading{display:flex;justify-content:space-between;gap:10px;padding-bottom:7px;margin-bottom:7px;border-bottom:1px solid var(--line);font-size:12px}
+.rune-set-heading span{color:var(--mint);font-variant-numeric:tabular-nums}
+.rune-set-bonus{display:flex;flex-direction:column;gap:3px;padding:5px 0;color:var(--faint)}
+.rune-set-bonus strong{font-size:10px}
+.rune-set-bonus span{font-size:10px;line-height:1.45}
+.rune-set-bonus.active{color:var(--mint)}
+.combat-runes-panel{display:flex;flex-direction:column;gap:9px}
+.combat-runes-panel .card-heading{margin-bottom:5px}
+.combat-rune-active{display:flex;gap:12px;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line);font-size:11px}
+.combat-rune-active b{color:var(--mint);white-space:nowrap}
+.combat-rune-active span{color:var(--text)}
+.combat-runes-panel .helper{margin:7px 0 0}
