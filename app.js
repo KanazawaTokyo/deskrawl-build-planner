@@ -106,7 +106,7 @@ function renderStats(){
   ['防御',['maxHP','bonusHP','armor','armorBonus','bonusArmor','mr','bonusMR','critRed','dodge','physicalDR','coldDR','fireDR','lightningDR','arcaneDR','poisonDR','healingReceived']],
   ['リソース・補助',['mana','manaBonus','manaRegen','mcr','move','loh','lohBonus','lifeKill','regen','regenBonus','itemFind','goldFind','potionFind','materialFind','xp','potionCharges','manaKill']],
   ['スキル限定・タレント',[...C.talentSpecialStats||[],'skillCritDamage','elementalSkillCritBonus','lightningStormCritBonus']],
-  ['装備固有・条件付き',['independentDamageBonus','temporaryInvulnerable']]
+  ['装備固有・条件付き',['activeConditionalDamage','independentDamageBonus','temporaryInvulnerable']]
  ];
  const details=groups.map(([name,keys])=>'<section class="stat-group"><h3>'+E(name)+'</h3>'+
   SV.tableHeader()+'<div class="stat-rows">'+keys.map(k=>SV.statRow(k,v,ui.selectedStat)).join('')+'</div></section>').join('');
