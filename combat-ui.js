@@ -182,13 +182,13 @@ function render(stats,settings,context={},options={}){
  defenseTable(d)+'</section>'+
  '<div class="combat-columns"><section class="card combat-card"><div class="card-heading"><div><h2>'+safe(d.selected.label)+'ダメージの軽減内訳</h2><span>各項の独立した軽減率・元被ダメから減った割合</span></div></div>'+
  defenseLayers(d)+
- '<div class="combat-detail-line"><span>'+ (q.defenseType==='physical'?'Armor':'Magic Resist') + ' 実効値</span><b>'+num(d.selected.resistance)+'</b></div>'+
- '<div class="combat-detail-line"><span>クリティカルダメージ軽減（Crit時のみ）</span><b>'+pct(d.selected.critRed*100)+'</b></div>'+
+ '<div class="combat-detail-line"><span>'+ (q.defenseType==='physical'?'アーマー':'魔法耐性') + ' 実効値</span><b>'+num(d.selected.resistance)+'</b></div>'+
+ '<div class="combat-detail-line"><span>クリティカルダメージ軽減（クリティカル時のみ）</span><b>'+pct(d.selected.critRed*100)+'</b></div>'+
  '<div class="combat-detail-line"><span>基準：敵 Lv '+num(q.attackerLevel)+'</span><b>'+num(q.incomingHit)+' ダメージ</b></div>'+
  '</section><section class="card combat-card"><div class="card-heading"><div><h2>軽減率を求める式</h2><span>異なる軽減効果は単純加算しません</span></div></div>'+
- '<div class="combat-formula"><p>Armor / MR 軽減 = R / (R + 50 × 敵Lv)</p>'+
- '<p>命中時被ダメ = 元ダメ × (1 − アーマー・魔法耐性) × (1 − 属性DR) × (1 − 共通DR) − 固定軽減</p>'+
- '<p>回避込み期待被ダメ = 命中時被ダメ × (1 − Dodge)</p></div>'+
+ '<div class="combat-formula"><p>アーマー・魔法耐性による軽減率 = 防御値 ÷ (防御値 + 50 × 敵レベル)</p>'+
+ '<p>命中時被ダメ = 元ダメ × (1 − アーマー・魔法耐性) × (1 − 属性軽減率) × (1 − 共通軽減率) − 固定軽減</p>'+
+ '<p>回避込み期待被ダメ = 命中時被ダメ × (1 − 回避率)</p></div>'+
  '<div class="notice gentle">アーマー・魔法耐性自体には固定の75%上限はありません。属性軽減・共通軽減はそれぞれ最大90%、回避は85%、クリティカルダメージ軽減は100%です。回避は継続ダメージには適用されません。</div>'+
  '<p class="helper">この計算は直接ヒットの平均値用です。防御側のシールド・無敵・継続ダメージ、敵固有のダメージ補正は含みません。固定軽減が発動した場合、残りダメージは最低1です。</p></section></div></section>'+
  '<div class="combat-sources"><a href="https://wikily.gg/deskrawl/stats/damage-formula" target="_blank" rel="noopener noreferrer">計算式の出典（WikiLy）</a><a href="https://playongg.com/games/deskrawl/calculator" target="_blank" rel="noopener noreferrer">ゲーム計算機（PlayOnGG）</a></div>'+
