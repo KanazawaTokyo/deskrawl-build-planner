@@ -40,7 +40,8 @@ function evaluate(doc,build){
   if(selection.slots[slot]!==false&&selection.powers[id]!==false)items[slot]=id;
  }
  const context={...equipment,items,schrodingerRing:items.ring1==='schrodinger'||items.ring2==='schrodinger'};
- const q=B.scenario(settings.combat);
+ const q=B.scenario(settings.combat),skill=B.abilities[q.abilityId];
+ if(skill){q.attackType=skill[1];q.damageType=skill[2];q.lightningAbility=skill[2]==='lightning'}
  const unique=B.uniqueBonuses(result,q,context);
  const add=(key,value,source,quality='calculated')=>{
   if(!Number.isFinite(value)||value===0)return;
@@ -140,8 +141,7 @@ function controls(v){
   v.selection.slots.chest&&equipped.chest==='unyielding'?'<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="unyieldingActive"'+(scen.unyieldingActive?' checked':'')+'>不屈：無敵発動中4秒</label>':''
  ].filter(Boolean).join('');
  const scenario='<div class="stats-sim-fields">'+
-  '<label class="field"><span>表示するスキル</span><select data-change="combat" data-key="abilityId">'+opt('other','一般スキル',scen.abilityId)+opt('lightningStorm','Lightning Storm',scen.abilityId)+'</select></label>'+
-  '<label class="field"><span>対象属性</span><select data-change="combat" data-key="damageType">'+Object.entries(B.types).map(([key,val])=>opt(key,val[0],scen.damageType)).join('')+'</select></label>'+
+  '<label class="field"><span>表示するスキル</span><select data-change="combat" data-key="abilityId">'+B.skillOptions.map(([id,label])=>opt(id,label,scen.abilityId)).join('')+'</select></label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="lightningAbility"'+(scen.lightningAbility?' checked':'')+'>雷アビリティ用タレント</label>'+
   '<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="elite"'+(scen.elite?' checked':'')+'>対象がElite/Boss</label>'+
   '<label class="field"><span>敵の残HP（%）</span><input type="number" min="0" max="100" step="1" data-change="combat" data-key="enemyHealth" value="'+scen.enemyHealth+'"></label>'+
