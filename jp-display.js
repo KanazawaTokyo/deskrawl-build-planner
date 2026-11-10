@@ -51,16 +51,16 @@ const talents={
  arcaneInsight:'秘術の洞察',searingEdge:'灼熱の刃',frostArmor:'氷の鎧',arcaneReach:'秘術の射程',
  manaFlow:'マナの奔流',flameWard:'炎の守り',manaConduit:'マナ導管',frostMastery:'冷気の熟達',
  stormExecutioner:'嵐の処刑者',manaRegeneration:'マナ回復',arcaneMomentum:'秘術の勢い',
- immolation:'焼尽',coldRetribution:'冷気の報復',thunderstruck:'感電麻痺',
- flameBreathCrit:'烈焰吐息：クリティカル強化',elementalFury:'元素の激怒',
- frostAlacrity:'冷気の俊敏',deepChill:'深い冷気',electricalShield:'電気の盾',
- arcaneReservoir:'魔力の貯蔵',conflagration:'烈火',iceMeteorCost:'アイスメテオ：マナコスト削減',
- iceShardsDamage:'氷の破片：ダメージ強化',stormMastery:'嵐の熟練',ignite:'発火',
- flashFreeze:'瞬間凍結',staticCharge:'電気チャージ',cataclysm:'大災害',
- frozenReservoir:'氷結の貯蓄',permafrost:'永久凍土',frozenRenewal:'氷結の再生',
- electrocuteMana:'感電：マナ獲得強化',plasmaConduction:'プラズマ導電',auraWard:'炎の加護',
- frostBeamExpansion:'冷気光線の拡張',currentTransfer:'電流転移',lingeringStorm:'残存する嵐',
- arcaneExposure:'魔力露出',combustion:'爆燃',shatteringIce:'氷砕き',stormConduit:'嵐の導体'
+ immolation:'焼却',coldRetribution:'冷気の報復',thunderstruck:'感電麻痺',
+ flameBreathCrit:'烈焰吐息強化：クリティカルダメージ',elementalFury:'精霊の怒り',
+ frostAlacrity:'氷の敏捷',deepChill:'深き冷気',electricalShield:'電気の盾',
+ arcaneReservoir:'秘術の貯蔵',conflagration:'大火',iceMeteorCost:'アイスメテオ強化：マナ消費',
+ iceShardsDamage:'氷の破片強化：ダメージ',stormMastery:'嵐の熟練',ignite:'発火',
+ flashFreeze:'瞬間凍結',staticCharge:'静電チャージ',cataclysm:'大災害',
+ frozenReservoir:'氷結の貯蓄',permafrost:'永久凍土',frozenRenewal:'氷結再生',
+ electrocuteMana:'感電：マナ獲得強化',plasmaConduction:'プラズマ伝導',auraWard:'炎の加護',
+ frostBeamExpansion:'フロストビーム拡張',currentTransfer:'電流伝播',lingeringStorm:'持続する嵐',
+ arcaneExposure:'魔力露出',combustion:'爆燃',shatteringIce:'砕氷',stormConduit:'嵐の導体'
 };
 const stat={
  weaponDamage:'武器ダメージ',weaponSpeed:'武器速度',weaponDps:'武器の基本DPS',
