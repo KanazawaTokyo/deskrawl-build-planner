@@ -23,6 +23,8 @@ assert.equal(view.active.effective.skillCritDamage,view.active.effective.critDam
 assert.equal(view.active.effective.critChance,72,'Aura and hero base are included');
 assert(view.active.breakdown.lightning.some(x=>x.source.includes('ポールドロン')),'breakdown includes transient stacks');
 assert(view.active.breakdown.lightning.some(x=>x.source.includes('プリズム')),'breakdown includes unique Prism amount');
+assert(view.active.effective.activeConditionalDamage>0,'equipped Schrodinger ring enables conditional Healthy/Injured in stats');
+assert(view.active.breakdown.activeConditionalDamage.some(x=>x.source.includes('指輪により成立')),'condition source explains why both count');
 assert(!view.base.breakdown.lightning.some(x=>x.source.includes('ポールドロン')),'raw equipment cannot contain triggered powers');
 const clone=JSON.parse(JSON.stringify(build));
 const off=Object.fromEntries(V.groups.map(([key])=>[key,false]));
@@ -38,6 +40,7 @@ const noUnique=V.evaluate(doc,clone);
 assert.equal(noUnique.active.effective.lightning,165.1,'disabling unique removes Pauldron AND Prism but keeps talents');
 assert.equal(noUnique.unique.greavesCrit,0);
 assert.equal(noUnique.active.effective.critDamage,view.active.effective.critDamage-120,'Grandmother +120 unique Crit is excluded; Sage Crit +100 is a fixed gear OP');
+assert.equal(noUnique.active.effective.activeConditionalDamage||0,0,'ring condition does not apply when all unique powers are OFF');
 clone.settings.statView={groups:{},powers:{shoulder:false}};
 const noShoulder=V.evaluate(doc,clone);
 assert.equal(noShoulder.unique.stacks,0);
@@ -81,6 +84,9 @@ assert.equal(powerOff.active.effective.move,view.active.effective.move,'disabled
 assert(V.controls(storm).includes('data-change="stat-power" data-key="greaves"'));
 assert(V.controls(storm).includes('data-change="stat-source" data-key="paragon"'));
 assert(V.controls(storm).includes('data-change="combat" data-key="elementalStacks"'));
+assert(V.controls(storm).includes('data-change="combat" data-key="enemyHealth"'));
+assert(V.controls(storm).includes('data-change="combat" data-key="forceHealthy"'));
+assert(V.controls(storm).includes('data-change="combat" data-key="burned"'));
 assert(V.statRow('lightning',storm,'lightning').includes('stats-compare-num'));
 assert(V.summary(storm).includes('補正込み'));
 // Simulate app events; UI controls persist only the per-build scenario and never alter equipment.
