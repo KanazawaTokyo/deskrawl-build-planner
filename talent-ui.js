@@ -70,7 +70,7 @@ function summary(data,stats){
  return '<section class="card talent-summary"><div class="card-heading"><div><h2>取得済みの補正・固有効果</h2><span>取得元をステータスタブでも確認できます</span></div></div>'+
  (rows.length?'<div class="talent-summary-stats">'+rows.map(x=>'<div class="talent-summary-stat"><span>'+escape(x.label)+'</span><b>+'+escape(C.format(x.key,x.value))+'</b><small>'+escape(x.source)+'</small></div>').join('')+'</div>':'<p class="helper">ポイントを振るとステータス効果がここに表示されます。</p>')+
  (specials.length?'<div class="talent-summary-special"><strong>選択中のキャップストーン</strong>'+specials.map(x=>'<p>'+escape(x.name)+'：'+escape(x.description)+'</p>').join('')+'</div>':'')+
- '<div class="notice gentle">フレイムオーラや敵の状態が必要なタレントは条件成立時のみ計算します。スキル限定効果は一般のCDR・クリティカル率などへ混ぜません。</div></section>';
+ '<div class="notice gentle">フレイムオーラや敵の状態が必要なタレントは条件成立時のみ計算します。スキル限定効果は一般のクールダウン短縮・クリティカル率などへ混ぜません。</div></section>';
 }
 function render(settings,selected,stats){
  const data=T.allocation(settings),s=data.total,ranks=data.ranks;
@@ -91,8 +91,8 @@ function render(settings,selected,stats){
  T.ROWS.map(r=>row(r,ranks,selectedDef.id,data.legacy)).join('')+
  '<div class="talent-tree-footnote">横にスクロールしてタレントを確認できます。キャップストーンは同じ段階で1つだけ習得できます。</div>'+
  '</div></section><aside class="talent-side">'+detail(selectedDef,ranks,data.legacy)+
- '<div class="talent-side-help"><b>操作とルール</b><p>クリックで習得、右クリック・Shift+クリック・−で返却。上位段階の成立条件を崩す返却は拒否されます。キャップストーンの付け替えは残ptを消費しません。</p><p>必要Goldは表示のみです。ゲーム内の所持Goldを変更しません。</p></div></aside></div>'+
- summary(data,stats)+'<p class="talent-reference"><a href="https://wikily.gg/deskrawl/talents/sorcerer" target="_blank" rel="noopener noreferrer">ゲームデータ出典：Sorcerer talents (WikiLy)</a></p>'+
+ '<div class="talent-side-help"><b>操作とルール</b><p>クリックで習得、右クリック・Shift+クリック・−で返却。上位段階の成立条件を崩す返却は拒否されます。キャップストーンの付け替えは残ptを消費しません。</p><p>必要ゴールドは表示のみです。ゲーム内の所持ゴールドを変更しません。</p></div></aside></div>'+
+ summary(data,stats)+'<p class="talent-reference"><a href="https://wikily.gg/deskrawl/talents/sorcerer" target="_blank" rel="noopener noreferrer">ゲームデータ出典：ソーサラーの戦闘タレント（WikiLy）</a></p>'+
  '</main>';
 }
 window.DBPTalentUI={render,effectText};
