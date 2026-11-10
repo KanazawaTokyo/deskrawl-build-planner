@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 const source=file=>fs.readFileSync(__dirname+'/'+file,'utf8');
 const ctx={window:null,console,Math,Date,JSON,Set,Number,String,Array,Map};
 ctx.window=ctx;vm.createContext(ctx);
-for(const f of ['master.js','pets.js','calc.js','combat.js','combat-ui.js'])vm.runInContext(source(f),ctx,{filename:f});
+for(const f of ['master.js','runes.js','pets.js','calc.js','combat.js','combat-ui.js'])vm.runInContext(source(f),ctx,{filename:f});
 const B=ctx.DBPCombat,UI=ctx.DBPCombatUI;
 const approx=(value,target,desc)=>assert(Math.abs(value-target)<1e-8,desc+': '+value+' vs '+target);
 const stats={effective:{weaponDamage:100,damage:0,int:0,critChance:0,critDamage:0,lightning:100,allDamage:50,
@@ -163,12 +163,16 @@ assert.equal(predicted.skill.percent,292.5,'Lightning Storm grows after learned 
 assert.equal(predicted.settings.skillPercent,292.5,'manual inputs cannot override known skill');
 assert.equal(predicted.settings.heroLevel,70,'character level fixed at 70');
 assert.equal(predicted.settings.attackType,'strong');assert.equal(predicted.settings.damageType,'lightning');
-const configured={...setting,skillRanks:{lightningStorm:8},runeRanks:{'stormcaller:1':6,'stormcaller:2':3,'lightningStorm:grand':6,'lightningStorm:normal':1}};
+const configured={...setting,skillRanks:{lightningStorm:8},runeSlots:['set:stormcaller:1','set:stormcaller:2','grand:lightningStorm','grand:lightningStorm','','']};
 const runeHit=B.attack(skillStats,configured,{abilityId:'lightningStorm'});
-assert.equal(runeHit.skill.runeBonus,19);
-assert.equal(runeHit.skill.level,37);
-assert.equal(runeHit.skill.percent,420);
-assert.equal(B.skillRank(configured,{effective:{}},'lightningStorm').level,27,'equipment skill levels can be removed independently');
+assert.equal(runeHit.skill.runeBonus,24,'four max-level skill runes: 4 × +6');
+assert.equal(runeHit.skill.level,42);
+assert.equal(runeHit.skill.percent,457.5);
+assert.equal(B.skillRank(configured,{effective:{}},'lightningStorm').level,32,'without Sage the skill is learned 8 + runes 24');
+const disabledRuneStats={...skillStats,sourceFlags:{runes:false}};
+assert.equal(B.skillRank(configured,disabledRuneStats,'lightningStorm').level,18,'OFF switch removes rune skill levels');
+const obsoleteRanks={...configured,runeSlots:undefined,runeRanks:{'stormcaller:1':6}};
+assert.equal(B.skillRank(obsoleteRanks,skillStats,'lightningStorm').runeBonus,0,'old per-skill selectors must not bypass six slots');
 assert.equal(JSON.parse(local.deskrawl_planner_v01).builds[0].settings.combat.defenseType,'physical');
 // A new build without the ring can opt into special cases independently.
 click('new-build');
@@ -186,8 +190,13 @@ click('tab-stats');click('settings');
 events.change({target:{id:'settingsCategory',value:'skills',dataset:{}}});
 assert(app.innerHTML.includes('スキル・ルーン'),'settings allow skill/rune registration');
 events.change({target:{id:'',type:'select-one',value:'9',dataset:{change:'skill-rank',key:'lightningStorm'}}});
-events.change({target:{id:'',type:'select-one',value:'6',dataset:{change:'rune-rank',key:'stormcaller:1'}}});
+events.change({target:{id:'',type:'select-one',value:'set:stormcaller:1',dataset:{change:'rune-slot',idx:'0'}}});
+events.change({target:{id:'',type:'select-one',value:'set:stormcaller:2',dataset:{change:'rune-slot',idx:'1'}}});
 assert.equal(ctx.DBPApp.getState().builds.at(-1).settings.skillRanks.lightningStorm,9);
-assert.equal(ctx.DBPApp.getState().builds.at(-1).settings.runeRanks['stormcaller:1'],6);
-assert.equal(JSON.parse(local.deskrawl_planner_v01).builds.at(-1).settings.runeRanks['stormcaller:1'],6,'rune config persisted as per-build JSON');
+assert.equal(ctx.DBPApp.getState().builds.at(-1).settings.runeSlots.length,6);
+assert.equal(ctx.DBPApp.getState().builds.at(-1).settings.runeSlots[0],'set:stormcaller:1');
+assert.equal(JSON.parse(local.deskrawl_planner_v01).builds.at(-1).settings.runeSlots[1],'set:stormcaller:2','six-slot configuration persisted as JSON');
+click('combat-open-runes');
+assert.equal(ctx.DBPApp.getUI().settingsTab,'skills');
+assert(app.innerHTML.includes('ルーンセット効果'));
 console.log('PASS: damage group math, target conditions, 6 mitigation types, caps, UI and per-build cloud-ready scenario');
