@@ -54,19 +54,12 @@ const defs=[
 ];
 const byId=Object.fromEntries(defs.map(x=>[x.id,x]));
 const empty=()=>({});
-const preset=()=>({
- arcaneInsight:10,manaFlow:8,stormExecutioner:10,manaRegeneration:1,
- thunderstruck:1,electricalShield:8,stormMastery:8,staticCharge:1,
- frozenReservoir:8,electrocuteMana:6,auraWard:8,arcaneExposure:1
-});
 const rawRanks=setting=>{
  const input=setting?.talentPoints;
  return input&&typeof input==='object'&&!Array.isArray(input)?input:null;
 };
 const spent=ranks=>Object.values(ranks||{}).reduce((acc,n)=>acc+(Number.isFinite(Number(n))?Number(n):0),0);
 const lowerSpent=(ranks,row)=>defs.filter(x=>x.row<row).reduce((n,x)=>n+(Number(ranks?.[x.id])||0),0);
-const resetCost=s=>4*s*(s+1);
-const refundCost=s=>8*s;
 function valid(ranks){
  const values=ranks||{};
  let count=0;
@@ -79,55 +72,63 @@ function valid(ranks){
    if(def.cap){capstone[def.cap]=(capstone[def.cap]||0)+1;if(capstone[def.cap]>1)return false}
   }
  }
- if(count>MAX)return false;
- for(const def of defs)if((values[def.id]||0)>0&&lowerSpent(values,def.row)<def.row)return false;
- return true;
+ return count<=MAX;
+}
+/** Independent game eligibility: hypothetical investments in later rows are
+ * allowed in the planner, but flagged until earlier rows meet thresholds.
+ */
+function gameEligibility(ranks){
+ const rows=ROWS.map(row=>{
+  const lower=lowerSpent(ranks,row);
+  const allocated=defs.filter(d=>d.row===row).reduce((n,d)=>n+(Number(ranks?.[d.id])||0),0);
+  const missing=Math.max(0,row-lower),active=allocated>0;
+  return {row,required:row,lower,allocated,missing,active,ok:!active||missing===0};
+ });
+ const problems=rows.filter(row=>!row.ok);
+ return {ok:problems.length===0&&valid(ranks),rows,problems};
 }
 function sanitize(source){
- const result={};
- const obj=source&&typeof source==='object'&&!Array.isArray(source)?source:{};
- // Process complete rows in increasing order; never fabricate prerequisites.
+ const result={},obj=source&&typeof source==='object'&&!Array.isArray(source)?source:{};
+ const takenCap=new Set();
+ // Preserve all early and late tiers; only normalize ranks, capstones and 70pt.
  for(const row of ROWS){
-  if(lowerSpent(result,row)<row)continue;
-  let takenCap=false;
-  for(const def of defs.filter(x=>x.row===row)){
+  for(const def of defs.filter(d=>d.row===row)){
    let n=Number(obj[def.id]??0);
    n=Number.isSafeInteger(n)?Math.max(0,Math.min(def.max,n)):0;
-   if(def.cap&&takenCap)n=0;
+   if(def.cap&&takenCap.has(def.cap))n=0;
    n=Math.min(n,MAX-spent(result));
-   if(n){result[def.id]=n;if(def.cap)takenCap=true}
+   if(n){result[def.id]=n;if(def.cap)takenCap.add(def.cap)}
   }
  }
  return result;
 }
 function allocation(settings){
  const raw=rawRanks(settings);
- if(!raw)return {legacy:true,ranks:{},total:0,remaining:MAX,issues:[]};
+ if(!raw)return {legacy:true,ranks:{},total:0,remaining:MAX,issues:[],eligibility:gameEligibility({})};
  const ranks=sanitize(raw);
  const issues=Object.keys(raw).filter(key=>Number(raw[key]||0)!==Number(ranks[key]||0));
- return {legacy:false,ranks,total:spent(ranks),remaining:MAX-spent(ranks),issues};
+ return {legacy:false,ranks,total:spent(ranks),remaining:MAX-spent(ranks),issues,eligibility:gameEligibility(ranks)};
 }
 function canAdd(ranks,id){
  const def=byId[id];
  if(!def)return {ok:false,why:'タレントが見つかりません'};
  const current=ranks[id]||0;
  if(current>=def.max)return {ok:false,why:'このタレントは最大ランクです'};
- if(lowerSpent(ranks,def.row)<def.row)return {ok:false,why:'下位段階に'+def.row+'pt必要です'};
- const existing=def.cap?defs.find(x=>x.cap===def.cap&&x.id!==id&&(ranks[x.id]||0)>0):null;
+ const existing=def.cap?defs.find(d=>d.cap===def.cap&&d.id!==id&&(ranks[d.id]||0)>0):null;
  if(existing){
   const next={...ranks};delete next[existing.id];next[id]=1;
-  if(!valid(next))return {ok:false,why:'解放条件を満たしていません'};
-  return {ok:true,ranks:next,type:'swap',cost:refundCost(spent(ranks)),previous:existing.id};
+  if(!valid(next))return {ok:false,why:'70ポイント上限またはキャップストーン制約に違反します'};
+  return {ok:true,ranks:next,type:'swap',previous:existing.id};
  }
  if(spent(ranks)>=MAX)return {ok:false,why:'残りポイントがありません'};
  const next={...ranks,[id]:current+1};
- return valid(next)?{ok:true,ranks:next,type:'add',cost:0}:{ok:false,why:'この段階は解放されていません'};
+ return valid(next)?{ok:true,ranks:next,type:'add'}:{ok:false,why:'ポイント上限またはランク上限に達しています'};
 }
 function canRemove(ranks,id){
  if(!byId[id]||!(ranks[id]>0))return {ok:false,why:'振り戻すポイントがありません'};
  const next={...ranks,[id]:ranks[id]-1};
  if(!next[id])delete next[id];
- return valid(next)?{ok:true,ranks:next,type:'refund',cost:refundCost(spent(ranks))}:{ok:false,why:'上位のタレントがこのポイントに依存しています'};
+ return valid(next)?{ok:true,ranks:next,type:'refund'}:{ok:false,why:'ポイント配分に問題があります'};
 }
 function effects(ranks,{aura=false,mana=0}={}){
  const result=[],special=[];
@@ -148,5 +149,5 @@ function effects(ranks,{aura=false,mana=0}={}){
  return {result,special};
 }
 const globalStats=new Set(['int','mana','armor','bonusArmor','bonusMR','fire','cold','lightning','elite','manaRegen','burned','lightningDR','allDR','vulnerable']);
-window.DBPTalents={MAX,ROWS,defs,byId,empty,preset,rawRanks,allocation,spent,lowerSpent,resetCost,refundCost,valid,sanitize,canAdd,canRemove,effects,globalStats};
+window.DBPTalents={MAX,ROWS,defs,byId,empty,rawRanks,allocation,spent,lowerSpent,gameEligibility,valid,sanitize,canAdd,canRemove,effects,globalStats};
 })();
