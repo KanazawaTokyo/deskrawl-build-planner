@@ -91,6 +91,13 @@ function render(stats,settings,context={},options={}){
   number('enemyHealth','敵の残HP（%）',q.enemyHealth,'通常は健康 >80%、負傷 <30%。指輪の効果は例外')
  ].join('');
  const skill=a.skill;
+ const runeState=window.DBPRunes?.selection(settings),runeEnabled=settings?.statView?.groups?.runes!==false;
+ const runePanel=runeState?'<section class="card combat-card combat-runes-panel"><div class="card-heading"><div><h2>ルーンセット効果</h2><span>装着ルーン '+runeState.equipped.length+'/6 · Lv6固定</span></div>'+
+ '<button class="btn outline" data-action="combat-open-runes">ルーンを編集</button></div>'+
+ (runeEnabled?runeState.bonuses.filter(b=>b.active).map(b=>'<div class="combat-rune-active"><b>'+safe(b.setName)+' '+b.threshold+'/6</b><span>'+safe(b.label)+'</span></div>').join('')||
+ '<p class="helper">2個以上のセット効果は発動していません。</p>':
+ '<p class="helper">ステータス計算条件でルーンがOFFになっています。</p>')+
+ '<p class="helper">ステータス増加とスキルLvは計算に反映。スプラッシュ・追加弾・追加スキルのヒット数や命中率は、単発ダメージに加算していません。</p></section>':'';
  const skillSummary=skill?'<div class="combat-skill-summary"><strong>実効スキル Lv'+num(skill.level)+'</strong>'+
  '<span>習得 Lv'+num(skill.learned)+(skill.assumed?'（未登録・Lv10仮定）':'')+' ＋ 装備 '+num(skill.equip)+' ＋ ルーン '+num(skill.runeBonus)+'</span>'+
  '<b>武器倍率 '+pct(skill.percent,2)+'</b><small>'+safe(B.attacks[skill.attackType][0])+' ／ '+safe(B.types[skill.damageType][0])+' ／ キャラクターLv70固定</small></div>':'';
@@ -149,7 +156,7 @@ function render(stats,settings,context={},options={}){
  '</div>'+
  '<section class="card combat-card combat-unique-card"><div class="card-heading"><div><h2>装備固有効果の計算状態</h2><span>現在の装備だけを検出し、発動条件に応じて反映</span></div></div>'+
  '<p class="helper">ポールドロンの+100%は属性ダメージの加算枠、グリーヴと篭手の+150%はCritダメージの加算枠、鉄兜は独立倍率です。プリズムの心臓はスタック反映後の最高属性ボーナスを25%増加すると仮定しています。</p>'+
- uniquePanel(a,context)+'</section>'+
+ uniquePanel(a,context)+'</section>'+runePanel+
  '<div class="combat-columns"><section class="card combat-card"><div class="card-heading"><div><h2>倍率グループの内訳</h2><span>各倍率の加算値（%）、乗算値、相対寄与率</span></div></div>'+attackTable(a,stats)+
  '<div class="notice gentle">寄与率は<strong>log(倍率)</strong>で増幅を100%に分解した比較指標です。「+100%」の倍率を複数足し合わせる意味ではありません。基礎の固定ダメージは寄与率から除外しています。</div></section>'+
  '<section class="card combat-card"><div class="card-heading"><div><h2>条件付きボーナス</h2><span>成立している条件だけが同じグループに加算</span></div></div>'+
