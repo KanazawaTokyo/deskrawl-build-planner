@@ -214,7 +214,8 @@ case 'stat-preset':{
  }});
  return;
 }
-case 'combat-toggle-settings':ui.combatSkillsOpen=!ui.combatSkillsOpen;render();break;
+case 'combat-open-runes':ui.tab='stats';ui.settingsOpen=true;ui.settingsTab='skills';render();break;
+ case 'combat-toggle-settings':ui.combatSkillsOpen=!ui.combatSkillsOpen;render();break;
  case 'combat-debuffs':{if(value!=='on'&&value!=='off')return;modify(()=>{b.settings.combat??={};for(const key of window.DBPCombat.debuffKeys)b.settings.combat[key]=value==='on'});return;}
  case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-talent':ui.tab='talent';ui.settingsOpen=false;render();break;case 'tab-pet':ui.tab='pet';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;case 'tab-combat':ui.tab='combat';ui.settingsOpen=false;render();break;case 'combat-defense-type':{const type=window.DBPCombat?.validateInput('defenseType',value);if(type)modify(()=>{b.settings.combat??={};b.settings.combat.defenseType=type});break;}
 case 'talent-add':
