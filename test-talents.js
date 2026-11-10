@@ -111,6 +111,24 @@ assert.equal(newR.sum.int,60,'10 base + 50 from 10/10 Arcane Insight');
 click('tab-talent');
 assert.equal(ctx.DBPApp.getUI().tab,'talent');
 assert(app.innerHTML.includes('戦闘タレント'));
+const UI=ctx.DBPTalentUI;
+assert.equal(T.defs.length,41,'all 41 sorcerer talent definitions remain available');
+for(const def of T.defs){
+ const preview=UI.tileEffect(def,0),current=UI.tileEffect(def,def.max);
+ assert(preview.startsWith('1pt時：'),'unlearned card previews the first point: '+def.id);
+ assert(!current.startsWith('1pt時：'),'learned card shows actual effect: '+def.id);
+ assert(Array.from(preview).length<=42,'compact effect must fit Japanese talent tile: '+def.id);
+ assert(Array.from(current).length<=42,'rank-scaled effect must fit Japanese talent tile: '+def.id);
+ assert(!/undefined|NaN|<[^>]+>/.test(preview+current),'safe numeric or descriptive effect: '+def.id);
+}
+assert.equal((app.innerHTML.match(/class="talent-effect"/g)||[]).length,41,'all 41 cards display effect summaries');
+assert(!app.innerHTML.includes('class="talent-symbol"'),'decorative element glyphs removed from talent cards');
+assert(app.innerHTML.includes('<span class="talent-rank">0 / 6</span>'),'unlearned ranks remain visible in the bottom section');
+assert(app.innerHTML.includes('<span class="talent-gauge"><i style="width:'),'rank progress bars remain visible');
+assert(app.innerHTML.includes('talent-node arcane picked focused'),'invested and focused states remain separate');
+assert(app.innerHTML.includes('1pt時：'),'preview text visible on unlearned cards');
+assert(app.innerHTML.includes('知力 +50'),'invested card renders numerical effect at selected rank');
+
 assert(app.innerHTML.includes('70pt'));
 assert(app.innerHTML.includes('キャップストーン'));
 assert(app.innerHTML.includes('ゲーム内の習得条件'),'checker present near talent tree');
@@ -135,6 +153,9 @@ click('talent-reset');
 assert.equal(alloc().total,0);
 click('talent-add','stormConduit');
 assert.equal(alloc().ranks.stormConduit,1,'row60 directly selectable after reset');
+assert(app.innerHTML.includes('感電・炎雷で30%追加発動'),'allocated capstone card includes its concise effect');
+assert.equal((app.innerHTML.match(/class="talent-effect"/g)||[]).length,41,'re-render keeps all effect summaries');
+
 assert.equal(alloc().eligibility.problems[0].row,60);
 assert.equal(alloc().eligibility.problems[0].missing,60);
 assert(app.innerHTML.includes('60pt段階')&&app.innerHTML.includes('あと60pt不足'));
