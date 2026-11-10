@@ -421,3 +421,28 @@
 .stats-compare-pick.at-limit input{cursor:not-allowed}
 .stats-compare-pick.at-limit strong{color:var(--muted)}
 .stats-compare-empty{border:1px dashed var(--line2);border-radius:12px;padding:23px;color:var(--muted);font-size:12px;line-height:1.8;background:var(--panel)}
+
+/* Talent planning: row prerequisites are informational, not editing locks. */
+.talent-eligibility{padding:16px 18px;display:flex;flex-direction:column;gap:12px}
+.talent-eligibility .card-heading{display:flex;align-items:center;flex-wrap:wrap;justify-content:space-between;gap:12px;margin:0}
+.talent-eligibility .card-heading h2{font-size:15px;margin:0 0 5px}
+.talent-eligibility .card-heading span{font-size:11px;color:var(--muted);line-height:1.5}
+.talent-eligibility-result{font-size:12px;font-weight:700;white-space:nowrap}
+.talent-eligibility-result.valid{color:#9ad6bc}
+.talent-eligibility-result.invalid{color:#e9b47d}
+.talent-eligibility-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.talent-eligibility-row{border:1px solid #364653;background:#141e28;border-radius:9px;padding:9px 11px;min-width:0}
+.talent-eligibility-row.valid{border-color:#375b50}
+.talent-eligibility-row.invalid{border-color:#826046}
+.talent-eligibility-row.unused{opacity:.68}
+.talent-eligibility-row-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.talent-eligibility-row-top b{font-size:11px;color:var(--text)}
+.talent-eligibility-row-top strong{font-size:10px;color:#a4cfb9;text-align:right}
+.talent-eligibility-row.invalid .talent-eligibility-row-top strong{color:#efba81}
+.talent-eligibility-row.unused .talent-eligibility-row-top strong{color:var(--muted)}
+.talent-eligibility-row small{display:block;margin-top:5px;font-size:10px;color:var(--muted);line-height:1.5}
+.talent-eligibility .helper{font-size:11px;line-height:1.65;margin:0}
+.talent-tier.is-unmet{border-left:2px solid #957553;padding-left:9px}
+.talent-tier.is-unmet>header small{color:#e2bb84}
+@media(max-width:810px){.talent-eligibility-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.talent-eligibility-grid{grid-template-columns:minmax(0,1fr)}}
