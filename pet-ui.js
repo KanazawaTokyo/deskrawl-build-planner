@@ -52,7 +52,7 @@ function render({settings,result,E,opt}){
       '</strong> / '+(inherited.kind==='passive'?'Lv10 +'+E(C.format(inherited.stat,inherited.max)):'Lv10アクティブ：'+E(inherited.at10))+
       ' — '+(inheritEnabled?'スロット有効':'Lv10か継承解放が必要')+'</div>':'')+
     '<p class="helper">継承元スキルはLv10まで強化済みが前提。アクティブ効果は永続ステータスへ加算しません。</p></div>'+
-    '<div class="card pet-card"><div class="card-heading"><div><h2>③ ペット装備</h2><span>Rare 2OP ／ Legendary・Black Mist 3OP</span></div></div>'+
+    '<div class="card pet-card"><div class="card-heading"><div><h2>③ ペット装備</h2><span>Rare・Legendary・Black Mist：3OP</span></div></div>'+
     '<label class="checkbox-row"><input type="checkbox" data-change="petEquipUnlock" '+(pet.equipmentUnlocked?'checked':'')+'/> 装備枠を購入・解放済み</label>'+
     '<label class="field"><span>ペット装備を選択</span><select data-change="petGearType">'+
     P.gearTypes.map(x=>opt(x.id,x.name+(x.rarity?' · '+x.rarity:''),eq.id||'')).join('')+'</select></label>'+
