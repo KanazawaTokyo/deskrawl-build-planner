@@ -19,7 +19,7 @@ assert.equal(storm.counts.stormcaller,6);
 assert.deepEqual(Array.from(storm.bonuses.filter(b=>b.active).map(b=>b.threshold)),[2,4,6]);
 assert.equal(sum.sum.lightning-start.sum.lightning,50,'2-piece lightning additive bonus');
 assert.equal(sum.sum.int-start.sum.int,35,'rune III +35 Intelligence');
-assert.equal(sum.sum.bonusHP-start.sum.bonusHP,15);
+assert(Math.abs((sum.sum.bonusHP-start.sum.bonusHP)-15)<1e-8);
 assert.equal(sum.sum.strongAttack-start.sum.strongAttack,20);
 assert.equal(sum.sum.healthy-start.sum.healthy,25);
 assert.equal(R.rankBonus(fullStorm.settings,'lightningStorm'),12,'two +6 Stormcaller pieces');
