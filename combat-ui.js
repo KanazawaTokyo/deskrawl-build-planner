@@ -81,20 +81,19 @@ function uniquePanel(a,context){
  if(!rows.length)return '<p class="helper">計算対象の装備固有効果は未登録です。装備タブで装備を登録してください。</p>';
  return '<div class="combat-unique-list">'+rows.map(x=>'<div class="combat-unique-entry '+(x.active?'active':'inactive')+'"><div class="combat-unique-row"><strong>'+safe(x.name)+'</strong><span>'+safe(x.bonus||x.status)+'</span></div><p>'+safe(x.detail)+'</p><small>'+safe(x.status)+(x.active?' · 計上／確認済み':' · 今回の命中に未適用')+'</small></div>').join('')+'</div>';
 }
-function render(stats,settings,context={}){
- const q=B.scenario(settings.combat),a=B.attack(stats,settings,q,context),d=B.defense(stats,settings,q,context);
+function render(stats,settings,context={},options={}){
+ const raw=B.scenario(settings.combat),selected=Object.hasOwn(B.abilities,raw.abilityId)?raw.abilityId:'lightningStorm';
+ const a=B.attack(stats,settings,{...raw,abilityId:selected},context),q=a.settings,d=B.defense(stats,settings,q,context);
  const schrodinger=Boolean(context.schrodingerRing);
  const types=Object.entries(B.types).map(([key,data])=>[key,data[0]]);
- const attacks=Object.entries(B.attacks).map(([key,data])=>[key,data[0]]);
  const attackFields=[
-  select('attackType','攻撃種別',q.attackType,attacks),
-  select('damageType','与える属性',q.damageType,types),
-  select('abilityId','使用スキル',q.abilityId,[['other','その他のスキル'],['lightningStorm','Lightning Storm（雷・強攻撃）']]),
-  number('skillPercent','スキルの武器倍率（%）',q.skillPercent,'スキル説明にある数値。100% = ×1'),
-  number('skillFlat','スキル固定ダメージ',q.skillFlat),
-  number('heroLevel','自分のレベル',q.heroLevel,'敵のArmor/MR計算に使用'),
-  number('enemyHealth','敵の残HP（%）',q.enemyHealth,'通常は健康 >80%、負傷 <30%。指輪・手動指定は例外')
+  select('abilityId','使用スキル',q.abilityId,B.skillOptions),
+  number('enemyHealth','敵の残HP（%）',q.enemyHealth,'通常は健康 >80%、負傷 <30%。指輪の効果は例外')
  ].join('');
+ const skill=a.skill;
+ const skillSummary=skill?'<div class="combat-skill-summary"><strong>実効スキル Lv'+num(skill.level)+'</strong>'+
+ '<span>習得 Lv'+num(skill.learned)+(skill.assumed?'（未登録・Lv10仮定）':'')+' ＋ 装備 '+num(skill.equip)+' ＋ ルーン '+num(skill.runeBonus)+'</span>'+
+ '<b>武器倍率 '+pct(skill.percent,2)+'</b><small>'+safe(B.attacks[skill.attackType][0])+' ／ '+safe(B.types[skill.damageType][0])+' ／ キャラクターLv70固定</small></div>':'';
  const gear=context.items||{};
  const uniqueInputs=[
   ...(gear.shoulder==='shoulder'?[select('elementalStacks','ポールドロン発動スタック（6秒）',q.elementalStacks,Array.from({length:6},(_,i)=>[i,i+'スタック（'+(i*20)+'%）']))]:[]),
@@ -105,7 +104,7 @@ function render(stats,settings,context={}){
   check('forceHealthy','健康扱い（対健康）',q.forceHealthy||schrodinger,schrodinger),check('forceInjured','負傷扱い（対負傷）',q.forceInjured||schrodinger,schrodinger),
   check('elite','Elite / Boss',q.elite),check('vulnerable','脆弱',q.vulnerable),
   check('burned','燃焼',q.burned),check('slowed','減速',q.slowed),
-  check('stunned','スタン',q.stunned),check('immobilized','移動不能',q.immobilized),check('frozen','凍結 Frozen',q.frozen),check('lightningAbility','雷アビリティのCrit補正',q.lightningAbility),
+  check('stunned','スタン',q.stunned),check('immobilized','移動不能',q.immobilized),check('frozen','凍結 Frozen',q.frozen),
   check('distant','遠距離',q.distant),check('bleeding','出血',q.bleeding),check('poisoned','毒状態',q.poisoned)
  ].join('');
  const targetDefenses=[
@@ -131,15 +130,17 @@ function render(stats,settings,context={}){
  (baseNotes?'ゲームの初期値を未入力項目に補完：'+safe(baseNotes)+'。':'')+
  ' 実ゲームでの命中ダメージは乱数 ±10%・端数処理などで変動します。</div>'+
  '<section class="combat-section"><div class="section-label"><span>01 / 与ダメージの計算</span><span class="muted small">INFLICTED DAMAGE</span></div>'+
- '<div class="combat-input-card"><h3>攻撃・スキル条件</h3><div class="combat-fields">'+attackFields+'</div>'+
+ '<div class="combat-input-card"><button type="button" class="combat-collapse-btn" data-action="combat-toggle-settings" aria-expanded="'+(options.skillsOpen!==false)+'"><strong>スキル・敵条件</strong><small>'+safe(skill?.label||'')+' · Lv'+num(skill?.level||0)+'</small><span>'+(options.skillsOpen!==false?'▴ 閉じる':'▾ 開く')+'</span></button>'+
+ (options.skillsOpen!==false?'<div class="combat-input-content"><div class="combat-fields combat-skill-fields">'+attackFields+'</div>'+skillSummary+
  '<div class="combat-form-title">装備固有効果の発動状態</div>'+
  (uniqueInputs?'<div class="combat-unique-controls">'+uniqueInputs+'</div>':'<p class="helper">スタック数を指定する装備はありません。</p>')+
  (gear.shoulder==='shoulder'?'<p class="combat-ring-note">ポールドロンは初期値として最大5スタックを<strong>仮定</strong>しています。6秒以内に強攻撃を5回使えない場合は実際のスタック数に変更してください。</p>':'')+
- '<div class="combat-form-title">敵の状態（命中する直前）</div>'+
+ '<div class="combat-form-title combat-debuff-title"><span>敵の状態（命中する直前）</span><span><button type="button" class="btn outline" data-action="combat-debuffs" data-value="on">デバフ全部ON</button><button type="button" class="btn outline" data-action="combat-debuffs" data-value="off">全部OFF</button></span></div>'+
  '<div class="combat-checks">'+targetOptions+'</div>'+
  (schrodinger?'<p class="combat-ring-notice"><strong>シュレーディンガーの指輪を装備中</strong>：敵のHPに関係なく「健康」「負傷」が両方成立します。チェックは指輪効果として固定されています。</p>':
  '<p class="combat-ring-note">健康・負傷は通常、敵HPから自動判定します。指輪の効果や特殊条件を手動で再現するときは、上の2項目を個別にチェックしてください。</p>')+
- '<details class="combat-advanced"><summary>敵側の防御値を入力（任意）</summary><div class="combat-fields">'+targetDefenses+'</div></details></div>'+
+ '<details class="combat-advanced"><summary>敵側の防御値を入力（任意）</summary><div class="combat-fields">'+targetDefenses+'</div></details>'+
+ '<p class="combat-ring-note">一括ON/OFFは脆弱・燃焼・減速・スタン・移動不能・凍結・出血・毒のみ。敵HP・Elite/Boss・遠距離は変更しません。</p></div>':'')+'</div>'+
  '<div class="combat-metrics">'+
  metric('通常ヒット',a.normal?num(a.normal.final):'—','Critなし・平均乱数')+
  metric('クリティカル',a.critical?num(a.critical.final):'—','Crit率 '+pct(a.critChance))+
