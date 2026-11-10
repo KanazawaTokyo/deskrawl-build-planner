@@ -8,13 +8,13 @@ const groups=[
  ['base','キャラクター基礎値','装備外の入力値・レベル初期値'],
  ['gems','宝石','装備中ソケットの数値'],
  ['runes','ルーン','6枠のステータス・2/4/6セット効果'],
- ['paragon','Paragon','割り振りポイント'],
+ ['paragon','パラゴン','割り振りポイント'],
  ['talents','タレント','通常効果・スキル限定効果'],
  ['pet','ペット','パッシブ・継承・ペット装備'],
- ['aura','Flame Aura','発動中の効果・条件付きタレント'],
+ ['aura','フレイムオーラ','発動中の効果・条件付きタレント'],
  ['potion','ポーション','選択中のポーション'],
  ['food','料理','選択中の食事'],
- ['unique','装備固有効果','装備ごとの固有パッシブ・発動効果']
+ ['unique','装備固有効果','装備ごとの固有効果・発動効果']
 ];
 const sections=[
   ['攻撃',['int','str','dex','damage','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','distant','dot','burned','stunned','bleeding','poisoned','lightning','arcane','physical','fire','cold','poison','thorns','thornsBonus','strBonus','allDamage','critChance','critDamage','as','cdr']],
@@ -39,7 +39,7 @@ function nextComparisonKeys(settings,key,checked){
  return keys.length>=comparisonLimit?null:[...keys,key];
 }
 const gearOnlyFilters=Object.fromEntries(groups.map(([id])=>[id,false]));
-const clean=(s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const clean=(s)=>String(window.DBPJP?.text(s)??s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 function config(settings={}){
  const raw=settings.statView||{};
  const enabled=raw.groups||{},powers=raw.powers||{};
@@ -99,7 +99,7 @@ function evaluate(doc,build){
  }
  if(unique.windcallerMove)add('move',unique.windcallerMove,'風呼びのブーツ · 撃破後4秒');
  if(unique.greavesCrit)add('elementalSkillCritBonus',unique.greavesCrit,'秘術の刃のグリーヴ · 火/雷/秘術スキル');
- if(unique.gauntletCrit)add('lightningStormCritBonus',unique.gauntletCrit,'ストームコーラーの篭手 · Lightning Storm');
+ if(unique.gauntletCrit)add('lightningStormCritBonus',unique.gauntletCrit,'ストームコーラーの篭手 · ライトニングストーム');
  if(unique.ironMult!==1)add('independentDamageBonus',(unique.ironMult-1)*100,'鉄の暴君の兜 · '+(q.elite?'Elite/Boss':'通常敵'));
  if(unique.invulnerable)add('temporaryInvulnerable',100,'不屈の胸当て · 4秒間の無敵');
  // Show which damage-vs stats currently contribute. This is an additive
@@ -131,8 +131,8 @@ function evaluate(doc,build){
  return {base,active,settings,q,selection,context,equipment,unique};
 }
 Object.assign(C.labels,{
- skillCritDamage:'対象スキルCritダメージ',elementalSkillCritBonus:'属性スキル固有Crit補正',
- lightningStormCritBonus:'Lightning Storm固有Crit補正',independentDamageBonus:'装備固有の独立ダメージ増幅',
+ skillCritDamage:'対象スキルクリティカルダメージ',elementalSkillCritBonus:'属性スキル固有Crit補正',
+ lightningStormCritBonus:'ライトニングストーム固有Crit補正',independentDamageBonus:'装備固有の独立ダメージ増幅',
  temporaryInvulnerable:'無敵発動中（参考）',activeConditionalDamage:'現在成立中の条件ダメージ加算'
 });
 for(const key of ['skillCritDamage','elementalSkillCritBonus','lightningStormCritBonus','independentDamageBonus','temporaryInvulnerable','activeConditionalDamage'])C.percent.add(key);
