@@ -8,14 +8,14 @@ const C=window.DBPCalc;
 const types={physical:['物理','physical','physicalDR'],fire:['炎','fire','fireDR'],cold:['冷気','cold','coldDR'],lightning:['雷','lightning','lightningDR'],poison:['毒','poison','poisonDR'],arcane:['アルケイン','arcane','arcaneDR']};
 const attacks={basic:['通常攻撃','basicAttack'],strong:['強攻撃','strongAttack'],special:['特殊攻撃','specialDamage']};
 const defaults=Object.freeze({
- damageType:'lightning',attackType:'special',skillPercent:100,skillFlat:0,heroLevel:70,
+ damageType:'lightning',attackType:'special',abilityId:'other',skillPercent:100,skillFlat:0,heroLevel:70,elementalStacks:5,windcallerActive:false,unyieldingActive:false,
  enemyHealth:50,forceHealthy:false,forceInjured:false,elite:false,vulnerable:false,slowed:false,immobilized:false,stunned:false,frozen:false,lightningAbility:false,burned:false,distant:false,bleeding:false,poisoned:false,
  targetArmor:0,targetMR:0,targetTypeDR:0,targetAllDR:0,targetCritRed:0,
  defenseType:'lightning',attackerLevel:70,incomingHit:10000,incomingCrit:false,incomingCritBonus:150
 });
-const boolKeys=new Set(['forceHealthy','forceInjured','elite','vulnerable','slowed','immobilized','stunned','frozen','lightningAbility','burned','distant','bleeding','poisoned','incomingCrit']);
+const boolKeys=new Set(['windcallerActive','unyieldingActive','forceHealthy','forceInjured','elite','vulnerable','slowed','immobilized','stunned','frozen','lightningAbility','burned','distant','bleeding','poisoned','incomingCrit']);
 const ranges={
- skillPercent:[0,100000],skillFlat:[0,1e9],heroLevel:[1,1000],enemyHealth:[0,100],
+ skillPercent:[0,100000],skillFlat:[0,1e9],heroLevel:[1,1000],enemyHealth:[0,100],elementalStacks:[0,5],
  targetArmor:[0,1e9],targetMR:[0,1e9],targetTypeDR:[0,90],targetAllDR:[0,90],targetCritRed:[0,100],
  attackerLevel:[1,1000],incomingHit:[1,1e9],incomingCritBonus:[0,10000]
 };
@@ -23,11 +23,12 @@ const num=(x,fallback=0)=>{const n=Number(x);return Number.isFinite(n)?n:fallbac
 const clamp=(n,min,max)=>Math.max(min,Math.min(max,n));
 function validateInput(key,value){
  if(key==='attackType')return Object.hasOwn(attacks,value)?value:null;
+ if(key==='abilityId')return ['other','lightningStorm'].includes(value)?value:null;
  if(key==='damageType'||key==='defenseType')return Object.hasOwn(types,value)?value:null;
  if(boolKeys.has(key))return value===true;
  if(Object.hasOwn(ranges,key)){
   const n=Number(value),limit=ranges[key];
-  return value!==''&&Number.isFinite(n)&&n>=limit[0]&&n<=limit[1]?n:null;
+  return value!==''&&Number.isFinite(n)&&n>=limit[0]&&n<=limit[1]&&(key!=='elementalStacks'||Number.isSafeInteger(n))?n:null;
  }
  return null;
 }
@@ -53,10 +54,85 @@ function baseline(stats,settings){
   dodge:missing('dodge')?5:0
  };
 }
+// Registry for equipped unique powers. Temporary effects are scenario-only.
+const knownPowers={
+ grandmother:["The Grandmother","Crit率+5%、Critダメージ+120%（ステータスに計上済み）"],
+ iron:["Iron Tyrant's Helm","与ダメージを独立で+20%（Elite/Boss +40%）"],
+ schrodinger:["Schrödinger's Ring","健康・負傷を同時に成立"],
+ sage:["Remnant of the Elder Sage","アビリティLv+10（ステータスに計上済み）"],
+ prism:["Prismatic Heart","最も高い属性ボーナスを25%強化"],
+ shoulder:["Elemental Burst Pauldron","強攻撃後6秒、火・雷・秘術+20%/スタック（最大5）"],
+ unyielding:["Unyielding Cuirass","HP30%未満で被弾後4秒間無敵（CD25秒）"],
+ gauntlets:["Stormcaller Gauntlets","Lightning StormのCritダメージ+150%"],
+ bottomless:["Bottomless Potion Belt","ポーション所持数+4（ステータスに計上済み）"],
+ greaves:["Greaves of the Arcane Edge","火・雷・秘術のスキルCritダメージ+150%"],
+ windcaller:["Boots of the Windcaller","敵撃破後4秒間、移動速度+50%"]
+};
+const elementNames={fire:'炎',cold:'冷気',lightning:'雷',poison:'毒',arcane:'秘術'};
+const fmt=n=>Number(n).toLocaleString('ja-JP',{maximumFractionDigits:2});
 function equippedEffects(doc,build){
- const rings=['ring1','ring2'];
- const ids=rings.map(slot=>build?.loadout?.[slot]).filter(Boolean);
- return {schrodingerRing:ids.some(id=>(doc?.items||[]).some(item=>item.id===id&&item.definitionId==='schrodinger'))};
+ const items={};const inventory=doc?.items||[];
+ for(const [slot,ref] of Object.entries(build?.loadout||{})){
+  if(!ref)continue;
+  const item=inventory.find(x=>x.id===ref&&(!x.slot||x.slot===slot));
+  if(item?.definitionId)items[slot]=item.definitionId;
+ }
+ return {schrodingerRing:items.ring1==='schrodinger'||items.ring2==='schrodinger',items};
+}
+function uniqueBonuses(stats,q,context={}){
+ const gear=context.items||{},has=(slot,id)=>gear[slot]===id;
+ const rows=[],sources=[];
+ const row=(id,active,status,detail,bonus='',group='other')=>{
+  rows.push({id,name:knownPowers[id][0],active,status,detail,bonus,group});
+ };
+ const stacks=has('shoulder','shoulder')?q.elementalStacks:0;
+ const stackBonus=['fire','lightning','arcane'].includes(q.damageType)?20*stacks:0;
+ if(has('shoulder','shoulder')){
+  row('shoulder',stacks>0,stacks+' / 5 スタック','火・雷・秘術にそれぞれ+20%×'+stacks+'（6秒）',stackBonus?'+'+stackBonus+'% 属性':'','element');
+  if(stackBonus)sources.push({key:'element',name:'エレメンタルバーストのポールドロン',value:stackBonus,detail:'20% × '+stacks+'スタック'});
+ }
+ // The currently largest elemental bonus after stack buffs gets ×1.25.
+ const elements=['fire','cold','lightning','poison','arcane'].map(key=>({key,total:get(stats,key)+(['fire','lightning','arcane'].includes(key)?20*stacks:0)}));
+ const highest=elements.reduce((max,item)=>item.total>max.total?item:max,{key:'',total:0});
+ const prismBonus=has('neck','prism')&&highest.key===q.damageType&&highest.total>0?highest.total*.25:0;
+ if(has('neck','prism')){
+  row('prism',highest.total>0,'最高：'+(elementNames[highest.key]||'未設定'),
+   (elementNames[highest.key]||'属性')+' +'+fmt(highest.total)+'%を25%強化'+(highest.key===q.damageType?'（攻撃に適用）':'（別属性）'),
+   prismBonus?'+'+fmt(prismBonus)+'% 属性':'','element');
+  if(prismBonus)sources.push({key:'element',name:'プリズムの心臓',value:prismBonus,detail:'最高属性+ '+fmt(highest.total)+'% × 25%'});
+ }
+ const elementalAbility=['fire','lightning','arcane'].includes(q.damageType);
+ const greavesCrit=has('legs','greaves')&&elementalAbility?150:0;
+ if(has('legs','greaves')){
+  row('greaves',elementalAbility,elementalAbility?'対象属性':'対象外','火・雷・秘術スキルのCritダメージ+150%',greavesCrit?'+150% Crit':'','critical');
+  if(greavesCrit)sources.push({key:'critical',name:'秘術の刃のグリーヴ',value:150,detail:'火・雷・秘術のスキル限定'});
+ }
+ const stormSkill=q.abilityId==='lightningStorm'&&q.damageType==='lightning'&&q.attackType==='strong';
+ const gauntletCrit=has('gloves','gauntlets')&&stormSkill?150:0;
+ if(has('gloves','gauntlets')){
+  row('gauntlets',stormSkill,stormSkill?'Lightning Storm':'対象スキル外',
+   'Lightning StormのCritダメージ+150%',gauntletCrit?'+150% Crit':'','critical');
+  if(gauntletCrit)sources.push({key:'critical',name:'ストームコーラーの篭手',value:150,detail:'Lightning Storm限定'});
+ }
+ const ironMult=has('head','iron')?(q.elite?1.4:1.2):1;
+ if(has('head','iron')){
+  row('iron',true,q.elite?'Elite / Boss':'通常敵',
+   '他の倍率とは独立（'+(q.elite?'40':'20')+'%増加）','×'+fmt(ironMult),'unique');
+  sources.push({key:'unique',name:'鉄の暴君の兜',value:(ironMult-1)*100,detail:'独立倍率 ×'+fmt(ironMult)});
+ }
+ const moving=has('boots','windcaller')&&q.windcallerActive;
+ if(has('boots','windcaller'))row('windcaller',moving,moving?'発動中4秒':'未発動',
+  '撃破後の移動速度+50%。ダメージ倍率には含めない',moving?'+50% MS':'','utility');
+ const invulnerable=has('chest','unyielding')&&q.unyieldingActive;
+ if(has('chest','unyielding'))row('unyielding',invulnerable,invulnerable?'無敵発動中4秒':'未発動',
+  'HP30%未満で被弾後に発動（CD25秒）。発動のきっかけとなる被弾は別判定',invulnerable?'被ダメ0':'','defense');
+ if(has('ring1','schrodinger')||has('ring2','schrodinger'))row('schrodinger',true,'常時',
+ '健康と負傷を同時成立させる（条件付きダメージに反映）','両条件成立','conditional');
+ if(has('weapon','grandmother'))row('grandmother',true,'常時','固定Crit補正は装備ステータスで計上済み','重複計上なし','stat');
+ if(has('ring1','sage')||has('ring2','sage'))row('sage',true,'常時','アビリティレベル+10はステータスに計上。スキル倍率は手動入力','Lv+10','stat');
+ if(has('belt','bottomless'))row('bottomless',true,'常時','ポーション所持数+4はステータスに計上','所持数+4','stat');
+ return {stacks,stackBonus,prismBonus,highestElement:highest.key,highestValue:highest.total,
+  greavesCrit,gauntletCrit,ironMult,windcallerMove:moving?50:0,invulnerable,rows,sources};
 }
 function conditional(stats,q,context={}){
  const ring=Boolean(context.schrodingerRing);
