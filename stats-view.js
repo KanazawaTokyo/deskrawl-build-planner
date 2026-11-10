@@ -21,13 +21,14 @@ function config(settings={}){
  const raw=settings.statView||{};
  const enabled=raw.groups||{},powers=raw.powers||{};
  const filters=Object.fromEntries(groups.map(([id])=>[id,enabled[id]!==false]));
- return {filters,powers,settings:settings,mode:raw.mode||'all'};
+ const slots=Object.fromEntries(window.DBP.slots.map(([slot])=>[slot,raw.slots?.[slot]!==false]));
+ return {filters,powers,slots,settings:settings,mode:raw.mode||'all'};
 }
-function gearOnly(doc,build){return C.calc(doc,build,{sourceFilters:gearOnlyFilters});}
+function gearOnly(doc,build,slots){return C.calc(doc,build,{sourceFilters:{...gearOnlyFilters,slots}});}
 function evaluate(doc,build){
  const settings=build.settings||{},selection=config(settings);
- const base=gearOnly(doc,build);
- const result=C.calc(doc,build,{sourceFilters:{...selection.filters,powers:selection.powers}});
+ const base=gearOnly(doc,build,selection.slots);
+ const result=C.calc(doc,build,{sourceFilters:{...selection.filters,powers:selection.powers,slots:selection.slots}});
  const active={
   ...result,sum:{...result.sum},raw:{...result.raw},effective:{...result.effective},
   breakdown:Object.fromEntries(Object.entries(result.breakdown).map(([key,items])=>[key,[...items]])),
@@ -36,7 +37,7 @@ function evaluate(doc,build){
  const equipment=B.equippedEffects(doc,build);
  const items={};
  if(selection.filters.unique)for(const [slot,id] of Object.entries(equipment.items)){
-  if(selection.powers[id]!==false)items[slot]=id;
+  if(selection.slots[slot]!==false&&selection.powers[id]!==false)items[slot]=id;
  }
  const context={...equipment,items,schrodingerRing:items.ring1==='schrodinger'||items.ring2==='schrodinger'};
  const q=B.scenario(settings.combat);
@@ -112,6 +113,10 @@ Object.assign(C.labels,{
 });
 for(const key of ['skillCritDamage','elementalSkillCritBonus','lightningStormCritBonus','independentDamageBonus','temporaryInvulnerable','activeConditionalDamage'])C.percent.add(key);
 function controls(v){
+ const slotHtml=window.DBP.slots.map(([key,label])=>
+  '<label class="stat-slot-toggle"><input type="checkbox" data-change="stat-slot" data-key="'+key+'"'+
+  (v.selection.slots[key]?' checked':'')+'><span>'+clean(label)+'</span></label>'
+ ).join('');
  const sourceHtml=groups.map(([key,label,description])=>
   '<label class="stat-source-toggle"><input type="checkbox" data-change="stat-source" data-key="'+key+'"'+
   (v.selection.filters[key]?' checked':'')+'><span><b>'+clean(label)+'</b><small>'+clean(description)+'</small></span></label>'
@@ -124,14 +129,15 @@ function controls(v){
   greaves:'秘術の刃のグリーヴ',windcaller:'風呼びのブーツ'};
  const powers=available.map(id=>{
   const name=localized[id]||B.knownPowers[id][0],checked=v.selection.powers[id]!==false;
-  return '<label class="stat-power-toggle"><input type="checkbox" data-change="stat-power" data-key="'+id+'"'+(checked?' checked':'')+(v.selection.filters.unique?'':' disabled')+'><span>'+clean(name)+'</span></label>';
+  const availableSlot=Object.entries(equipped).some(([slot,power])=>power===id&&v.selection.slots[slot]!==false);
+  return '<label class="stat-power-toggle"><input type="checkbox" data-change="stat-power" data-key="'+id+'"'+(checked?' checked':'')+(v.selection.filters.unique&&availableSlot?'':' disabled')+'><span>'+clean(name)+'</span></label>';
  }).join('');
  const opt=(value,title,current)=>'<option value="'+value+'"'+(String(value)===String(current)?' selected':'')+'>'+clean(title)+'</option>';
  const scen=v.q;
  const perGear=[
-  equipped.shoulder==='shoulder'?'<label class="field"><span>ポールドロン・スタック数</span><select data-change="combat" data-key="elementalStacks">'+Array.from({length:6},(_,i)=>opt(i,i+' / 5（+'+(20*i)+'%）',scen.elementalStacks)).join('')+'</select></label>':'',
-  equipped.boots==='windcaller'?'<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="windcallerActive"'+(scen.windcallerActive?' checked':'')+'>風呼び：撃破後4秒</label>':'',
-  equipped.chest==='unyielding'?'<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="unyieldingActive"'+(scen.unyieldingActive?' checked':'')+'>不屈：無敵発動中4秒</label>':''
+  v.selection.slots.shoulder&&equipped.shoulder==='shoulder'?'<label class="field"><span>ポールドロン・スタック数</span><select data-change="combat" data-key="elementalStacks">'+Array.from({length:6},(_,i)=>opt(i,i+' / 5（+'+(20*i)+'%）',scen.elementalStacks)).join('')+'</select></label>':'',
+  v.selection.slots.boots&&equipped.boots==='windcaller'?'<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="windcallerActive"'+(scen.windcallerActive?' checked':'')+'>風呼び：撃破後4秒</label>':'',
+  v.selection.slots.chest&&equipped.chest==='unyielding'?'<label class="stat-power-toggle"><input type="checkbox" data-change="combat" data-key="unyieldingActive"'+(scen.unyieldingActive?' checked':'')+'>不屈：無敵発動中4秒</label>':''
  ].filter(Boolean).join('');
  const scenario='<div class="stats-sim-fields">'+
   '<label class="field"><span>表示するスキル</span><select data-change="combat" data-key="abilityId">'+opt('other','一般スキル',scen.abilityId)+opt('lightningStorm','Lightning Storm',scen.abilityId)+'</select></label>'+
@@ -148,7 +154,9 @@ function controls(v){
  return '<section class="card stats-sim-panel" aria-label="ステータスの補正ON/OFF設定">'+
  '<div class="card-heading"><div><h2>ステータス計算条件</h2><span>装備の数字だけ／有効な補正込みを比較。各項目はビルド単位で保存。</span></div></div>'+
  '<div class="stats-presets"><button class="btn outline" data-action="stat-preset" data-value="gear">装備のみ</button><button class="btn outline" data-action="stat-preset" data-value="all">補正すべてON</button></div>'+
- '<div class="stats-source-grid">'+sourceHtml+'</div>'+
+ '<div class="stats-slot-header"><b>装備部位</b><small>OFFの装備はOP・宝石・固有効果を計算から除外</small></div>'+
+  '<div class="stats-slot-grid">'+slotHtml+'</div>'+
+  '<div class="stats-source-grid">'+sourceHtml+'</div>'+
  (available.length?'<details class="stats-power-details" open><summary>装備固有効果を個別に切替（'+available.length+'件）</summary><div class="stats-powers-grid">'+powers+'</div></details>':'')+
  '<details class="stats-power-details" open><summary>発動状態・スキル条件を指定</summary>'+scenario+'</details>'+
  '<p class="helper">「装備のみ」は左側の比較値の定義です。右側の補正は上のON/OFFで変更します。発動効果は現在の状況を仮定した数値で、持続率・実際の発動確率は計算しません。タレント限定Critは通常Critとは別に表示します。</p>'+

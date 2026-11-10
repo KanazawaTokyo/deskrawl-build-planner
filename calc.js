@@ -67,6 +67,7 @@ function calc(doc,build,sub={}){
   const enabled=k=>sub.sourceFilters?.[k]!==false;
   const chosen=build.loadout||{};
   for(const [slot,id] of Object.entries(chosen)){
+    if(sub.sourceFilters?.slots?.[slot]===false)continue;
     const effectiveId=(sub.slot===slot)?sub.itemId:id;
     const item=doc.items.find(x=>x.id===effectiveId);if(!item)continue;
     const def=definitions.find(x=>x.id===item.definitionId);
