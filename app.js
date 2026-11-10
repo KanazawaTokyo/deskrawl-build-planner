@@ -89,8 +89,48 @@ function renderGemComparison(current,candidate){
 function slotIcon(x){return {weapon:'⚔',head:'♜',neck:'◇',shoulder:'◆',chest:'▣',gloves:'✦',belt:'▬',legs:'◫',boots:'⌁',ring1:'◌',ring2:'◌'}[x]||'◆'}
 function renderPet(){return PU?PU.render({settings:build().settings,result:C.calc(state,build()),E,opt}):'<main class="workspace"><p>ペット機能の読み込みが必要です。</p></main>'}
 function renderTalent(){const t=window.DBPTalentUI;return t?t.render(build().settings||{},ui.talentSelected,C.calc(state,build())):'<div class="notice">タレントツリーを読み込めませんでした。再読み込みしてください。</div>';}
-function renderCombat(){const ui=window.DBPCombatUI;return ui?ui.render(C.calc(state,build()),build().settings||{},window.DBPCombat.equippedEffects(state,build())):'<div class="notice">計算モジュールを読み込めませんでした。再読み込みしてください。</div>';}
-function renderStats(){const b=build(),r=C.calc(state,b);return `<main class="workspace stats-workspace"><section class="stats-main"><div class="page-heading"><div class="eyebrow">CHARACTER OVERVIEW</div><h1>キャラクターステータス</h1><p>装備・Paragon・タレント・バフの取得元を確認できます。</p></div><div class="quickbar"><label class="toggle"><input type="checkbox" data-change="aura" ${b.settings?.aura?'checked':''}/><span class="toggle-track"></span><span>Flame Aura <strong>${b.settings?.aura?'ON':'OFF'}</strong></span></label><label class="inline-select">ポーション <select data-change="quickpotion">${potionOptions(b.settings?.potion)}</select></label><button class="btn outline" data-action="settings"><span>⚙</span> ビルド設定</button></div><div class="section-label"><span>重要ステータス</span><span class="muted small">KEY METRICS</span></div><div class="stat-tiles">${C.priority.map(k=>statTile(k,r)).join('')}</div><div class="notice gentle">表示数値は登録されている項目の<b>部分計算</b>です。Divine固定OPは加算済みですが、強化値・基礎値・外部補正の未登録分や、条件付きの固有効果は未計算のため、ゲーム内の完全な最終値ではありません。<button class="inline-link" data-action="measurement">実測値を記録</button></div><div class="section-label extra-space"><span>すべてのステータス</span><span class="muted small">ALL STATISTICS</span></div>${[['攻撃',['int','str','dex','damage','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','distant','dot','burned','stunned','bleeding','poisoned','lightning','arcane','physical','fire','cold','poison','thorns','thornsBonus','strBonus','allDamage','critChance','critDamage','as','cdr']],['防御',['maxHP','bonusHP','armor','armorBonus','bonusArmor','mr','bonusMR','critRed','dodge','physicalDR','coldDR','fireDR','lightningDR','arcaneDR','poisonDR','healingReceived']],['リソース・補助',['mana','manaBonus','manaRegen','mcr','move','loh','lohBonus','lifeKill','regen','regenBonus','itemFind','goldFind','potionFind','materialFind','xp','potionCharges','manaKill']],['スキル限定・タレント',C.talentSpecialStats||[]]].map(([name,keys])=>`<section class="stat-group"><h3>${name}</h3><div class="stat-rows">${keys.map(k=>`<button data-action="stat" data-value="${k}" class="stat-row ${ui.selectedStat===k?'chosen':''}"><span>${E(C.labels[k])}</span><b>${E(C.format(k,r.effective[k]))}</b><span class="stat-arrow">›</span></button>`).join('')}</div></section>`).join('')}<section class="card snapshot"><div class="card-heading"><div><h2>実測記録</h2><span>過去の測定値は現在の合計に足しません</span></div><button class="text-btn" data-action="measurement">＋ 登録</button></div>${state.measurements.filter(x=>x.buildId===b.id).slice(-3).reverse().map(m=>`<div class="snapshot-row"><strong>${E(m.at)}</strong><span>${Object.entries(m.values||{}).map(([k,v])=>`${C.labels[k]||k}: ${v}`).join(' · ')}</span><small>${E(m.notes||'')}</small></div>`).join('')||'<p class="muted">実測記録はまだありません。</p>'}</section></section><aside class="stats-side ${ui.settingsOpen?'show-settings':''}">${ui.settingsOpen?renderSettings():renderBreakdown(r)}</aside></main>`;}
+function renderCombat(){
+ const b=build(),sv=window.DBPStatsView.config(b.settings||{});
+ const equipped=window.DBPCombat.equippedEffects(state,b);
+ const items={};
+ if(sv.filters.unique)for(const [slot,id] of Object.entries(equipped.items))if(sv.powers[id]!==false)items[slot]=id;
+ const context={...equipped,items,schrodingerRing:items.ring1==='schrodinger'||items.ring2==='schrodinger'};
+ const stats=C.calc(state,b,{sourceFilters:{...sv.filters,powers:sv.powers}});
+ const ui=window.DBPCombatUI;
+ return ui?ui.render(stats,b.settings||{},context):'<div class="notice">計算モジュールを読み込めませんでした。再読み込みしてください。</div>';
+}
+function renderStats(){
+ const b=build(),SV=window.DBPStatsView,v=SV.evaluate(state,b),r=v.active;
+ const groups=[
+  ['攻撃',['int','str','dex','damage','basicAttack','strongAttack','specialDamage','healthy','injured','slowed','immobilized','elite','vulnerable','distant','dot','burned','stunned','bleeding','poisoned','lightning','arcane','physical','fire','cold','poison','thorns','thornsBonus','strBonus','allDamage','critChance','critDamage','as','cdr']],
+  ['防御',['maxHP','bonusHP','armor','armorBonus','bonusArmor','mr','bonusMR','critRed','dodge','physicalDR','coldDR','fireDR','lightningDR','arcaneDR','poisonDR','healingReceived']],
+  ['リソース・補助',['mana','manaBonus','manaRegen','mcr','move','loh','lohBonus','lifeKill','regen','regenBonus','itemFind','goldFind','potionFind','materialFind','xp','potionCharges','manaKill']],
+  ['スキル限定・タレント',[...C.talentSpecialStats||[],'skillCritDamage','elementalSkillCritBonus','lightningStormCritBonus']],
+  ['装備固有・条件付き',['independentDamageBonus','temporaryInvulnerable']]
+ ];
+ const details=groups.map(([name,keys])=>'<section class="stat-group"><h3>'+E(name)+'</h3>'+
+  SV.tableHeader()+'<div class="stat-rows">'+keys.map(k=>SV.statRow(k,v,ui.selectedStat)).join('')+'</div></section>').join('');
+ const snapshots=state.measurements.filter(x=>x.buildId===b.id).slice(-3).reverse().map(m=>
+  '<div class="snapshot-row"><strong>'+E(m.at)+'</strong><span>'+
+  Object.entries(m.values||{}).map(([k,val])=>E(C.labels[k]||k)+': '+E(val)).join(' · ')+'</span><small>'+E(m.notes||'')+'</small></div>').join('');
+ return '<main class="workspace stats-workspace"><section class="stats-main">'+
+ '<div class="page-heading"><div class="eyebrow">CHARACTER OVERVIEW</div><h1>キャラクターステータス</h1>'+
+ '<p>装備の数字と、タレント・ペット・固有効果を含むシミュレーション値を並べて比較します。</p></div>'+
+ '<div class="quickbar"><label class="toggle"><input type="checkbox" data-change="aura"'+(b.settings?.aura?' checked':'')+'><span class="toggle-track"></span><span>Flame Aura <strong>'+(b.settings?.aura?'ON':'OFF')+'</strong></span></label>'+
+ '<label class="inline-select">ポーション <select data-change="quickpotion">'+potionOptions(b.settings?.potion)+'</select></label>'+
+ '<button class="btn outline" data-action="settings"><span>⚙</span> ビルド設定</button></div>'+
+ SV.controls(v)+
+ '<div class="section-label"><span>主なステータス比較</span><span class="muted small">GEAR ONLY / BUFFED</span></div>'+
+ SV.summary(v)+
+ '<div class="notice gentle">左は<strong>装備OP・固定数値のみ</strong>、右は選択した基礎値・宝石・Paragon・タレント・ペット・Aura・消耗品・装備固有効果込みです。装備自体は書き換えません。'+
+ '固有の独立倍率・一時無敵・スキル限定Critは通常OPに混ぜず別項目で表示します。ゲーム内部の計算を完全再現するものではありません。</div>'+
+ '<div class="section-label extra-space"><span>すべてのステータス</span><span class="muted small">GEAR / WITH EFFECTS / DIFFERENCE</span></div>'+
+ details+
+ '<section class="card snapshot"><div class="card-heading"><div><h2>実測記録</h2><span>過去の測定値は現在の合計に足しません</span></div>'+
+ '<button class="text-btn" data-action="measurement">＋ 登録</button></div>'+
+ (snapshots||'<p class="muted">実測記録はまだありません。</p>')+'</section></section>'+
+ '<aside class="stats-side '+(ui.settingsOpen?'show-settings':'')+'">'+(ui.settingsOpen?renderSettings():renderBreakdown(r))+'</aside></main>';
+}
 function statTile(k,r){const val=r.effective[k];const cap=D.limits[k];return `<button class="stat-tile ${ui.selectedStat===k&&!ui.settingsOpen?'chosen':''}" data-action="stat" data-value="${k}"><span class="stat-label">${E(C.labels[k])}</span><strong>${E(C.format(k,val))}</strong><span class="stat-hint">${cap?`上限 ${cap}%${r.raw[k]>cap?' · 超過 '+C.format(k,r.raw[k]-cap):''}`:k==='mr'?'Armorとは別計算':'実効値・部分合計'}</span>${cap?`<div class="progress"><i style="width:${Math.min(100,Math.max(0,(val||0)/cap*100))}%"></i></div>`:''}</button>`}
 function renderBreakdown(r){const k=ui.selectedStat,list=r.breakdown[k]||[],raw=r.raw[k],eff=r.effective[k];return `<div class="side-panel"><div class="side-title"><div><small>STAT BREAKDOWN</small><h2>${E(C.labels[k]||k)}</h2></div><button class="icon-btn" data-action="settings" title="設定パネル">⚙</button></div><div class="side-total"><span>登録データからの計算値</span><strong>${E(C.format(k,eff))}</strong>${raw!==eff?`<small>上限適用前 ${E(C.format(k,raw))}</small>`:''}</div><h3>取得元内訳</h3>${list.length?list.map(x=>`<div class="break-row"><div><span>${E(x.source)}</span><small>${E(qualityOf(x.quality))}</small></div><strong>+${E(C.format(k,x.value))}</strong></div>`).join(''):'<div class="notice">この項目の取得元は未登録です。ビルド設定か装備を入力してください。</div>'}${k==='mr'||k==='armor'?`<div class="mitigation"><span>敵Lv ${E(build().settings?.enemyLevel||70)} の推定軽減率</span><strong>${E(r.mitigations[k].toFixed(1))}%</strong><small>式：防御値 ÷（防御値 + 50 × 敵Lv）。登録値のみで計算した参考値。</small></div>`:''}<button class="btn outline wide" data-action="settings">設定を編集 <span>→</span></button><p class="side-note">${r.pending.length}件の未校正項目があります。確度の低い数値を最終値として扱わないでください。</p></div>`;}
 function potionOptions(current){return [['none','なし'],['swift','上級迅速（AS）'],['vitality','上級活力（HP）'],['resistance','上級耐性（MR）'],['wind','風（Dodge）'],['focus','上級集中（CDR）'],['efficiency','上級効率（MCR）'],['cruel','上級残酷（Crit）']].map(x=>opt(x[0],x[1],current)).join('')}
@@ -126,6 +166,16 @@ if(ui.modal==='compare-builds'){const x=state.builds.find(y=>y.id===ui.compareBu
 return `<div class="modal-backdrop" data-action="modal-close"><div class="modal-panel" role="dialog" aria-modal="true">${content}</div></div>`;}
 // ---------- mutations ----------
 function act(action,id,value,el){const b=build();switch(action){
+case 'stat-preset':{
+ const full=value==='all';
+ if(!full&&value!=='gear')return;
+ modify(()=>{b.settings.statView={
+  ...b.settings.statView,
+  groups:Object.fromEntries(window.DBPStatsView.groups.map(([key])=>[key,full])),
+  powers:{}
+ }});
+ return;
+}
 case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-talent':ui.tab='talent';ui.settingsOpen=false;render();break;case 'tab-pet':ui.tab='pet';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;case 'tab-combat':ui.tab='combat';ui.settingsOpen=false;render();break;case 'combat-defense-type':{const type=window.DBPCombat?.validateInput('defenseType',value);if(type)modify(()=>{b.settings.combat??={};b.settings.combat.defenseType=type});break;}
 case 'talent-add':
 case 'talent-remove':{
@@ -193,12 +243,25 @@ case 'measurement-save':{const fields=['critChance','critRed','cdr','mcr','dodge
 function defaultSettings(){return {aura:true,enemyLevel:70,paragonPoints:{},paragonLevel:null,talentPoints:{},talents:{flameWard:0,arcaneReservoir:0},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{}}}
 function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=getItem(id),v=el.type==='checkbox'?el.checked:el.value;
  if(PU?.isChange(kind)){PU.change(el,{settings:b.settings,modify,flash,render});return}
+  if(kind==='stat-source'){
+    const key=el.dataset.key;
+    if(!window.DBPStatsView.groups.some(g=>g[0]===key)){flash('不明な補正項目です');return}
+    modify(()=>{b.settings.statView??={};b.settings.statView.groups??={};b.settings.statView.groups[key]=Boolean(v)});
+    return;
+  }
+  if(kind==='stat-power'){
+    const key=el.dataset.key,equipped=window.DBPCombat.equippedEffects(state,b);
+    if(!Object.values(equipped.items).includes(key)||!window.DBPCombat.knownPowers[key]){flash('装備中の固有効果ではありません');return}
+    modify(()=>{b.settings.statView??={};b.settings.statView.powers??={};b.settings.statView.powers[key]=Boolean(v)});
+    return;
+  }
  if(kind==='combat'){const key=el.dataset.key,raw=el.type==='checkbox'?el.checked:el.value;const verified=window.DBPCombat?.validateInput(key,raw);if(verified===null||verified===undefined){flash('計算条件の入力範囲を確認してください');render();return}modify(()=>{
  b.settings.combat??={};
  b.settings.combat[key]=verified;
  if(key==='abilityId'&&verified==='lightningStorm'){
   b.settings.combat.attackType='strong';
   b.settings.combat.damageType='lightning';
+   b.settings.combat.lightningAbility=true;
  }
  if((key==='attackType'&&verified!=='strong'||key==='damageType'&&verified!=='lightning')&&b.settings.combat.abilityId==='lightningStorm'){
   b.settings.combat.abilityId='other';
