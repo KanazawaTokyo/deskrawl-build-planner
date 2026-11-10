@@ -236,7 +236,7 @@ case 'talent-remove':{
  const result=action==='talent-add'?T.canAdd(a.ranks,value):T.canRemove(a.ranks,value);
  if(!result.ok){render();flash(result.why);return}
  modify(()=>{b.settings.talentPoints=result.ranks});
- if(result.type==='swap')flash('キャップストーンを変更しました（ゲーム内費用 '+result.cost+'G）');
+ if(result.type==='swap')flash('キャップストーンを変更しました');
  return;
 }
 case 'talent-new-tree':{
@@ -245,20 +245,11 @@ case 'talent-new-tree':{
  modify(()=>{b.settings.talentPoints={};ui.talentSelected='arcaneInsight'});
  flash('新しい70ptタレントツリーに切り替えました');return;
 }
-case 'talent-history-preset':{
- const T=window.DBPTalents;if(!T)return;
- const preset=T.preset();
- if(!T.valid(preset)||T.spent(preset)!==70){flash('履歴プリセットの検証に失敗しました');return}
- if(!confirm('以前の会話に基づく推定70pt配分を読み込みますか？\n現在のゲーム内の割り振りと一致しているとは限りません。旧データは残します。'))return;
- modify(()=>{b.settings.talentPoints=preset;ui.talentSelected='arcaneExposure'});
- flash('会話履歴の70pt構成を読み込みました。ゲーム内で照合してください');return;
-}
 case 'talent-reset':{
  const T=window.DBPTalents;if(!T)return;
  const a=T.allocation(b.settings);
  if(a.legacy||!a.total)return;
- const cost=T.resetCost(a.total);
- if(!confirm('このビルドの戦闘タレント '+a.total+'ptをすべて振り直しますか？\nゲーム内の参考費用：'+cost+'G\nこの操作はゲーム内のGoldを実際には消費しません。'))return;
+ if(!confirm('このビルドの戦闘タレント '+a.total+'ptをすべてリセットしますか？'))return;
  modify(()=>{b.settings.talentPoints={}});
  flash('戦闘タレントを0ptへリセットしました');return;
 }
