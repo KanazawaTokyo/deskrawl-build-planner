@@ -155,7 +155,7 @@ assert.equal(JSON.stringify(active().settings.statView||{}),beforeFull,'even syn
 click('stat','move');
 assert(app.innerHTML.includes('data-change="stat-compare" data-key="move" checked'),'selected stat remains removable at eight');
 change('stat-compare','move',false);
-assert.deepEqual(Array.from(V.comparisonKeys(active().settings)),fullInitial.filter(k=>k!=='move'),'unchecked comparison stat removed');
+assert.deepEqual(Array.from(V.comparisonKeys(active().settings)),Array.from(fullInitial).filter(k=>k!=='move'),'unchecked comparison stat removed');
 assert(app.innerHTML.includes('7 / 8 項目を表示'),'summary shows freed comparison slot');
 click('stat','int');
 assert(app.innerHTML.includes('data-change="stat-compare" data-key="int"'),'unselected stat now available');
