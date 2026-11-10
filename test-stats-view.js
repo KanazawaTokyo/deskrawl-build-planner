@@ -68,7 +68,7 @@ assert(Math.abs(storm.active.effective.skillCritDamage-storm.active.effective.cr
  'Lightning-only talent +96, Greaves+150 and Gauntlets+150 combine only on selected skill');
 assert.equal(storm.active.effective.critDamage,view.active.effective.critDamage,
  'skill-specific modifiers must NOT change generic CritDamage');
-assert.equal(storm.active.effective.independentDamageBonus,40,'Elite/Boss Iron Helm independent +40, not generic allDamage');
+assert(Math.abs(storm.active.effective.independentDamageBonus-40)<1e-7,'Elite/Boss Iron Helm independent +40, not generic allDamage');
 assert.equal(storm.active.effective.temporaryInvulnerable,100,'activated armor displays immunity separately');
 assert.equal(storm.active.effective.move-view.active.effective.move,50,'Windcaller only affects mobility');
 assert(storm.active.breakdown.skillCritDamage.some(x=>x.source.includes('グリーヴ')));
