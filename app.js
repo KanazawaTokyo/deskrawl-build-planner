@@ -118,26 +118,26 @@ function renderStats(){
  SV.summary(v)+
  '<div class="notice gentle">左は<strong>装備の能力値・固定数値のみ</strong>、右は選択した基礎値・宝石・パラゴン・タレント・ペット・オーラ・消耗品・装備固有効果込みです。装備自体は書き換えません。'+
  '固有の独立倍率・一時無敵・スキル限定クリティカルは通常OPに混ぜず別項目で表示します。ゲーム内部の計算を完全再現するものではありません。</div>'+
- '<div class="section-label extra-space"><span>すべてのステータス</span><span class="muted small">装備のみ / 補正込み / 差分</span></div>'+
+ '<div class="section-label extra-space"><span>すべてのステータス</span><span class="muted small">装備のみ / 補正込み / 過剰分</span></div>'+
  details+
  '<section class="card snapshot"><div class="card-heading"><div><h2>実測記録</h2><span>過去の測定値は現在の合計に足しません</span></div>'+
  '<button class="text-btn" data-action="measurement">＋ 登録</button></div>'+
  (snapshots||'<p class="muted">実測記録はまだありません。</p>')+'</section></section>'+
  '<aside class="stats-side '+(ui.settingsOpen?'show-settings':'')+'">'+(ui.settingsOpen?renderSettings():renderBreakdown(r))+'</aside></main>';
 }
-function statTile(k,r){const val=r.effective[k];const cap=D.limits[k];return `<button class="stat-tile ${ui.selectedStat===k&&!ui.settingsOpen?'chosen':''}" data-action="stat" data-value="${k}"><span class="stat-label">${E(C.labels[k])}</span><strong>${E(C.format(k,val))}</strong><span class="stat-hint">${cap?`上限 ${cap}%${r.raw[k]>cap?' · 超過 '+C.format(k,r.raw[k]-cap):''}`:k==='mr'?'Armorとは別計算':'実効値・部分合計'}</span>${cap?`<div class="progress"><i style="width:${Math.min(100,Math.max(0,(val||0)/cap*100))}%"></i></div>`:''}</button>`}
+function statTile(k,r){const val=r.effective[k];const cap=D.limits[k];return `<button class="stat-tile ${ui.selectedStat===k&&!ui.settingsOpen?'chosen':''}" data-action="stat" data-value="${k}"><span class="stat-label">${E(window.DBPStatsView.statLabel(k))}</span><strong>${E(C.format(k,val))}</strong><span class="stat-hint">${cap?`上限 ${cap}%${r.raw[k]>cap?' · 超過 '+C.format(k,r.raw[k]-cap):''}`:k==='mr'?'Armorとは別計算':'実効値・部分合計'}</span>${cap?`<div class="progress"><i style="width:${Math.min(100,Math.max(0,(val||0)/cap*100))}%"></i></div>`:''}</button>`}
 function renderBreakdown(r){
  const k=ui.selectedStat,list=r.breakdown[k]||[],raw=r.raw[k],eff=r.effective[k],SV=window.DBPStatsView;
- const selected=SV.comparisonKeys(build().settings),isShown=selected.includes(k),full=selected.length>=SV.comparisonLimit;
+ const selected=SV.comparisonKeys(build().settings),isShown=selected.includes(k),full=selected.length>=SV.comparisonLimit,cap=SV.capOf(k),extra=SV.excessValue(k,r);
  const toggle='<label class="stats-compare-pick'+(full&&!isShown?' at-limit':'')+'">'+
   '<input type="checkbox" data-change="stat-compare" data-key="'+E(k)+'"'+
   (isShown?' checked':'')+(full&&!isShown?' disabled':'')+'>'+
   '<span><strong>ステータス比較に表示</strong><small>'+selected.length+' / '+SV.comparisonLimit+' 項目を選択中'+
   (full&&!isShown?' · 追加するには別の項目のチェックを外してください':'')+'</small></span></label>';
- return '<div class="side-panel"><div class="side-title"><div><small>ステータス内訳</small><h2>'+E(C.labels[k]||k)+'</h2></div>'+
+ return '<div class="side-panel"><div class="side-title"><div><small>ステータス内訳</small><h2>'+E(SV.statLabel(k))+'</h2></div>'+
   '<button class="icon-btn" data-action="settings" title="設定パネル">⚙</button></div>'+toggle+
   '<div class="side-total"><span>登録データからの計算値</span><strong>'+E(C.format(k,eff))+'</strong>'+
-  (raw!==eff?'<small>上限適用前 '+E(C.format(k,raw))+'</small>':'')+'</div>'+
+  (cap!==null?'<small>過剰分 '+E(SV.excessText(k,r))+(extra>0?'（上限適用前 '+E(C.format(k,raw))+'）':'')+'</small>':'')+'</div>'+
   '<h3>取得元内訳</h3>'+
   (list.length?list.map(x=>'<div class="break-row"><div><span>'+E(x.source)+'</span><small>'+E(qualityOf(x.quality))+
   '</small></div><strong>+'+E(C.format(k,x.value))+'</strong></div>').join(''):
