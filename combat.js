@@ -164,15 +164,16 @@ function share(layers){
 }
 function attack(stats,settings,options,context={}){
  const q=scenario(options),base=baseline(stats,settings),element=types[q.damageType][1],selected=attacks[q.attackType][1];
+ const unique=uniqueBonuses(stats,q,context);
  const weaponDamage=get(stats,'weaponDamage'),flatDamage=get(stats,'damage'),primary=get(stats,'int')+base.int;
- const eleValue=get(stats,element),allValue=get(stats,'allDamage');
+ const eleValue=get(stats,element)+unique.stackBonus+unique.prismBonus,allValue=get(stats,'allDamage');
  const conditions=conditional(stats,q,context),conditionValue=conditions.reduce((sum,x)=>sum+x.value,0);
  const atkValue=get(stats,selected);
  const conditionalBasicCrit=q.attackType==='basic'?get(stats,'basicCritChance'):0;
  const conditionalFrozenCrit=q.frozen?get(stats,'frozenCritChance'):0;
  const conditionalLightningCrit=q.damageType==='lightning'&&q.lightningAbility?get(stats,'lightningAbilityCritDamage'):0;
  const critChance=clamp(get(stats,'critChance')+base.critChance+conditionalBasicCrit+conditionalFrozenCrit,0,85);
- const critBonus=get(stats,'critDamage')+base.critDamage+conditionalLightningCrit+(q.frozen?get(stats,'frozenCritDamage'):0),targetCritRed=q.targetCritRed;
+ const critBonus=get(stats,'critDamage')+base.critDamage+conditionalLightningCrit+(q.frozen?get(stats,'frozenCritDamage'):0)+unique.greavesCrit+unique.gauntletCrit,targetCritRed=q.targetCritRed;
  const critMult=1+(critBonus/100)*(1-targetCritRed/100);
  const elemMult=1+(eleValue+allValue)/100,primaryMult=1+primary/100;
  const condMult=1+conditionValue/100,attackMult=1+atkValue/100;
@@ -188,7 +189,8 @@ function attack(stats,settings,options,context={}){
   {key:'critical',label:'クリティカル期待増幅',value:(critMult-1)*critChance,factor:1+critChance/100*(critMult-1)},
   {key:'conditional',label:'条件付きダメージ',value:conditionValue,factor:condMult},
   {key:'attack',label:attacks[q.attackType][0]+'ボーナス',value:atkValue,factor:attackMult},
-  {key:'vulnerable',label:'脆弱の被ダメージ増加',value:q.vulnerable?30:0,factor:vulnMult}
+  {key:'vulnerable',label:'脆弱の被ダメージ増加',value:q.vulnerable?30:0,factor:vulnMult},
+  {key:'unique',label:'装備固有の独立倍率',value:(unique.ironMult-1)*100,factor:unique.ironMult}
  ]);
  const sumBase=weaponDamage+flatDamage;
  // Rounding follows the gameplay stages approximately; nominal spread is ×1.
@@ -201,20 +203,22 @@ function attack(stats,settings,options,context={}){
   const vsStage=Math.floor(spreadStage*condMult);
   const attackStage=Math.floor(vsStage*attackMult);
   const vulnStage=Math.floor(attackStage*vulnMult);
-  const afterResistance=Math.floor(vulnStage*(1-armorCut));
+  const uniqueStage=Math.floor(vulnStage*unique.ironMult);
+  const afterResistance=Math.floor(uniqueStage*(1-armorCut));
   const afterType=Math.floor(afterResistance*(1-typeCut));
   const final=Math.max(1,Math.floor(afterType*(1-allCut)));
-  return {start,elementStage,criticalStage,spreadStage,vsStage,attackStage,vulnStage,afterResistance,afterType,final};
+  return {start,elementStage,criticalStage,spreadStage,vsStage,attackStage,vulnStage,uniqueStage,afterResistance,afterType,final};
  }
  const normal=hit(false),critical=hit(true),prob=critChance/100;
  const expected=normal&&critical?normal.final*(1-prob)+critical.final*prob:null;
- return {settings:q,base,weaponDamage,flatDamage,primary,eleValue,allValue,conditionValue,conditions,
+ return {settings:q,base,weaponDamage,flatDamage,primary,eleValue,allValue,conditionValue,conditions,unique,
  atkValue,critChance,critBonus,targetCritRed,critMult,elemMult,primaryMult,condMult,attackMult,
  armorCut,typeCut,allCut,vulnMult,resistMult,skillMult,layers,normal,critical,expected,
  hasWeapon:weaponDamage>0,equippedEffects:context,estimated:true};
 }
-function defenseFor(stats,settings,options,type){
+function defenseFor(stats,settings,options,type,context={}){
  const q=scenario(options),base=baseline(stats,settings);
+ const invulnerable=context?.items?.chest==='unyielding'&&q.unyieldingActive;
  const category=types[type]||types.lightning;
  const bonusMR=get(stats,'bonusMR');
  const mr=get(stats,'mr')+base.int*(1+bonusMR/100);
@@ -229,23 +233,25 @@ function defenseFor(stats,settings,options,type){
  const critMult=q.incomingCrit?1+q.incomingCritBonus/100*(1-critRed):1;
  const before=q.incomingHit*critMult;
  const afterResist=before*(1-resistCut),afterType=afterResist*(1-typeCut),afterGeneral=afterType*(1-generalCut);
- const afterFlat=Math.max(1,Math.floor(afterGeneral-flatCut));
+ const noImmunityAfterFlat=Math.max(1,Math.floor(afterGeneral-flatCut));
+ const afterFlat=invulnerable?0:noImmunityAfterFlat;
  const dodgeExpected=afterFlat*(1-dodge);
  const relative=clamp(1-dodgeExpected/before,0,1);
  const layers=[
   {key:'resistance',label:type==='physical'?'Armor':'Magic Resist',rate:resistCut*100,cutFromBase:resistCut*100,remaining:afterResist},
   {key:'typeDR',label:category[0]+'ダメージ軽減',rate:typeCut*100,cutFromBase:(afterResist-afterType)/before*100,remaining:afterType},
   {key:'allDR',label:'共通ダメージ軽減',rate:generalCut*100,cutFromBase:(afterType-afterGeneral)/before*100,remaining:afterGeneral},
-  {key:'flatDR',label:'固定ダメージ軽減',rate:null,cutFromBase:(afterGeneral-afterFlat)/before*100,remaining:afterFlat},
+  {key:'flatDR',label:'固定ダメージ軽減',rate:null,cutFromBase:(afterGeneral-noImmunityAfterFlat)/before*100,remaining:noImmunityAfterFlat},
+  ...(invulnerable?[{key:'uniqueInvulnerable',label:'不屈の胸当て：無敵発動中',rate:100,cutFromBase:noImmunityAfterFlat/before*100,remaining:0}]:[]),
   {key:'dodge',label:'回避（期待値）',rate:dodge*100,cutFromBase:(afterFlat-dodgeExpected)/before*100,remaining:dodgeExpected}
  ];
- return {key:type,label:category[0],resistance:resist,resistCut,typeCut,generalCut,flatCut,dodge,critRed,critMult,before,afterFlat,dodgeExpected,
+ return {key:type,label:category[0],resistance:resist,resistCut,typeCut,generalCut,flatCut,dodge,critRed,critMult,before,afterFlat,dodgeExpected,invulnerable,
  directCut:1-afterFlat/before,expectedCut:relative,layers,missingBaseDodge:base.dodge>0};
 }
-function defense(stats,settings,options){
+function defense(stats,settings,options,context={}){
  const q=scenario(options);
- const byType=Object.keys(types).map(type=>defenseFor(stats,settings,q,type));
+ const byType=Object.keys(types).map(type=>defenseFor(stats,settings,q,type,context));
  return {settings:q,byType,selected:byType.find(x=>x.key===q.defenseType)};
 }
-window.DBPCombat={types,attacks,defaults,ranges,validateInput,scenario,baseline,resistanceCut,equippedEffects,conditional,attack,defense};
+window.DBPCombat={types,attacks,defaults,ranges,knownPowers,validateInput,scenario,baseline,resistanceCut,equippedEffects,uniqueBonuses,conditional,attack,defense};
 })();
