@@ -163,7 +163,7 @@ function uniqueBonuses(stats,q,context={}){
  if(has('ring1','schrodinger')||has('ring2','schrodinger'))row('schrodinger',true,'常時',
  '健康と負傷を同時成立させる（条件付きダメージに反映）','両条件成立','conditional');
  if(has('weapon','grandmother'))row('grandmother',true,'常時','固定Crit補正は装備ステータスで計上済み','重複計上なし','stat');
- if(has('ring1','sage')||has('ring2','sage'))row('sage',true,'常時','アビリティレベル+10はステータスに計上。スキル倍率は手動入力','Lv+10','stat');
+ if(has('ring1','sage')||has('ring2','sage'))row('sage',true,'常時','アビリティレベル+10はステータスに計上。スキル倍率は自動計算','Lv+10','stat');
  if(has('belt','bottomless'))row('bottomless',true,'常時','ポーション所持数+4はステータスに計上','所持数+4','stat');
  return {stacks,stackBonus,prismBonus,highestElement:highest.key,highestValue:highest.total,
   greavesCrit,gauntletCrit,ironMult,windcallerMove:moving?50:0,invulnerable,rows,sources};
