@@ -44,7 +44,7 @@ function render(stats,settings={},context={}){
  '</div>'+
  (r.ok?
  '<div class="dps-summary">'+
- [['30秒相当の総ダメージ',number(r.totalDamage),'選択時間 '+r.duration+'秒の推定値'],
+ [['選択時間の総ダメージ',number(r.totalDamage),'選択時間 '+r.duration+'秒の推定値'],
   ['平均DPS',number(r.averageDps),'対象1ヒットの期待値を使用'],
   ['Storm詠唱回数',number(r.stormCasts),'ヒット合計 '+r.hitCount+'回'],
   ['Mana不足時間',fixed(r.starvedSeconds)+'秒','攻撃できなかった枠の時間']].map(([label,value,description])=>
