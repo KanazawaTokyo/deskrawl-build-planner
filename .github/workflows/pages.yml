@@ -39,6 +39,7 @@ jobs:
           node test-japanese.js
           node test-ai-export.js
           node test-op-optimizer.js
+          node test-dps-sim.js
       - name: Build website
         run: node scripts/build.js
       - name: Configure GitHub Pages
