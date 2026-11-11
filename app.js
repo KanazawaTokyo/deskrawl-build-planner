@@ -279,6 +279,7 @@ case 'optimizer-save':{
  const p=optz.position(ui.slot,ui.optimizerPosition);
  modify(()=>{
   const copy=optz.swapped(source,p,value);
+  copy.gems=(source.gems||[]).map(g=>({...g}));
   copy.id=D.uid('item');copy.locked=false;
   copy.opLocks={primary:[...(source.opLocks?.primary||[])],secondary:Boolean(source.opLocks?.secondary)};
   if(p.kind==='primary')copy.opLocks.primary[p.index]=false;else copy.opLocks.secondary=false;
