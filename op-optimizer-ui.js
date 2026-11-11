@@ -6,7 +6,7 @@ function render({state,build,slot,positionId='primary:0',selectedKey='',E,opt}){
  if(!r.ok)return '<section class="card optimizer-panel"><div class="card-heading"><div><h2>OP変更シミュレーター</h2><span>装備中の個体を基準に比較</span></div></div><div class="notice">'+E(r.reason)+'</div></section>';
  const selected=r.options.find(x=>x.key===selectedKey)||r.top;
  const pct=x=>(x>0?'+':'')+x.toFixed(2)+'%';
- const num=x=>Number.isFinite(x)?Math.round(x).toLocaleString('ja-J'):'—';
+ const num=x=>Number.isFinite(x)?Math.round(x).toLocaleString('ja-JP'):'—';
  const aff=(key,value)=>key?E(D.affixes[key]?.[0]||key)+' +'+E(C.format(key,value)):'未設定';
  const stage=x=>x===11?'開光Ⅰ':x===12?'開光Ⅱ':'+'+x;
  const posName=p=>p.kind==='secondary'?'補助OP':'主要OP '+(p.index+1);
