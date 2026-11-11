@@ -62,8 +62,8 @@
   for(const key of pool){
    if(others.has(key))continue; // Cannot roll a duplicate primary OP.
    const same=key===current,change=same?null:swapped(original,pos,key);
-   const virtual=change?{...state,items:[...state.items,change]}:state;
-   // The replacement retains the original item ID; only the preview doc changes.
+   const virtual=change?{...state,items:state.items.map(it=>it.id===original.id?change:it)}:state;
+   // Replace only in a temporary item list; the saved inventory is never mutated.
    const after=same?baseline:snapshot(virtual,build,context,filters,q);
    const currentValue=current?C.valueOf(original,current,pos.kind==='primary'?pos.index:'s'):null;
    const nextValue=key?C.valueOf(change||original,key,pos.kind==='primary'?pos.index:'s'):null;
