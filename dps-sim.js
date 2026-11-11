@@ -41,10 +41,10 @@ function simulate(stats,settings={},context={}){
  const options=config(settings.dps);
  const q=B.scenario(settings.combat);
  if(q.abilityId!=='lightningStorm')return {ok:false,reason:'持続DPS v0.1はライトニングストーム専用です。上の「使用スキル」をLightning Stormに切り替えてください。',options};
- const hit=B.attack(stats,settings,q,context);
- if(!Number.isFinite(hit.expected)||hit.expected<=0)return {ok:false,reason:'武器ダメージまたはライトニングストームのダメージを計算できません。装備を確認してください。',options};
  const totalMana=Number(stats?.effective?.mana);
  if(!Number.isFinite(totalMana)||totalMana<=0)return {ok:false,reason:'最大Manaが登録されていません。タレント・パラゴン・基礎値を確認してください。',options};
+ const hit=B.attack(stats,settings,q,context);
+ if(!Number.isFinite(hit.expected)||hit.expected<=0)return {ok:false,reason:'武器ダメージまたはライトニングストームのダメージを計算できません。装備を確認してください。',options};
  const cap=totalMana,mcr=clamp(Number(stats.effective.mcr)||0,0,85),
  cdr=clamp(Number(stats.effective.cdr)||0,0,80);
  const baseCost=50,spent=baseCost*(1-mcr/100);
