@@ -138,6 +138,7 @@ function buildReport(state,build,at=new Date().toISOString()){
     equippedUniquePowerToggles:calculated.selection.powers,
     comparisonKeys:V.comparisonKeys(settings)
    },
+   sustainedDpsSettings:select(settings.dps||{},Object.keys(settings.dps||{})),
    buildNotes:settings.notes||null
   },
   calculated:{
