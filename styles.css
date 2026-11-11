@@ -547,3 +547,34 @@
  .subnav{gap:13px}
 }
 @media(max-width:400px){.optimizer-metrics,.optimizer-picked-grid{grid-template-columns:1fr}}
+
+/* Sustained DPS: conservative Stormcaller Mana budget */
+.dps-card{display:flex;flex-direction:column;gap:15px}
+.dps-card .card-heading{margin-bottom:0}
+.dps-duration{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}
+.dps-duration>span{font-size:12px;color:var(--muted);font-weight:700}
+.dps-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.dps-fields .field small,.dps-check small{font-size:10px;color:var(--muted);line-height:1.5}
+.dps-check{display:flex;align-items:center;gap:10px;min-width:0;align-self:stretch;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:#111923;cursor:pointer}
+.dps-check input{width:16px;height:16px;accent-color:var(--mint);flex-shrink:0}
+.dps-check span{display:flex;flex-direction:column;gap:5px;min-width:0}
+.dps-check b{font-size:12px;color:var(--text)}
+.dps-summary{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.dps-stat{padding:14px;border:1px solid var(--line);border-radius:10px;background:#101720;display:flex;flex-direction:column;gap:8px;min-width:0}
+.dps-stat small{font-size:11px;color:var(--muted)}
+.dps-stat strong{font-size:22px;font-variant-numeric:tabular-nums;color:var(--text);overflow-wrap:anywhere}
+.dps-stat span{font-size:10px;color:var(--muted)}
+.dps-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:24px;row-gap:0}
+.dps-details>div{display:flex;gap:10px;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line);padding:9px 0;font-size:12px}
+.dps-details>div span{color:var(--muted)}
+.dps-details>div b{font-variant-numeric:tabular-nums;font-weight:650;text-align:right}
+.dps-chart-title{font-weight:700;font-size:12px;display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
+.dps-chart-title small{font-weight:400;font-size:10px;color:var(--muted)}
+.dps-graph{min-width:0;background:#101720;border:1px solid var(--line);border-radius:10px;padding:10px 6px}
+.dps-graph svg{display:block;width:100%;height:auto;max-height:250px}
+.dps-caveats{border-top:1px solid var(--line);padding-top:16px;font-size:11px;line-height:1.8;color:var(--muted)}
+.dps-caveats summary{cursor:pointer;color:var(--text);font-weight:600}
+.dps-caveats p{margin-top:9px}
+@media(max-width:1100px){.dps-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:780px){.dps-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:500px){.dps-fields,.dps-details{grid-template-columns:minmax(0,1fr)}.dps-stat strong{font-size:19px}.dps-summary{gap:7px}.dps-stat{padding:10px}}
