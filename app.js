@@ -98,7 +98,8 @@ function renderCombat(){
  const context={...equipped,items,schrodingerRing:items.ring1==='schrodinger'||items.ring2==='schrodinger'};
  const stats=C.calc(state,b,{sourceFilters:{...sv.filters,powers:sv.powers,slots:sv.slots}});
  const combatUI=window.DBPCombatUI;
- return combatUI?combatUI.render(stats,b.settings||{},context,{skillsOpen:ui.combatSkillsOpen}):'<div class="notice">計算モジュールを読み込めませんでした。再読み込みしてください。</div>';
+ const dpsPanel=window.DBPDpsUI?.render(stats,b.settings||{},context)||'';
+  return combatUI?combatUI.render(stats,b.settings||{},context,{skillsOpen:ui.combatSkillsOpen,dpsPanel}):'<div class="notice">計算モジュールを読み込めませんでした。再読み込みしてください。</div>';
 }
 function renderStats(){
  const b=build(),SV=window.DBPStatsView,v=SV.evaluate(state,b),r=v.active;
@@ -231,7 +232,13 @@ case 'stat-preset':{
  }});
  return;
 }
-case 'combat-open-runes':ui.tab='stats';ui.settingsOpen=true;ui.settingsTab='runes';render();break;
+case 'dps-duration':{
+ const n=window.DBPDpsSim?.validate('duration',value);
+ if(n===undefined)return;
+ modify(()=>{b.settings.dps??={};b.settings.dps.duration=n});
+ return;
+}
+ case 'combat-open-runes':ui.tab='stats';ui.settingsOpen=true;ui.settingsTab='runes';render();break;
  case 'combat-toggle-settings':ui.combatSkillsOpen=!ui.combatSkillsOpen;render();break;
  case 'combat-debuffs':{if(value!=='on'&&value!=='off')return;modify(()=>{b.settings.combat??={};for(const key of window.DBPCombat.debuffKeys)b.settings.combat[key]=value==='on'});return;}
  case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-talent':ui.tab='talent';ui.settingsOpen=false;render();break;case 'tab-pet':ui.tab='pet';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;case 'tab-combat':ui.tab='combat';ui.settingsOpen=false;render();break;case 'combat-defense-type':{const type=window.DBPCombat?.validateInput('defenseType',value);if(type)modify(()=>{b.settings.combat??={};b.settings.combat.defenseType=type});break;}
@@ -370,6 +377,17 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
   const R=window.DBPRunes,index=Number(el.dataset.idx);
   if(!R.canSelect(b.settings,index,v)){render();flash('セットルーンは同じ番号を2枠に装備できません');return}
   modify(()=>{b.settings.runeSlots=R.selection(b.settings).slots;b.settings.runeSlots[index]=v});
+  return;
+ }
+ if(kind==='dps'){
+  const key=el.dataset.key,raw=el.type==='checkbox'?el.checked:el.value;
+  const parsed=window.DBPDpsSim?.validate(key,raw);
+  if(parsed===undefined){flash('DPS計算条件の入力範囲を確認してください');render();return}
+  modify(()=>{
+   b.settings.dps??={};
+   if(parsed===null)delete b.settings.dps[key];
+   else b.settings.dps[key]=parsed;
+  });
   return;
  }
  if(kind==='combat'){const key=el.dataset.key,raw=el.type==='checkbox'?el.checked:el.value;const verified=window.DBPCombat?.validateInput(key,raw);if(verified===null||verified===undefined){flash('計算条件の入力範囲を確認してください');render();return}modify(()=>{
