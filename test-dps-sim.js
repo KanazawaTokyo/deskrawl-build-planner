@@ -44,7 +44,7 @@ assert.equal(S.validate('initialMana',''),null,'initial Mana can be restored to 
 assert.equal(S.validate('autoNova',false),false,'checkbox false is stored correctly');
 assert.equal(S.simulate(fake,{combat:{abilityId:'iceNova'}}).ok,false,'unsupported skills never reuse storm DPS');
 assert.equal(S.simulate({effective:{weaponDamage:100,mana:0}},base).ok,false,'unknown Mana is explicitly rejected');
-const seed=D.makeSeed(),character=seed.builds[0],before=JSON.stringify(seed);
+const seed=D.makeSeed(),character=seed.builds[0];
 character.settings.combat={abilityId:'lightningStorm',elementalStacks:5};
 const filtered=ctx.DBPStatsView.config(character.settings);
 const eq=B.equippedEffects(seed,character),items={};
@@ -61,7 +61,7 @@ assert.equal(r.novaRecovery,130,'rank 8 restores 130 Mana');
 assert.equal(r.novaProcChance,1,'rank 8 always succeeds');
 assert(r.novaCasts>=1,'Ice Nova is used in actual build');
 assert(r.stormCasts>=1,'Storm casts occur during combat');
-assert.equal(JSON.stringify(seed),before.replace('"combat":', '"combat":')===JSON.stringify(seed)?before:JSON.stringify(seed),'simulation is read only');
+
 // Re-check against a snapshot after changing the combat settings.
 const snapshot=JSON.stringify(seed);
 S.simulate(stats,character.settings,context);
