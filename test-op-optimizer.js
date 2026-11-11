@@ -22,6 +22,7 @@ const neck=state.items.find(x=>x.id===b.loadout.neck);
 neck.upgrade=12;neck.upgradeKnown=true;
 neck.primary=['int','lightning','strongAttack','injured'];neck.secondary='move';
 neck.locked=true;neck.opLocks={primary:[true,true,true,false],secondary:true};
+neck.gems=[{type:'diamond'}];
 neck.overrides={'int:0:12':99.3,'lightning:1:12':161.23};
 b.settings.combat={abilityId:'lightningStorm',elementalStacks:5,elite:true,
  vulnerable:true,burned:true,forceHealthy:true,forceInjured:true};
@@ -102,6 +103,14 @@ assert.equal(candidate.opLocks.primary[0],false,'changed OP loses prior required
 assert.equal(candidate.opLocks.primary[1],true,'untouched required OP remains locked');
 assert.equal(candidate.overrides['int:0:12'],undefined,'new candidate cannot inherit stale measured OP');
 assert.equal(candidate.overrides['lightning:1:12'],161.23,'untouched measured OP preserved');
+assert.equal(candidate.gems[0].type,'diamond','socket selection preserved in candidate');
+const changeGem={dataset:{change:'gem',id:candidate.id,idx:'0'},value:'amethyst'};
+handlers.change({target:changeGem});
+const afterGem=ctx.DBPApp.getState();
+assert.equal(afterGem.items.find(x=>x.id===neck.id).gems[0].type,'diamond',
+ 'subsequent gem edits to the candidate must not leak into the original locked item');
+assert.equal(afterGem.items.find(x=>x.id===candidate.id).gems[0].type,'amethyst',
+ 'the candidate gemstone is independently editable');
 assert.equal(ctx.DBPApp.getUI().detail,'compare','navigate to current-vs-candidate view');
 assert.equal(live.schemaVersion,1,'cloud schema stays unchanged');
 assert.equal(live.builds.length,1,'no extra build created');
