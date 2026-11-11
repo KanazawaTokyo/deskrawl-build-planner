@@ -74,7 +74,7 @@ assert(visible.includes('data-change="dps"'));
 assert(visible.includes('dps-duration'));
 assert(visible.includes('Storm 1回の命中数'));
 const noMana=UI.render({effective:{weaponDamage:100,mana:0}},character.settings);
-assert(noMana.includes('最大Manaが登録されていません'));
+assert(noMana.includes('最大マナが登録されていません'),'Japanese display normalizes Mana label');
 assert(UI.chart(r).includes('viewBox="0 0 720 175"'));
 // End-to-end browser event handling must persist per-build only, not change combat input or gear.
 store.deskrawl_planner_v01=JSON.stringify(seed);
