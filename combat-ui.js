@@ -169,7 +169,8 @@ function render(stats,settings,context={},options={}){
  '<div class="combat-detail-line"><span>脆弱：追加独立倍率</span><b>'+fx(a.vulnMult)+'</b></div>'+'<div class="combat-detail-line"><span>装備固有：独立倍率</span><b>'+fx(a.unique.ironMult)+'</b></div>'+
  '<div class="combat-detail-line"><span>対象の防御による減算</span><b>−'+pct((1-a.resistMult)*100)+'</b></div>'+
  trace(a)+'</section></div></section>'+
- '<section class="combat-section"><div class="section-label"><span>02 / 被ダメージ・軽減率</span><span class="muted small">被ダメージ</span></div>'+
+ (options.dpsPanel||'')+
+  '<section class="combat-section"><div class="section-label"><span>03 / 被ダメージ・軽減率</span><span class="muted small">被ダメージ</span></div>'+
  '<div class="combat-input-card"><h3>被ダメージのシミュレーション条件</h3><div class="combat-fields">'+incomingFields+'</div>'+
  '<div class="combat-checks">'+check('incomingCrit','敵の攻撃がクリティカル',q.incomingCrit)+'</div></div>'+
  '<div class="combat-metrics">'+
