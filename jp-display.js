@@ -217,13 +217,13 @@ for(const d of D.definitions){
  // Translate catalog copies, mirrored rings and Ancient variants as well as the
  // original named definitions. Do not translate an ID, slot or saved nickname.
  const originalName=d.name;
- const sourceName=originalName.replace(/\\s*\\(Ancient\\)$/, '').replace(/（部位未確認）$/, '');
+ const sourceName=originalName.replace(/\s*\(Ancient\)$/, '').replace(/（部位未確認）$/, '');
  const translated=names[d.id]||equipmentNamesJP[sourceName];
  if(translated){
    d.name=translated+(d.isAncient?'（エンシャント）':'')+
      (d.slotUnverified?'（部位未確認・仮訳）':'');
  }else{
-   d.name=text(originalName.replace(/\\s*\\(Ancient\\)$/, ''))+(d.isAncient?'（エンシャント）':'');
+   d.name=text(originalName.replace(/\s*\(Ancient\)$/, ''))+(d.isAncient?'（エンシャント）':'');
  }
  if(d.effect)d.effect=text(d.effect);
 }
