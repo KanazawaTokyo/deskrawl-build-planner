@@ -49,6 +49,9 @@ assert.equal(untranslated.length,0,'English equipment names remain: '+untranslat
 const untranslatedEffects=allEquipment.filter(d=>/[A-Za-z]{3,}/.test(d.effect||'')).map(d=>d.id+': '+d.effect);
 assert.equal(untranslatedEffects.length,0,'English unique effects remain: '+untranslatedEffects.join(' | '));
 assert.equal(D.definitions.find(x=>x.id==='undying').name,'不死者の面貌');
+assert.equal(D.definitions.find(x=>x.id==='bm-soulfeast-pauldron').name,'魂喰らいの肩甲');
+assert(D.definitions.find(x=>x.id==='bm-soulfeast-pauldron').effect.includes('ボスは5体分'));
+
 assert.equal(D.definitions.find(x=>x.id==='ancient-undying').name,'不死者の面貌（エンシャント）');
 assert.equal(D.definitions.find(x=>x.id==='schrodinger-ring2').name,'シュレーディンガーの指輪');
 assert.equal(D.definitions.find(x=>x.id==='bm-patch-rimebound-grasp').name,'霜縛りの手甲（部位未確認・仮訳）');
@@ -82,6 +85,9 @@ vm.runInContext(source('app.js'),c,{filename:'app.js'});
 const click=action=>events.click({target:{closest:()=>({dataset:{action}})}});
 click('tab-equipment');
 assert(app.innerHTML.includes('鉄の暴君の兜')&&app.innerHTML.includes('古の賢者の遺骨'));
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'shoulder'}})}});
+assert(app.innerHTML.includes('【ブラックミスト】魂喰らいの肩甲'),'sorcerer shoulder dropdown includes localized Soulfeast');
+
 assert(app.innerHTML.includes('>主要OP<')&&app.innerHTML.includes('>補助OP<'));
 
 events.click({target:{closest:()=>({dataset:{action:'slot',value:'head'}})}});
