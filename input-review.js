@@ -72,7 +72,8 @@ function settingProblems(settings,key){
    if(r.equipped.length!==6)p.push('ルーン6枠の装備内容を入力してください');
   }
  }
- if(key==='pet'&&!settings?.pet?.id)p.push('使用中のペットを選択してください');
+ if(key==='pet'&&(!settings?.pet?.id||settings.pet.id==='unknown'))p.push('使用中のペットを選択してください');
+ if(key==='base'&&!Object.values(settings?.base||{}).some(v=>v!==null&&v!==undefined&&v!==''))p.push('装備外の基礎ステータスが未入力です');
  return p;
 }
 function status(record,signature,problems){
