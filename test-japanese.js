@@ -49,6 +49,9 @@ assert.equal(untranslated.length,0,'English equipment names remain: '+untranslat
 const untranslatedEffects=allEquipment.filter(d=>/[A-Za-z]{3,}/.test(d.effect||'')).map(d=>d.id+': '+d.effect);
 assert.equal(untranslatedEffects.length,0,'English unique effects remain: '+untranslatedEffects.join(' | '));
 assert.equal(D.definitions.find(x=>x.id==='undying').name,'不死者の面貌');
+assert.equal(D.definitions.find(x=>x.id==='dreadwing').name,'恐怖の翼');
+assert.equal(D.definitions.find(x=>x.id==='ancient-dreadwing').name,'恐怖の翼（エンシャント）');
+
 assert.equal(D.definitions.find(x=>x.id==='bm-soulfeast-pauldron').name,'魂喰らいの肩甲');
 assert(D.definitions.find(x=>x.id==='bm-soulfeast-pauldron').effect.includes('ボスは5体分'));
 
@@ -96,6 +99,9 @@ assert(app.innerHTML.includes('【ディバイン】不死者の面貌'));
 assert(app.innerHTML.includes('【ブラックミスト】堕ちた王の王冠'));
 events.click({target:{closest:()=>({dataset:{action:'slot',value:'weapon'}})}});
 assert(app.innerHTML.includes('【ブラックミスト】フロストワームの杖'));
+assert(app.innerHTML.includes('【ディバイン】恐怖の翼'),'Dreadwing selectable as Divine weapon');
+assert(app.innerHTML.includes('【エンシャント・ディバイン】恐怖の翼（エンシャント）'),'Ancient weapon selectable');
+
 
 click('tab-stats');
 assert(app.innerHTML.includes('マナコスト削減（上限：85%）'));
