@@ -1,0 +1,124 @@
+'use strict';
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const code=file=>fs.readFileSync(__dirname+'/'+file,'utf8');
+const ctx={window:null,Math,JSON,Number,String,Date,Set,Map,Array,console,URL,URLSearchParams,Blob,
+ crypto:require('node:crypto').webcrypto};ctx.window=ctx;ctx.addEventListener=()=>{};vm.createContext(ctx);
+for(const f of ['master.js','runes.js','pets.js','talents.js','calc.js','combat.js','stats-view.js','combat-engine.js','engine-ui.js'])
+ vm.runInContext(code(f),ctx,{filename:f});
+const E=ctx.DBPCombatEngine,UI=ctx.DBPCombatEngineUI,D=ctx.DBP;
+const base={base:{int:0,critChance:0,critDamage:0,dodge:0},combat:{abilityId:'lightningStorm'}};
+const fake={effective:{weaponDamage:100,damage:0,int:0,critChance:0,critDamage:0,
+ lightning:0,cold:0,strongAttack:0,allDamage:0,mana:200,mcr:0,cdr:0,manaRegen:0,
+ armor:0,mr:0,dodge:0,allDR:0,maxHP:1000},pending:[],breakdown:{}};
+const run=(s=base,c={},o={})=>E.simulate(fake,s,c,{skill:'lightningStorm',duration:5,stormInterval:1,...o});
+assert.equal(E.options({enemyHp:'',duration:'30'}).issues.length,0);
+assert(E.options({enemyHp:'NaN'}).issues.length>0);
+assert(E.options({enemyHp:1000,incomingHit:100}).issues.length>0,'missing enemy cadence refused');
+assert(E.options({duration:-20}).issues.length>0);
+assert(E.options({stormHits:1.2}).issues.length>0);
+assert(E.options({skill:'sneaky'}).issues.length>0);
+const storm=run();
+assert(storm.ok,storm.reason);
+assert.equal(storm.casts,4,'200 Mana = four 50-Mana storms');
+assert.equal(storm.stormHits,4);
+assert.equal(storm.startMana,200);
+assert.equal(storm.endMana,0);
+assert.equal(storm.outcome,'time-limit');
+assert.equal(storm.killTime,null);
+assert.equal(storm.damage,storm.events.filter(x=>x.type==='storm').reduce((n,x)=>n+x.damage,0));
+assert.equal(run(base,{}, {duration:5,stormInterval:1,stormHits:3}).damage,storm.damage*3);
+const manaRegen=run(base,{}, {duration:5,manaRegen:50});
+assert(manaRegen.casts>storm.casts,'mana regeneration adds casts');
+const initialLow=run(base,{}, {duration:5,initialMana:50});
+assert.equal(initialLow.casts,1);
+const boss=run(base,{}, {duration:5,enemyHp:100});
+assert.equal(boss.outcome,'victory');
+assert.equal(boss.killTime,0,'first instant cast can kill at t0');
+assert.equal(boss.appliedDamage,100,'overkill is not applied damage');
+const shoulder=run(base,{items:{shoulder:'shoulder'}},{duration:3});
+const ss=shoulder.events.filter(x=>x.type==='storm');
+assert.equal(ss.length,3);
+assert.equal(ss[0].stacks,0,'first Storm receives no after-cast stack');
+assert(ss[1].damage>ss[0].damage,'second cast should benefit from Elemental Burst');
+assert.equal(ss[1].stacks,1);
+assert.equal(ss[2].stacks,2);
+const beam=E.simulate(fake,base,{}, {skill:'frostBeam',duration:3});
+assert(beam.ok,beam.reason);
+assert.equal(beam.channels,1);
+assert.equal(beam.frostTicks,9,'0.33s tick interval yields 9 ticks within 3s');
+assert.equal(beam.casts,1);
+assert.equal(beam.endMana,155,'beam base cost 45 charged once');
+assert.equal(beam.events.filter(x=>x.type==='beam-tick').length,9);
+const runeSettings={...base,runeSlots:Array.from({length:6},(_,i)=>'set:absoluteZero:'+(i+1))};
+const full=E.simulate(fake,runeSettings,{}, {skill:'frostBeam',duration:3});
+assert.equal(full.runes.absoluteZero,6);
+assert.equal(full.runes.beamTick,0.2);
+assert.equal(full.frostTicks,15,'15 ticks with Absolute Zero 4 piece');
+const tick=full.events.filter(x=>x.type==='beam-tick');
+assert.equal(tick[0].percent,78,'skill rank defaults to Lv10');
+assert.equal(tick[2].percent,278,'0.6 second tick receives +200 points');
+assert.equal(tick[4].percent,478,'1.0 second tick receives +400 points');
+assert(tick[4].damage>tick[0].damage,'channel ramp raises per-hit damage');
+const rime=E.simulate(fake,base,{items:{gloves:'bm-patch-rimebound-grasp'}},{skill:'frostBeam',duration:3,initialMana:70});
+assert.equal(rime.channels,1);
+assert.equal(rime.cutChannels,1,'additional tick mana cuts channel');
+assert.equal(rime.frostTicks,5,'cost 45 + five 5 Mana ticks fit 70 Mana');
+assert.equal(rime.endMana,0);
+const rimeRich=E.simulate(fake,base,{items:{gloves:'bm-patch-rimebound-grasp'}},{skill:'frostBeam',duration:3});
+assert.equal(rimeRich.frostTicks,9);
+assert.equal(rimeRich.endMana,110,'base45 plus 9*5 extra');
+const frost4=E.simulate(fake,{...base,runeSlots:runeSettings.runeSlots.slice(0,4)}, {},{skill:'frostBeam',duration:3});
+assert.equal(frost4.runes.absoluteZero,4);
+assert.equal(frost4.frostTicks,15);
+assert.equal(frost4.events.filter(x=>x.type==='beam-tick')[4].percent,78,'ramp requires 6 runes');
+const enemy=run(base,{}, {incomingHit:250,incomingEvery:1,duration:5});
+assert.equal(enemy.incomingHits,4);
+assert.equal(enemy.outcome,'death');
+assert.equal(enemy.deathTime,4);
+assert.equal(enemy.takenDamage,1000);
+const beamDef=E.simulate(fake,{...base,runeSlots:runeSettings.runeSlots.slice(0,4)}, {},
+ {skill:'frostBeam',duration:3,incomingHit:100,incomingEvery:1});
+assert.equal(beamDef.takenDamage,225,'3 hits inside channel get 25% DR');
+const runA=run(base,{}, {mode:'sampled',seed:2405,duration:5});
+const runB=run(base,{}, {mode:'sampled',seed:2405,duration:5});
+assert.deepEqual(JSON.parse(JSON.stringify(runA)),JSON.parse(JSON.stringify(runB)),'same RNG seed is exactly replayable');
+const invalid=E.simulate({...fake,effective:{...fake.effective,mana:0}},base,{},{});
+assert.equal(invalid.ok,false);
+const defaultSeed=D.makeSeed(),active=defaultSeed.builds[0],before=JSON.stringify(defaultSeed);
+const fromBuild=E.evaluate(defaultSeed,active,{duration:5});
+assert(fromBuild&&typeof fromBuild.ok==='boolean');
+assert.equal(JSON.stringify(defaultSeed),before,'evaluation never writes to user data');
+const raw=UI.render({state:defaultSeed,build:active,compareId:''});
+assert.match(raw,/戦闘シミュレーション/);
+assert.match(raw,/data-change="engine"/);
+assert.match(raw,/仮想敵の最大HP/);
+assert.match(raw,/総与ダメージ|不足しています/);
+console.log('PASS: event-driven combat timing, mana, frost channel, 4/6 runes, Rime, enemy HP, defense, RNG and UI');
+
+// Minimal browser simulation verifies that the app's new tab can be opened
+// without changing inventory and that scenario controls persist via localStorage.
+const listeners={},store={},view={innerHTML:'',addEventListener:(event,cb)=>listeners[event]=cb};
+const toast={textContent:'',classList:{add(){},remove(){}}};
+const document={getElementById:key=>key==='app'?view:key==='toast'?toast:null,
+ createElement:()=>({style:{},files:[],click(){}}),body:{appendChild(){}},addEventListener(){}};
+Object.assign(ctx,{document,localStorage:{getItem:k=>store[k]??null,setItem:(k,v)=>store[k]=v,removeItem:k=>delete store[k]},
+ setTimeout:()=>0,clearTimeout:()=>{},location:{hash:'',pathname:'/',origin:'http://example.invalid',search:''},
+ history:{replaceState(){}},confirm:()=>true,prompt:()=>'',fetch:()=>Promise.reject(Error('offline'))});
+vm.runInContext(code('app.js'),ctx,{filename:'app.js'});
+listeners.click({target:{closest:()=>({dataset:{action:'tab-engine'}})}});
+assert.match(view.innerHTML,/COMBAT LAB v1/);
+assert.match(view.innerHTML,/戦闘シミュレーション/);
+const oldGear=JSON.stringify(ctx.DBPApp.getState().items);
+listeners.change({target:{dataset:{change:'engine',key:'skill'},value:'frostBeam',type:'select-one'}});
+listeners.change({target:{dataset:{change:'engine',key:'duration'},value:'45',type:'number'}});
+listeners.change({target:{dataset:{change:'engine',key:'autoNova'},checked:true,type:'checkbox'}});
+listeners.change({target:{dataset:{change:'engine',key:'enemyHp'},value:'100000000',type:'number'}});
+const saved=ctx.DBPApp.getState();
+assert.equal(saved.builds[0].settings.engine.skill,'frostBeam');
+assert.equal(saved.builds[0].settings.engine.duration,45);
+assert.equal(saved.builds[0].settings.engine.autoNova,true);
+assert.equal(saved.builds[0].settings.engine.enemyHp,100000000);
+assert.equal(JSON.stringify(saved.items),oldGear);
+assert.equal(JSON.parse(store.deskrawl_planner_v01).builds[0].settings.engine.duration,45);
+assert.match(view.innerHTML,/Beamヒット間隔/);
+console.log('PASS: app tab routing, editable scenario, autosave and inventory preservation');
