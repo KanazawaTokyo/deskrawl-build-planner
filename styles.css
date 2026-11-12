@@ -688,3 +688,35 @@
 .ranking-snapshot-json{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:15px}
 .ranking-snapshot-json summary{cursor:pointer;color:var(--muted);font-size:12px}
 .ranking-snapshot-json pre{max-height:320px;overflow:auto;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}
+
+/* Combat Lab: experimental event-driven combat simulator */
+.engine-workspace{max-width:1200px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+.engine-workspace .page-heading{margin-bottom:0}
+.engine-config,.engine-result,.engine-timeline,.engine-diff{padding:20px}
+.engine-fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0 10px}
+.engine-fields .field{display:flex;flex-direction:column;min-width:0;gap:6px}
+.engine-fields input,.engine-fields select,.engine-diff select{min-width:0;width:100%;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;color:var(--text);padding:10px}
+.engine-fields .field small{font-size:10px;color:var(--muted);line-height:1.5}
+.engine-check{display:flex;align-items:center;gap:8px;padding:12px;border:1px solid var(--line);border-radius:10px}
+.engine-check>span{display:flex;flex-direction:column;gap:6px}
+.engine-check small{font-size:10px;color:var(--muted);line-height:1.5}
+.engine-comparison{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+.engine-result{min-width:0}
+.engine-results-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0}
+.engine-metric{background:var(--panel2);padding:13px;border:1px solid var(--line);border-radius:11px;display:flex;flex-direction:column;gap:6px}
+.engine-metric small{color:var(--muted);font-size:11px}
+.engine-metric strong{font-size:17px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.engine-metric span{color:var(--muted);font-size:10px;line-height:1.55}
+.engine-meta{font-size:12px;color:var(--muted);margin:12px 0}
+.engine-pending{margin:11px 0;border:1px solid var(--line);padding:10px 12px;border-radius:9px}
+.engine-pending summary{cursor:pointer;color:var(--gold);font-size:12px}
+.engine-pending ul{font-size:11px;line-height:1.7;overflow-wrap:anywhere}
+.engine-diff .field{display:flex;flex-direction:column;gap:6px;max-width:450px;margin:14px 0}
+.engine-diff-value{color:var(--mint);font-size:14px;font-weight:600}
+.engine-event-head,.engine-event-row{display:grid;grid-template-columns:75px minmax(0,1fr) 76px 95px;gap:8px;align-items:center;border-bottom:1px solid var(--line);padding:8px 6px;font-size:12px}
+.engine-event-head{color:var(--muted);font-weight:600;font-size:11px}
+.engine-event-row>span{overflow-wrap:anywhere}
+.engine-event-row>span:last-child{text-align:right;font-variant-numeric:tabular-nums}
+.engine-event-row>span:nth-child(3){text-align:right;font-variant-numeric:tabular-nums}
+@media(max-width:900px){.engine-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.engine-fields{grid-template-columns:1fr}.engine-config,.engine-result,.engine-timeline,.engine-diff{padding:14px}.engine-comparison{grid-template-columns:1fr}.engine-results-grid{grid-template-columns:1fr 1fr}.engine-metric strong{font-size:15px}.engine-event-head,.engine-event-row{grid-template-columns:48px minmax(0,1fr) 54px 70px;gap:5px;font-size:10px}.engine-event-head{font-size:9px}}

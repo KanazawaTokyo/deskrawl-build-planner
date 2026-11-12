@@ -3,7 +3,7 @@ const D=window.DBP,C=window.DBPCalc;
 const PU=window.DBPPetUI||null;
 const LS='deskrawl_planner_v01',CFG='deskrawl_planner_cloud_v01',SESSION='deskrawl_planner_session_v01';
 let state;try{const raw=localStorage.getItem(LS);state=raw?JSON.parse(raw):D.makeSeed();if(!state||state.schemaVersion!==1)throw Error('Invalid saved schema');}catch(e){state=D.makeSeed()}
-let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',optimizerPosition:'primary:0',optimizerSelected:'',settingsOpen:false,settingsTab:'paragon',combatSkillsOpen:true,talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',rankingBoardId:'',rankingPreset:'boss',rankingRunId:'',cloudNote:'',status:'local',dirty:false};
+let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',optimizerPosition:'primary:0',optimizerSelected:'',settingsOpen:false,settingsTab:'paragon',combatSkillsOpen:true,talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',rankingBoardId:'',rankingPreset:'boss',rankingRunId:'',engineCompareBuildId:'',cloudNote:'',status:'local',dirty:false};
 let cloudCfg;try{const builtIn=window.DBP_CLOUD_CONFIG;const local=JSON.parse(localStorage.getItem(CFG)||'null');cloudCfg=builtIn?.url&&builtIn?.key?builtIn:local}catch(e){cloudCfg=window.DBP_CLOUD_CONFIG||null}
 let session;try{session=JSON.parse(localStorage.getItem(SESSION)||'null')}catch(e){session=null}
 let cloudRevision=0,cloudSaveTimer=null,cloudBusy=false,cloudDirty=false,cloudSyncBlocked=false;const app=document.getElementById('app');const toast=document.getElementById('toast');
@@ -30,8 +30,8 @@ function modify(fn){fn();save()}
 function render(){const b=build();if(!b)return;if(ui.tab==='ranking'&&window.DBPRankings&&!window.DBPRankings.boardById(state,ui.rankingBoardId))ui.rankingBoardId=window.DBPRankings.boards(state)[0]?.id||'';app.innerHTML=`<div class="shell"><header class="topbar"><div class="brand"><div class="brand-symbol">✧</div><div><div class="brand-title">DESKRAWL <span>ビルドプランナー</span></div><div class="brand-sub">ソーサラー <span class="dot">·</span> 嵐呼び <span class="dot">·</span> v0.1</div></div></div><div class="header-right"><span class="sync-status ${ui.status}"><i></i>${{local:'ローカル保存',saving:'同期中',synced:'クラウド同期済み',error:'同期失敗',conflict:'競合を検知'}[ui.status]||'ローカル保存'}</span><button class="icon-btn" data-action="backup" title="JSONバックアップ">⇩</button><button class="icon-btn" data-action="import" title="JSONバックアップから復元">⇧</button><button class="icon-btn" data-action="cloud" title="同期・ログイン">☁</button></div></header>
 <div class="profile-strip"><div class="profile-control"><span class="field-legend">使用中のビルド</span><select id="buildSelect" class="profile-select">${state.builds.map(x=>opt(x.id,x.name,x.id===b.id?x.id:'' )).join('')}</select></div><div class="profile-buttons"><button class="btn new-build-main" data-action="new-build">＋ 新しい一式を作る</button><button class="text-btn" data-action="duplicate-build" title="装備個体を共有してビルド設定を複製します">参照共有で複製</button><button class="text-btn" data-action="rename-build">名前変更</button><button class="icon-btn subtle" data-action="delete-build" title="ビルド削除">⌫</button><button class="text-btn" data-action="compare-builds">ビルド比較</button><button class="btn outline" data-action="input-review">登録照合</button><button class="btn outline ai-export-open" data-action="ai-export">AI分析用に出力</button></div></div>
 ${renderLockedSets()}
-<nav class="mainnav"><button class="navbtn ${ui.tab==='equipment'?'active':''}" data-action="tab-equipment"><span>◈</span> 装備 <small>装備</small></button><button class="navbtn ${ui.tab==='talent'?'active':''}" data-action="tab-talent"><span>✧</span> タレント <small>戦闘タレント</small></button><button class="navbtn ${ui.tab==='pet'?'active':''}" data-action="tab-pet"><span>♜</span> ペット <small>ペット</small></button><button class="navbtn ${ui.tab==='stats'?'active':''}" data-action="tab-stats"><span>▦</span> ステータス <small>能力値</small></button><button class="navbtn ${ui.tab==='combat'?'active':''}" data-action="tab-combat"><span>◫</span> ダメージ・軽減 <small>ダメージ計算</small></button><button class="navbtn ${ui.tab==='ranking'?'active':''}" data-action="tab-ranking"><span>♛</span> ランキング <small>記録・比較</small></button><div class="navhint">装備候補と計算結果を分けて管理</div></nav>
-${ui.tab==='equipment'?renderEquipment():ui.tab==='talent'?renderTalent():ui.tab==='pet'?renderPet():ui.tab==='combat'?renderCombat():ui.tab==='ranking'?window.DBPRankings?.render({state,selectedBoardId:ui.rankingBoardId,E,opt})||'<main class="workspace">ランキングモジュールを読み込めませんでした。</main>':renderStats()}
+<nav class="mainnav"><button class="navbtn ${ui.tab==='equipment'?'active':''}" data-action="tab-equipment"><span>◈</span> 装備 <small>装備</small></button><button class="navbtn ${ui.tab==='talent'?'active':''}" data-action="tab-talent"><span>✧</span> タレント <small>戦闘タレント</small></button><button class="navbtn ${ui.tab==='pet'?'active':''}" data-action="tab-pet"><span>♜</span> ペット <small>ペット</small></button><button class="navbtn ${ui.tab==='stats'?'active':''}" data-action="tab-stats"><span>▦</span> ステータス <small>能力値</small></button><button class="navbtn ${ui.tab==='combat'?'active':''}" data-action="tab-combat"><span>◫</span> ダメージ・軽減 <small>ダメージ計算</small></button><button class="navbtn ${ui.tab==='engine'?'active':''}" data-action="tab-engine"><span>⚙</span> 戦闘実験 <small>時系列計算</small></button><button class="navbtn ${ui.tab==='ranking'?'active':''}" data-action="tab-ranking"><span>♛</span> ランキング <small>記録・比較</small></button><div class="navhint">装備候補と計算結果を分けて管理</div></nav>
+${ui.tab==='equipment'?renderEquipment():ui.tab==='talent'?renderTalent():ui.tab==='pet'?renderPet():ui.tab==='combat'?renderCombat():ui.tab==='engine'?renderEngine():ui.tab==='ranking'?window.DBPRankings?.render({state,selectedBoardId:ui.rankingBoardId,E,opt})||'<main class="workspace">ランキングモジュールを読み込めませんでした。</main>':renderStats()}
 <footer class="footer"><span>ゲームデータ · ${E(D.version.split('-').slice(-3).join('-'))}</span><span>ディバイン固定OP・ランク6の宝石を登録済み · 強化後の端数・固有効果はゲーム内表示と照合してください</span></footer></div>${renderModal()}`;}
 function renderLockedSets(){
  const sets=lockedSets(),selected=selectedLockedSet(),ready=canSaveLockedSet(),filled=equippedSlots(),total=D.slots.length;
@@ -130,6 +130,10 @@ function renderCombat(){
  const combatUI=window.DBPCombatUI;
  const dpsPanel=window.DBPDpsUI?.render(stats,b.settings||{},context)||'';
   return combatUI?combatUI.render(stats,b.settings||{},context,{skillsOpen:ui.combatSkillsOpen,dpsPanel}):'<div class="notice">計算モジュールを読み込めませんでした。再読み込みしてください。</div>';
+}
+function renderEngine(){
+ return window.DBPCombatEngineUI?.render({state,build:build(),compareId:ui.engineCompareBuildId})||
+  '<main class="workspace"><p class="notice">戦闘エンジンを読み込めませんでした。</p></main>';
 }
 function renderStats(){
  const b=build(),SV=window.DBPStatsView,v=SV.evaluate(state,b),r=v.active;
@@ -308,7 +312,8 @@ case 'dps-duration':{
  case 'combat-open-runes':ui.tab='stats';ui.settingsOpen=true;ui.settingsTab='runes';render();break;
  case 'combat-toggle-settings':ui.combatSkillsOpen=!ui.combatSkillsOpen;render();break;
  case 'combat-debuffs':{if(value!=='on'&&value!=='off')return;modify(()=>{b.settings.combat??={};for(const key of window.DBPCombat.debuffKeys)b.settings.combat[key]=value==='on'});return;}
- case 'tab-ranking':ui.tab='ranking';ui.settingsOpen=false;ui.modal='';render();break;
+ case 'tab-engine':ui.tab='engine';ui.settingsOpen=false;ui.modal='';render();break;
+case 'tab-ranking':ui.tab='ranking';ui.settingsOpen=false;ui.modal='';render();break;
 case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-talent':ui.tab='talent';ui.settingsOpen=false;render();break;case 'tab-pet':ui.tab='pet';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;case 'tab-combat':ui.tab='combat';ui.settingsOpen=false;render();break;case 'combat-defense-type':{const type=window.DBPCombat?.validateInput('defenseType',value);if(type)modify(()=>{b.settings.combat??={};b.settings.combat.defenseType=type});break;}
 case 'talent-add':
 case 'talent-remove':{
@@ -612,6 +617,27 @@ function rankingBoardFields(){
   notes:rankingField('rankingNotes')};
 }
 function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=getItem(id),v=el.type==='checkbox'?el.checked:el.value;
+ if(kind==='engine'){
+  const E=window.DBPCombatEngine,key=el.dataset.key;
+  if(!E)return;
+  let next;
+  if(key==='skill'){if(!['lightningStorm','frostBeam'].includes(v))return;next=v}
+  else if(key==='mode'){if(!['expected','sampled'].includes(v))return;next=v}
+  else if(key==='autoNova')next=v===true;
+  else if(key==='incomingType'){if(!['physical','fire','cold','lightning','poison','arcane'].includes(v))return;next=v}
+  else if(Object.hasOwn(E.numeric,key)){
+   if(v===''&&Object.hasOwn(E.defaults,key)&&E.defaults[key]===null)next=null;
+   else{
+    const z=Number(v),[min,max]=E.numeric[key];
+    if(v===''||!Number.isFinite(z)||z<min||z>max||(['stormHits','seed'].includes(key)&&!Number.isSafeInteger(z))){
+      render();flash('戦闘条件の入力が範囲外です');return;
+    }
+    next=z;
+   }
+  }else return;
+  modify(()=>{b.settings??={};b.settings.engine??={};b.settings.engine[key]=next});
+  return;
+ }
  if(PU?.isChange(kind)){PU.change(el,{settings:b.settings,modify,flash,render});return}
  if(kind==='optimizer-position'){const p=window.DBPOpOptimizer?.position(ui.slot,v);if(!p)return;ui.optimizerPosition=v;ui.optimizerSelected='';render();return;}
   if(kind==='stat-compare'){
@@ -710,7 +736,7 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
 function itKey(el){return el.dataset.key}
 app.addEventListener('click',e=>{const el=e.target.closest('[data-action]');if(!el)return;const {action,id,value}=el.dataset;if(action==='modal-close'&&e.target.closest('.modal-panel')&&e.target!==el)return;act(action==='talent-add'&&e.shiftKey?'talent-remove':action,id,value,el)});
 app.addEventListener('contextmenu',e=>{const el=e.target.closest?.('[data-action="talent-add"]');if(!el||!window.DBPTalents)return;e.preventDefault();act('talent-remove',null,el.dataset.value,el)});
-app.addEventListener('change',e=>{const el=e.target;if(el.id==='rankingBoardSelect'){ui.rankingBoardId=el.value;render();return}if(el.id==='buildSelect'){state.activeBuildId=el.value;ui.itemId=null;save();return}if(el.id==='lockedSetSelect'){ui.selectedSetId=el.value;render();return}if(el.id==='settingsCategory'){ui.settingsTab=el.value;render();return}if(el.id==='otherBuild'){ui.compareBuildId=el.value;render();return}if(el.dataset.change)changed(el)});
+app.addEventListener('change',e=>{const el=e.target;if(el.id==='engineCompareBuild'){ui.engineCompareBuildId=el.value;render();return}if(el.id==='rankingBoardSelect'){ui.rankingBoardId=el.value;render();return}if(el.id==='buildSelect'){state.activeBuildId=el.value;ui.itemId=null;save();return}if(el.id==='lockedSetSelect'){ui.selectedSetId=el.value;render();return}if(el.id==='settingsCategory'){ui.settingsTab=el.value;render();return}if(el.id==='otherBuild'){ui.compareBuildId=el.value;render();return}if(el.dataset.change)changed(el)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.modal){ui.modal='';render()}});
 window.addEventListener('storage',e=>{if(e.key===LS&&e.newValue&&e.newValue!==JSON.stringify(state)){ui.status='conflict';flash('別タブでの変更を検知しました。バックアップを確認してください。');render()}});
 // File import control created independently of app render.
