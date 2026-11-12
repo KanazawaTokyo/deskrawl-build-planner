@@ -13,6 +13,7 @@ jobs:
       - name: Validate all equipment and build features
         run: |
           node --version
+          node test-gear-catalog.js
           node test-affix-pools.js
           node test-paragon.js
           node test-pets.js
