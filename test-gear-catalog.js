@@ -11,9 +11,13 @@ assert(all.find(x=>x.id==='prism'),'old Prismatic Heart ID was removed');
 assert(all.find(x=>x.id==='schrodinger'),'old Schrodinger ID was removed');
 assert(all.find(x=>x.id==='sage'),'old Elder Sage ID was removed');
 for(const name of ['Staff of the Frostwyrm','Rimeguard Treads','Cryofracture Ring',
-  'Venomfrost Pauldron','Stormcaller Gauntlets','Rimebound Grasp（部位未確認）']){
+  'Venomfrost Pauldron','Soulfeast Pauldron','Stormcaller Gauntlets','Rimebound Grasp（部位未確認）']){
   assert(all.some(d=>d.name===name&&d.rarity==='Black Mist'),name+' missing');
 }
+const soulfeast=all.find(d=>d.id==='bm-soulfeast-pauldron');
+assert(soulfeast&&soulfeast.slot==='shoulder'&&soulfeast.rarity==='Black Mist');
+assert(soulfeast.effect.includes('3%')&&soulfeast.effect.includes('5体分'),'unique effect description preserved');
+assert(soulfeast.sourceUrl.includes('soulfeast-pauldron'),'item-specific reference present');
 for(const n of ['Schrödinger’s Ring','Remnant of the Elder Sage','Ring of Momentum','Charged Ring']){
   for(const slot of ['ring1','ring2'])assert(all.some(d=>d.name===n&&d.slot===slot),n+' missing '+slot);
 }
