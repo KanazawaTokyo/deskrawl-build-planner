@@ -42,6 +42,18 @@ assert.equal(D.definitions.find(x=>x.id==='iron').name,'鉄の暴君の兜');
 assert.equal(D.definitions.find(x=>x.id==='sage').name,'古の賢者の遺骨');
 assert.equal(D.definitions.find(x=>x.id==='bottomless').name,'底なしポーションベルト');
 assert.equal(D.definitions.find(x=>x.id==='gauntlets').name,'ストームコーラーのガントレット');
+
+const allEquipment=D.definitions.filter(d=>!d.id.startsWith('custom-'));
+const untranslated=allEquipment.filter(d=>/[A-Za-z]{3,}/.test(d.name)).map(d=>d.id+': '+d.name);
+assert.equal(untranslated.length,0,'English equipment names remain: '+untranslated.join(' | '));
+const untranslatedEffects=allEquipment.filter(d=>/[A-Za-z]{3,}/.test(d.effect||'')).map(d=>d.id+': '+d.effect);
+assert.equal(untranslatedEffects.length,0,'English unique effects remain: '+untranslatedEffects.join(' | '));
+assert.equal(D.definitions.find(x=>x.id==='undying').name,'不死者の面貌');
+assert.equal(D.definitions.find(x=>x.id==='ancient-undying').name,'不死者の面貌（エンシャント）');
+assert.equal(D.definitions.find(x=>x.id==='schrodinger-ring2').name,'シュレーディンガーの指輪');
+assert.equal(D.definitions.find(x=>x.id==='bm-patch-rimebound-grasp').name,'霜縛りの手甲（部位未確認・仮訳）');
+assert.equal(D.definitions.find(x=>x.id==='bm-ring-of-dragonslayer-ring2').name,'竜殺しの指輪');
+
 assert(B.skillOptions.some(([id,label])=>id==='lightningStorm'&&label.includes('ライトニングストーム')));
 assert(B.skillOptions.some(([id,label])=>id==='flameLightningFire'&&label==='炎雷（炎成分）'));
 assert(B.skillOptions.some(([id,label])=>id==='flameLightningLightning'&&label==='炎雷（雷成分）'));
@@ -71,6 +83,14 @@ const click=action=>events.click({target:{closest:()=>({dataset:{action}})}});
 click('tab-equipment');
 assert(app.innerHTML.includes('鉄の暴君の兜')&&app.innerHTML.includes('古の賢者の遺骨'));
 assert(app.innerHTML.includes('>主要OP<')&&app.innerHTML.includes('>補助OP<'));
+
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'head'}})}});
+assert(app.innerHTML.includes('【エンシャント・ディバイン】不死者の面貌（エンシャント）'));
+assert(app.innerHTML.includes('【ディバイン】不死者の面貌'));
+assert(app.innerHTML.includes('【ブラックミスト】堕ちた王の王冠'));
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'weapon'}})}});
+assert(app.innerHTML.includes('【ブラックミスト】フロストワームの杖'));
+
 click('tab-stats');
 assert(app.innerHTML.includes('マナコスト削減（上限：85%）'));
 assert(app.innerHTML.includes('クールダウン短縮（上限：80%）'));
