@@ -56,17 +56,29 @@ ${!isDiv&&dd?.effect?`<div class="notice gentle"><b>装備固有効果</b>：${E
 ${renderGemSection(it)}
 <label class="field"><span>メモ・固有効果の確認内容</span><textarea data-change="memo" data-id="${it.id}" rows="2">${E(it.memo||'')}</textarea></label></fieldset><div class="editor-bottom"><div class="small muted">${counts>1?'⚠ '+counts+'ビルドで共有中。OP・強化値の変更は全ビルドに反映。削除時も影響するビルドを確認します。':'編集内容は自動保存されます。装備を外しても保管庫には残ります。'}</div><div class="actions"><button class="text-btn" data-action="duplicate-item" data-id="${it.id}">個体を複製</button>${!same?`<button class="btn" data-action="equip" data-id="${it.id}">この候補を装備する</button>`:''}<button class="danger-link" data-action="delete-item" data-id="${it.id}" title="保存した候補を完全に削除します。共有ビルドへの影響を確認します。">候補を削除</button></div></div></div>`;}
 function renderGemSection(it){
- const group=D.gemSocketGroup[it.slot],max=D.gemSocketLimits[it.slot]||0;
+ const max=D.gemSocketLimits[it.slot]||0;
  if(!max)return `<div class="form-title"><b>宝石・ソケット</b><span>ソケットなし</span></div><div class="notice gentle">この部位には宝石を装着できません。</div>`;
  const source='https://deskrawl-db.vercel.app/gems';
  const rows=Array.from({length:max},(_,idx)=>{
-   const g=it.gems?.[idx]||{},value=g.type||'',effect=D.gemEffect(value,it.slot),data=D.gems[value],legacy=value&&!data;
-   const options=[opt('','なし',value),...Object.entries(D.gems).map(([key,d])=>opt(key,d.name+' · 輝く八角形',value)),...(legacy?[opt(value,'旧形式：'+value+'（集計対象外）',value)]:[])].join('');
-   return `<div class="gem-item"><span>ソケット ${idx+1} <span class="gem-tier">ランク6</span></span><select data-change="gem" data-id="${E(it.id)}" data-idx="${idx}">${options}</select><div class="gem-effect ${legacy?'gem-warning':''}">${effect?`<strong>+${E(C.format(effect.stat,effect.value))}</strong><span>${E(C.labels[effect.stat])}</span>`:legacy?'未対応の旧データ · 計算対象外':'宝石なし'}</div>${g.value!==undefined&&g.value!==null&&g.value!==''?`<small class="gem-legacy">旧版入力値 ${E(g.value)} は保持中・集計対象外。選び直すとクリアされます。</small>`:''}</div>`;
+   const g=it.gems?.[idx]||{},value=g.type||'',tier=Number(g.tier)||6,actual=g.value;
+   const effect=D.gemEffect(value,it.slot,tier,actual),legacy=value&&!D.gems[value];
+   const options=[opt('','なし',value),...Object.entries(D.gems).map(([key,d])=>opt(key,d.name,value)),...(legacy?[opt(value,'旧形式：'+value+'（集計対象外）',value)]:[])].join('');
+   const summary=effect&&Number.isFinite(effect.value)?
+     `<strong>+${E(C.format(effect.stat,effect.value))}</strong><span>${E(C.labels[effect.stat])}${tier===7?'（実測値）':''}</span>`:
+     effect?.tier===7?'<span>新ランクの数値未入力・計算対象外</span>':
+     legacy?'未対応の旧データ · 計算対象外':'宝石なし';
+   return `<div class="gem-item"><span>ソケット ${idx+1}</span>
+   <select data-change="gem" data-id="${E(it.id)}" data-idx="${idx}">${options}</select>
+   ${value&&!legacy?`<label class="field tiny"><span>宝石ランク</span><select data-change="gem-tier" data-id="${E(it.id)}" data-idx="${idx}">${opt(6,'Tier 6 · 輝く八角形',tier)}${opt(7,'Tier 7 · Perfect Star',tier)}</select></label>`:''}
+   ${value&&!legacy&&tier===7?`<label class="field tiny"><span>Tier 7のゲーム内実測値（任意）</span><input type="number" min="0" step="any" inputmode="decimal" data-change="gem-value" data-id="${E(it.id)}" data-idx="${idx}" placeholder="未確認・未計算" value="${E(actual??'')}"/></label>`:''}
+   <div class="gem-effect ${legacy?'gem-warning':''}">${summary}</div>
+   ${tier!==7&&g.value!==undefined&&g.value!==null&&g.value!==''?`<small class="gem-legacy">旧版入力値 ${E(g.value)} は保持中・集計対象外。選び直すとクリアされます。</small>`:''}
+   </div>`;
  }).join('');
  const line=(type,grp)=>{const e=D.gemEffect(type,grp==='armor'?'chest':grp==='accessory'?'neck':'weapon');return `${E(C.labels[e.stat])} +${E(C.format(e.stat,e.value))}`};
- return `<div class="form-title"><b>宝石・ソケット</b><span>最高ランク6のみ · 固定効果を自動反映</span></div><div class="gem-row">${rows}</div>
- <details class="advanced gem-reference"><summary>最高ランクの宝石6種類・全効果を見る</summary><div class="gem-table-scroll"><table class="gem-table"><thead><tr><th>宝石</th><th>武器</th><th>防具</th><th>装飾品</th></tr></thead><tbody>${Object.entries(D.gems).map(([key,d])=>`<tr><th>${E(d.name)}</th><td>${line(key,'weapon')}</td><td>${line(key,'armor')}</td><td>${line(key,'accessory')}</td></tr>`).join('')}</tbody></table></div><p class="small muted">ランク6＝輝く八角形。<a href="${source}" target="_blank" rel="noopener noreferrer">参考：Deskrawl宝石データ</a></p></details>`;
+ return `<div class="form-title"><b>宝石・ソケット</b><span>Tier 6を自動計算／Tier 7は実測値のみ</span></div><div class="gem-row">${rows}</div>
+ <p class="small muted">11月12日追加「Perfect Star（Tier 7）」に対応。実数値の資料が未確認のため、実測値を入力するまでステータスには加算しません。</p>
+ <details class="advanced gem-reference"><summary>Tier 6の宝石6種類・全効果を見る</summary><div class="gem-table-scroll"><table class="gem-table"><thead><tr><th>宝石</th><th>武器</th><th>防具</th><th>装飾品</th></tr></thead><tbody>${Object.entries(D.gems).map(([key,d])=>`<tr><th>${E(d.name)}</th><td>${line(key,'weapon')}</td><td>${line(key,'armor')}</td><td>${line(key,'accessory')}</td></tr>`).join('')}</tbody></table></div><p class="small muted">Tier 6＝輝く八角形。<a href="${source}" target="_blank" rel="noopener noreferrer">参考：Deskrawl宝石データ</a></p></details>`;
 }
 function renderDivineSection(it,dd){
 const totals=C.itemTotal(it);
@@ -532,9 +544,11 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
   modify(()=>{it.opLocks??={primary:[],secondary:false};if(primary){it.opLocks.primary??=[];it.opLocks.primary[idx]=Boolean(v)}else it.opLocks.secondary=Boolean(v)});
   flash(v?'このOPを必須として固定しました':'OPの固定を解除しました');return;
  }
- if(['definition','nickname','upgrade','upgradeKnown','primary','secondary','memo','gem','override'].includes(kind)&&it){if(it.locked){render();flash('この装備は固定中です。チェックを外してから編集してください。');return}
+ if(kind==='gem-tier'&&!['6','7'].includes(String(v))){render();flash('宝石ランクは6か7を選択してください');return}
+ if(kind==='gem-value'&&v!==''&&(!Number.isFinite(Number(v))||Number(v)<0)){render();flash('宝石の実測値は0以上の数値で入力してください');return}
+ if(['definition','nickname','upgrade','upgradeKnown','primary','secondary','memo','gem','gem-tier','gem-value','override'].includes(kind)&&it){if(it.locked){render();flash('この装備は固定中です。チェックを外してから編集してください。');return}
  const protect=kind==='definition'&&lockedOpCount(it)>0||kind==='primary'&&isOpLocked(it,'primary',Number(el.dataset.idx))||kind==='secondary'&&isOpLocked(it,'secondary')||kind==='override'&&(()=>{const k=String(itKey(el)||'').split(':')[1];return k==='s'?isOpLocked(it,'secondary'):/^[0-3]$/.test(k)&&isOpLocked(it,'primary',Number(k))})();
- if(protect){render();flash('必須OPは固定中です。該当する「必須」チェックを外してから変更してください。');return}if(countRefs(it.id)>1&&!['upgradeKnown'].includes(kind)&&!confirm('この装備は'+countRefs(it.id)+'ビルドで共有されています。変更すると両方に反映されます。続行しますか？')){render();return}modify(()=>{if(kind==='definition'){it.definitionId=v;it.primary=[];it.secondary='';it.opLocks={primary:[],secondary:false};it.overrides={}}else if(kind==='nickname')it.nickname=v.slice(0,120);else if(kind==='upgrade')it.upgrade=Number(v);else if(kind==='upgradeKnown')it.upgradeKnown=v;else if(kind==='primary'){const idx=Number(el.dataset.idx);if(it.primary.includes(v)&&v!==it.primary[idx]&&v){flash('同じOPを2枠に設定できません');return}while(it.primary.length<4)it.primary.push('');it.primary[idx]=v;if(it.opLocks?.primary)it.opLocks.primary[idx]=false;}else if(kind==='secondary'){it.secondary=v;if(it.opLocks)it.opLocks.secondary=false;}else if(kind==='memo')it.memo=v.slice(0,1000);else if(kind==='override'){it.overrides[itKey(el)]=v===''?null:Number(v)}else if(kind==='gem'){const idx=Number(el.dataset.idx);while(it.gems.length<=idx)it.gems.push({type:''});it.gems[idx]={type:v};}});return;}
+ if(protect){render();flash('必須OPは固定中です。該当する「必須」チェックを外してから変更してください。');return}if(countRefs(it.id)>1&&!['upgradeKnown'].includes(kind)&&!confirm('この装備は'+countRefs(it.id)+'ビルドで共有されています。変更すると両方に反映されます。続行しますか？')){render();return}modify(()=>{if(kind==='definition'){it.definitionId=v;it.primary=[];it.secondary='';it.opLocks={primary:[],secondary:false};it.overrides={}}else if(kind==='nickname')it.nickname=v.slice(0,120);else if(kind==='upgrade')it.upgrade=Number(v);else if(kind==='upgradeKnown')it.upgradeKnown=v;else if(kind==='primary'){const idx=Number(el.dataset.idx);if(it.primary.includes(v)&&v!==it.primary[idx]&&v){flash('同じOPを2枠に設定できません');return}while(it.primary.length<4)it.primary.push('');it.primary[idx]=v;if(it.opLocks?.primary)it.opLocks.primary[idx]=false;}else if(kind==='secondary'){it.secondary=v;if(it.opLocks)it.opLocks.secondary=false;}else if(kind==='memo')it.memo=v.slice(0,1000);else if(kind==='override'){it.overrides[itKey(el)]=v===''?null:Number(v)}else if(kind==='gem'||kind==='gem-tier'||kind==='gem-value'){const idx=Number(el.dataset.idx);it.gems??=[];while(it.gems.length<=idx)it.gems.push({type:''});if(kind==='gem')it.gems[idx]={type:v,tier:6};else if(kind==='gem-tier')it.gems[idx]={...it.gems[idx],tier:Number(v),value:null};else it.gems[idx]={...it.gems[idx],value:v===''?null:Number(v)};}});return;}
  if(kind==='aura'){modify(()=>{b.settings.aura=v});return}if(kind==='quickpotion'){modify(()=>{b.settings.potion=v});return}if(kind==='enemyLevel'){modify(()=>{b.settings.enemyLevel=Math.max(1,Math.min(999,Number(v)||70))});return}
  if(kind==='paragonPoint'){
     const def=D.paragonStats.find(x=>x.key===el.dataset.key),input=Number(v);
