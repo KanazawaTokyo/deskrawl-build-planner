@@ -106,15 +106,21 @@ function statReport(result){
 function buildReport(state,build,at=new Date().toISOString()){
  if(!state||!build)throw Error('選択中のビルドが見つかりません');
  const settings=build.settings||{},calculated=V.evaluate(state,build),
-  allocation=D.paragonAllocation(settings);
+  allocation=D.paragonAllocation(settings),review=window.DBPInputReview?.report(state,build);
  return {
   format:'deskrawl-chatgpt-build-analysis',version:1,exportedAt:at,
   game:'Deskrawl',class:'ソーサラー',
-  buildName:build.name||'無題のビルド',
+  buildName:build.name||'無題のビルド',gameMasterVersion:D.version,
+  registrationReview:review?{
+   complete:review.complete,total:review.total,
+   equipment:review.items.map(x=>({slot:x.slot,status:x.status,problems:x.problems})),
+   settings:review.settings.map(x=>({key:x.key,status:x.status,problems:x.problems}))
+  }:null,
   interpretation:[
    '現在選択中の1ビルドのローカル入力と推定計算結果です。全ビルドのバックアップではありません。',
    '装備強化未確認・入力不足・推定値・一時効果を確定値と混同しないでください。',
    '補正込みはゲーム内の実測値ではなくBuild Plannerによるモデル計算です。',
+   '登録照合の「checked」は本人が入力を確認した意味であり、計算式の検証済みを意味しません。',
    '計算条件はダメージ計算タブと共有しています。発動効果が常時有効とは限りません。'
   ],
   equipment:D.slots.map(([slot])=>equipmentEntry(state,build,slot)),
@@ -156,7 +162,7 @@ function toJSON(report){return JSON.stringify(report,null,2);}
 function toPrompt(report){
  return '以下はDeskrawl Build Plannerから出力した現在のビルドです。\n'+
  '装備・OP・強化状態・宝石・ルーン・パラゴン・タレント・ペット・発動条件と計算結果を読み取り、分析の基準にしてください。\n'+
- '「未確認」「推定」「発動条件付き」の項目は確定値として扱わず、必要なら確認してください。\n'+
+ '「未確認」「推定」「発動条件付き」の項目は確定値として扱わず、登録照合結果も参照してください。\n'+
  'このデータにはアカウント認証情報は含まれていません。\n\n'+
  '```json\n'+toJSON(report)+'\n```';
 }

@@ -28,6 +28,7 @@ jobs:
           node test-lock.js
           node test-sets.js
           node test-equipment-workflow.js
+          node test-input-review.js
           node test-required-ops.js
           node test-affix-pools.js
           node test-paragon.js
