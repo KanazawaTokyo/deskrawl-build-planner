@@ -72,6 +72,7 @@ const equipmentNamesJP={
  "Crown of the Fallen King": "堕ちた王の王冠",
  "Circlet of Focus": "集中のサークレット",
  "Reaper's Pauldron": "死神の肩当て",
+ "Soulfeast Pauldron": "魂喰らいの肩甲",
  "Shell Spike Pauldron": "シェルスパイクのポールドロン",
  "Venomfrost Pauldron": "毒霜の肩甲",
  "Thornheart Cuirass": "茨心の胸甲",
