@@ -603,3 +603,20 @@
 .new-build-option b{position:absolute;right:14px;top:14px;background:#28493d;color:#b8f0d9;border-radius:7px;padding:4px 7px;font-size:10px}
 @media(max-width:1100px){.gear-workflow-bar{align-items:flex-start;flex-direction:column}.gear-workflow-actions{align-items:flex-start;flex-direction:row;flex-wrap:wrap}}
 @media(max-width:650px){.new-build-main{width:100%}.gear-workflow-bar{padding:15px}.gear-workflow-actions{width:100%}.gear-workflow-actions .btn{flex:1}.candidate-entry{gap:5px}.candidate-entry .candidate{padding:8px 5px}.candidate-equip{padding:10px 9px;font-size:11px}.candidate-entry .candidate-status{padding:0 5px}.new-build-option span{padding-right:0}.new-build-option b{position:static;align-self:flex-start}}
+
+
+/* Item deletion confirmation: real in-app dialog, not browser-native confirm(). */
+.delete-target{display:flex;flex-direction:column;gap:7px;padding:15px 17px;margin:0 0 14px;background:#111924;border:1px solid #3b495b;border-radius:11px}
+.delete-target small{font-size:11px;color:var(--muted)}
+.delete-target strong{font-size:17px;overflow-wrap:anywhere}
+.delete-target span{font-size:11px;color:#9faebe;overflow-wrap:anywhere}
+.delete-warning{border:1px solid #8c534c;background:#372322;color:#ffd1c7;border-radius:10px;padding:12px 14px;font-size:12px;line-height:1.7;margin:12px 0}
+.delete-impact{border:1px solid #4a5362;border-radius:10px;background:#19212c;padding:13px 15px;font-size:12px;line-height:1.7;margin:13px 0}
+.delete-impact strong{font-size:12px}
+.delete-impact ul{margin:8px 0 6px;padding-left:20px;max-height:130px;overflow:auto}
+.delete-impact li{margin-bottom:3px;overflow-wrap:anywhere}
+.delete-impact p{color:var(--muted);font-size:11px}
+.danger-btn{background:#bd4d53;border-color:#bd4d53;color:#fff}
+.danger-btn:hover{filter:brightness(1.12)}
+.modal-panel:has(.delete-target){max-width:min(530px,calc(100vw - 24px))}
+@media(max-width:550px){.modal-panel:has(.delete-target) .modal-actions{flex-direction:column-reverse}.modal-panel:has(.delete-target) .modal-actions button{width:100%}}
