@@ -18,7 +18,9 @@ assert.equal(JSON.parse(saved.deskrawl_planner_v01).items.find(x=>x.id===item.id
 change('upgrade',item.id,9);s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===item.id).upgrade,old,'locked item upgrade must not change');
 change('nickname',item.id,'BAD');s=ctx.DBPApp.getState();assert.notEqual(s.items.find(x=>x.id===item.id).nickname,'BAD','locked item name must not change');
 click('new-item');s=ctx.DBPApp.getState();const candidate=s.items.at(-1);assert.equal(candidate.locked,false,'new candidate from a locked current item is unlocked');
-click('equip',candidate.id);s=ctx.DBPApp.getState();assert.equal(s.builds[0].loadout.chest,item.id,'locked gear must block swapping');
+click('equip',candidate.id);s=ctx.DBPApp.getState();assert.equal(s.builds[0].loadout.chest,candidate.id,'locked current gear must permit a safe swap');
+assert.equal(s.items.find(x=>x.id===item.id).locked,true,'the original locked item remains protected');
+click('equip',item.id);s=ctx.DBPApp.getState();assert.equal(s.builds[0].loadout.chest,item.id,'can return to a protected item');
 click('duplicate-item',item.id);s=ctx.DBPApp.getState();assert.equal(s.items.at(-1).locked,false,'duplicate of locked gear must be editable');
 click('delete-item',item.id);s=ctx.DBPApp.getState();assert(s.items.some(x=>x.id===item.id),'locked gear cannot be deleted');
 change('upgrade',candidate.id,5);s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===candidate.id).upgrade,5,'editing an unlocked candidate still works');
