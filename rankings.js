@@ -13,7 +13,7 @@ const templates={
 };
 const categories={boss:'ワールドボス',rift:'ミシックリフト',heroic:'ヒロイックマップ',other:'その他'};
 const metrics={time:'最短クリア時間',tier:'最高到達Tier',score:'最高スコア'};
-const limits={boards:100,runs:3000};
+const limits={boards:100,runs:500};
 const clone=x=>JSON.parse(JSON.stringify(x));
 const array=x=>Array.isArray(x)?x:[];
 const textValue=(value,max)=>String(value??'').trim().slice(0,max);
@@ -89,10 +89,13 @@ function copyBuildForBoard(state,boardId,sourceBuildId,uid=D.uid){
  const loadout={},newItems=[];
  for(const [slot,id] of equipped){
   const it=state.items.find(x=>x.id===id);const cp=clone(it);
-  cp.id=uid('item');cp.locked=false;cp.source='ranking-variant';
+  cp.id=uid('item');cp.locked=false;cp.source='ranking-variant';cp.owned=null;
   cp.createdAt=new Date().toISOString();newItems.push(cp);loadout[slot]=cp.id;
  }
- const variant={id:uid('build'),name:(source.name+' · '+board.name).slice(0,100),loadout,
+ const baseName=(source.name+' · '+board.name).slice(0,92);
+ let name=baseName,number=2;
+ while(state.builds.some(x=>x.name===name))name=baseName+' #'+(number++);
+ const variant={id:uid('build'),name,loadout,
   settings:clone(source.settings||{}),createdAt:new Date().toISOString()};
  // Keep previous verification only for unchanged settings. Items have fresh IDs,
  // and therefore cannot falsely inherit prior per-item confirmations.
@@ -120,7 +123,7 @@ function snapshot(state,build){
  const gear={};
  for(const [slot] of D.slots){
   const item=state.items.find(x=>x.id===build.loadout?.[slot]);
-  if(item){const copy=clone(item);delete copy.id;gear[slot]=copy}
+  if(item){const copy=clone(item),definition=D.definitions.find(x=>x.id===item.definitionId&&x.slot===slot);delete copy.id;copy.definitionName=definition?.name||item.definitionId;copy.definitionRarity=definition?.rarity||null;gear[slot]=copy}
   else gear[slot]=null;
  }
  const review=window.DBPInputReview?.report(state,build);
@@ -137,6 +140,7 @@ function addRun(state,boardId,buildId,raw,uid=D.uid){
  const result={id:uid('run'),boardId,buildId,buildName:b.name,
   metric:board.metric,...value,createdAt:new Date().toISOString(),snapshot:snapshot(state,b)};
  state.rankingRuns??=[];state.rankingRuns.push(result);
+ linkBuild(state,boardId,buildId);
  return result;
 }
 function deleteRun(state,id){
@@ -187,6 +191,7 @@ function render({state,selectedBoardId,E,opt}){
  const rr=board?sortedRuns(state,board.id):[];
  const best=rr[0];
  const linked=board?array(board.buildIds):[];
+ const bests=board?buildBests(state,board.id):new Map();
  let html='<main class="workspace ranking-workspace">'+
   '<div class="page-heading"><div class="eyebrow">RANKING LAB</div><h1>ランキング攻略</h1>'+
   '<p>ランキングごとにビルドを準備し、ゲーム内の結果を記録します。予測値や実際のランキング順位を自動取得する機能ではありません。</p></div>'+
@@ -215,7 +220,7 @@ function render({state,selectedBoardId,E,opt}){
   '<p class="helper">1位記録は確認した時点の手入力値です。シーズン中に更新される可能性があります。</p></section>';
  html+='<section class="card ranking-builds"><div class="card-heading"><div><h2>このランキングのビルド</h2><span>同じ装備を共有することも、独立した仮想コピーを作ることもできます</span></div></div>'+
   '<div class="ranking-build-list">'+(linked.length?linked.map(id=>{
-    const b=state.builds.find(x=>x.id===id),bestRun=buildBests(state,board.id).get(id);
+    const b=state.builds.find(x=>x.id===id),bestRun=bests.get(id);
     if(!b)return '';
     return '<div class="ranking-build-row"><div><strong>'+E(b.name)+'</strong><small>'+
      E(bestRun?resultText(board.metric,bestRun.value,bestRun.duration):'記録なし')+
@@ -241,7 +246,7 @@ function render({state,selectedBoardId,E,opt}){
     '<button class="text-btn" data-action="ranking-run-detail" data-id="'+E(x.id)+'">当時の装備</button>'+
     '<button class="text-btn" data-action="ranking-delete-run" data-id="'+E(x.id)+'">削除</button></div></div>';
   }).join('')+'</div>':'<p class="muted">まだ記録がありません。挑戦結果はビルド登録が未完成でも保存できます。</p>')+
-  (rr.length>100?'<p class="helper">最新の表示は上位100件です。全件はバックアップJSONに保持されます。</p>':'')+
+  (rr.length>100?'<p class="helper">上位100件を表示中です。全件はバックアップJSONに保持されます。</p>':'')+
   '</section></main>';
  return html;
 }
@@ -291,8 +296,9 @@ function runDetailModal({state,run,E}){
  const board=boardById(state,run.boardId),snap=run.snapshot||{},gear=snap.gear||{};
  const names=D.slots.map(([slot,label])=>{
   const i=gear[slot],def=D.definitions.find(x=>x.id===i?.definitionId&&x.slot===slot);
-  const name=i?.nickname||def?.name||i?.definitionId||'未装備';
-  return '<div class="ranking-snapshot-row"><strong>'+E(label)+'</strong><span>'+E(name)+
+  const name=i?.nickname||i?.definitionName||def?.name||i?.definitionId||'未装備';
+  const affixes=i?[...(i.primary||[]).filter(Boolean).map(x=>D.affixes[x]?.[0]||x),...(i.secondary?[D.affixes[i.secondary]?.[0]||i.secondary]:[])]:[];
+  return '<div class="ranking-snapshot-row"><div><strong>'+E(label)+'</strong><small>'+E(affixes.join(' / ')||'OP未入力')+'</small></div><span>'+E(name)+
    (i?.upgradeKnown?' · +'+E(i.upgrade):' · 強化未確認')+'</span></div>';
  }).join('');
  return '<div class="modal-title"><h2>挑戦当時のビルド</h2><button class="icon-btn" data-action="modal-close">×</button></div>'+
@@ -304,6 +310,7 @@ function runDetailModal({state,run,E}){
  ' · 入力照合：'+E(snap.review?snap.review.complete+'/'+snap.review.total:'未記録')+'</p>'+
  '<p class="helper">ルーン：'+E(array(snap.settings?.runeSlots).filter(Boolean).length)+'/6 · ペット：'+
  E(snap.settings?.pet?.id||'未設定')+' · パラゴンレベル：'+E(snap.settings?.paragonLevel??'未確認')+'</p>'+
+ '<details class="ranking-snapshot-json"><summary>全装備・設定の保存データを表示（読み取り専用）</summary><pre>'+E(JSON.stringify({gear:snap.gear,settings:snap.settings},null,2))+'</pre></details>'+
  '<div class="modal-actions"><button class="btn" data-action="modal-close">閉じる</button></div>';
 }
 window.DBPRankings={templates,categories,metrics,limits,boards,runs,boardById,runById,boardInput,addBoard,updateBoard,
