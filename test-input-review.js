@@ -20,6 +20,7 @@ assert.equal(R.confirmItem(doc,build,gear.id),false,'incomplete item cannot be c
 gear.owned=true;gear.upgradeKnown=true;
 assert.equal(R.confirmItem(doc,build,gear.id,'2026-11-12T00:00:00Z'),true);
 assert.equal(R.report(doc,build).items[0].status,'checked');
+assert.equal(doc.inputReviews.items[gear.id].checkedAt,'2026-11-12T00:00:00Z');
 assert.equal(doc.schemaVersion,1,'no schema migration');
 gear.upgrade=8;
 assert.equal(R.report(doc,build).items[0].status,'stale','changed enhancement invalidates verification');
@@ -55,7 +56,6 @@ assert.match(html,/登録照合/);
 assert.match(html,/data-action="review-edit-item"/);
 assert.match(html,/data-action="review-confirm-settings"/);
 assert.match(html,/変更後・再照合待ち/);
-assert.equal(JSON.stringify(doc).includes('2026-11-12T00:00:00Z'),true);
 console.log('PASS: manual registration review, incompleteness, stale gear/settings, shared items, safe state');
 
 // Integration with the existing editor and event delegation.
