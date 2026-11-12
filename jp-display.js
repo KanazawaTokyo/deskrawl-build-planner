@@ -47,6 +47,64 @@ const pets={
  'black-spider':'黒蜘蛛',stumplin:'切り株の魔物','ember-bat':'熾火コウモリ',
  'grey-forest-wolf':'灰色の森狼','brown-horse':'茶色の馬'
 };
+// Japanese equipment display names. Keys are original English source names,
+// while saved definition IDs and cloud records remain unchanged.
+// Japanese reference: https://deskrawl-db.vercel.app/armor and /weapons.
+// 2026-11-12 items absent from the reference are explicitly marked provisional.
+const equipmentNamesJP={
+ "The Grandmother": "グランドマザー",
+ "Iron Tyrant’s Helm": "鉄の暴君の兜",
+ "Iron Tyrant's Helm": "鉄の暴君の兜",
+ "Schrödinger’s Ring": "シュレーディンガーの指輪",
+ "Schrödinger's Ring": "シュレーディンガーの指輪",
+ "Remnant of the Elder Sage": "古の賢者の遺骨",
+ "Prismatic Heart": "プリズムの心臓",
+ "Elemental Burst Pauldron": "エレメンタルバーストのポールドロン",
+ "Unyielding Cuirass": "不屈の胸当て",
+ "Stormcaller Gauntlets": "ストームコーラーのガントレット",
+ "Bottomless Potion Belt": "底なしポーションベルト",
+ "Greaves of the Arcane Edge": "秘術の刃のグリーヴ",
+ "Boots of the Windcaller": "ウィンドコーラーのブーツ",
+ "Staff of the Frostwyrm": "フロストワームの杖",
+ "Hellstorm Mace": "ヘルストームのメイス",
+ "Amber Skull Staff": "琥珀髑髏の杖",
+ "Serrated Greatsword of Agony": "苦痛の鋸刃大剣",
+ "Crown of the Fallen King": "堕ちた王の王冠",
+ "Circlet of Focus": "集中のサークレット",
+ "Reaper's Pauldron": "死神の肩当て",
+ "Shell Spike Pauldron": "シェルスパイクのポールドロン",
+ "Venomfrost Pauldron": "毒霜の肩甲",
+ "Thornheart Cuirass": "茨心の胸甲",
+ "Runeward Vestment": "ルーンウォードの法衣",
+ "Unstoppable Gauntlets": "アンストッパブル・ガントレット",
+ "Festering Gauntlets": "膿む篭手",
+ "Gauntlets of the Third Beat": "三拍子の篭手",
+ "Endless Mana Belt": "無尽マナベルト",
+ "Battle Draught Belt": "戦いの秘薬のベルト",
+ "Greaves of the Stalwart Tonic": "剛健の強壮薬のグリーヴ",
+ "Manaflow Greaves": "魔力の流れのグリーヴ",
+ "Stoneguard Greaves": "岩守の脚甲",
+ "Boots of the Mending Stride": "癒しの歩みのブーツ",
+ "Blooddistiller’s Stride": "血の蒸留師の歩み",
+ "Blooddistiller's Stride": "血の蒸留師の歩み",
+ "Rimeguard Treads": "霜守りのブーツ",
+ "Pendant of the Surging Mind": "迸る精神のペンダント",
+ "Fire Lord's Necklace": "炎帝のネックレス",
+ "Stormguard Necklace": "嵐の守護者のネックレス",
+ "Pendant of Vigor": "活力のペンダント",
+ "Ring of Dragonslayer": "竜殺しの指輪",
+ "Ring of the Fourth Flame": "第四の炎の指輪",
+ "Charged Ring": "充填の指輪",
+ "Cryofracture Ring": "氷砕の指輪",
+ "Ring of Revelation": "啓示のリング",
+ "Glorious Gladiator Helmet": "栄光の剣闘士の兜",
+ "Visage of the Undying": "不死者の面貌",
+ "Soulrender": "ソウルレンダー",
+ "Ring of Momentum": "勢いの指輪（仮訳）",
+ "Rimebound Grasp": "霜縛りの手甲",
+ "Glacial Aegis": "氷河の守り"
+};
+const itemEffectTranslations=[["Healthy","健康な状態"],["Injured","負傷した状態"],["Thorns","棘"],["Numbing Cold","凍える寒さ"],["Brittle","脆化"],["Pyroblast","パイロブラスト"],["Soul Impact","ソウルインパクト"],["Crit","クリティカル"],["tick","ヒット"],["Armor","アーマー"],["HPポーション","ライフポーション"],["Frozen","凍結"]];
 const talents={
  arcaneInsight:'秘術の洞察',searingEdge:'灼熱の刃',frostArmor:'氷の鎧',arcaneReach:'秘術の射程',
  manaFlow:'マナの奔流',flameWard:'炎の守り',manaConduit:'マナ導管',frostMastery:'冷気の熟達',
@@ -148,12 +206,27 @@ const pairs=[
  ['Special Attack','特殊攻撃'],['Elite/Boss','エリート・ボス']
 ].sort((a,b)=>b[0].length-a[0].length);
 function text(value){if(typeof value!=='string')return value;let s=value;
- for(const [english,jp] of pairs) s=s.split(english).join(jp);return s;}
+ for(const [english,jp] of pairs) s=s.split(english).join(jp);
+ for(const [english,jp] of itemEffectTranslations) s=s.split(english).join(jp);
+ return s;}
 function rarity(value){return rarityJP[value]||value;}
 Object.assign(C.labels,stat);
 for(const [key,info] of Object.entries(D.affixes))if(Array.isArray(info))info[0]=stat[key]||text(info[0]);
 for(const p of D.paragonStats)p.label=stat[p.stat]||text(p.label);
-for(const d of D.definitions){if(names[d.id])d.name=names[d.id];if(d.effect)d.effect=text(d.effect);}
+for(const d of D.definitions){
+ // Translate catalog copies, mirrored rings and Ancient variants as well as the
+ // original named definitions. Do not translate an ID, slot or saved nickname.
+ const originalName=d.name;
+ const sourceName=originalName.replace(/\s*\(Ancient\)$/, '').replace(/（部位未確認）$/, '');
+ const translated=names[d.id]||equipmentNamesJP[sourceName];
+ if(translated){
+   d.name=translated+(d.isAncient?'（エンシャント）':'')+
+     (d.slotUnverified?'（部位未確認・仮訳）':'');
+ }else{
+   d.name=text(originalName.replace(/\s*\(Ancient\)$/, ''))+(d.isAncient?'（エンシャント）':'');
+ }
+ if(d.effect)d.effect=text(d.effect);
+}
 for(const [id,arr] of Object.entries(B.abilities))if(skills[id]){
  const suffix=id==='flameLightningFire'?'（炎成分）':id==='flameLightningLightning'?'（雷成分）':
  ['fireBall','flameBreath','fireElemental','fireMeteor'].includes(id)?'（炎）':
