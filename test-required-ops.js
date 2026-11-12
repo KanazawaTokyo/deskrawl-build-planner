@@ -24,8 +24,8 @@ change('primary',item.id,'',1);s=ctx.DBPApp.getState();assert.equal(s.items.find
 change('op-lock-primary',item.id,true,1);s=ctx.DBPApp.getState();assert(!s.items.find(x=>x.id===item.id).opLocks.primary[1],'blank OP cannot be locked');
 click('new-item');s=ctx.DBPApp.getState();const cp=s.items.at(-1);
 assert.equal(cp.locked,false);
-assert.deepEqual(cp.primary,[],'new gear must have no inherited OP');
-assert.deepEqual(cp.opLocks.primary,[],'new gear must have no inherited required locks');
+assert.equal(cp.primary.length,0,'new gear must have no inherited OP');
+assert.equal(cp.opLocks.primary.length,0,'new gear must have no inherited required locks');
 assert.equal(cp.definitionId,'custom-chest','new gear starts empty for explicit type selection');
 change('definition',cp.id,'unyielding');s=ctx.DBPApp.getState();
 assert.equal(s.items.find(x=>x.id===cp.id).definitionId,'unyielding','a new gear item accepts a new definition');
