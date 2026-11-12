@@ -106,6 +106,67 @@ const definitions=[
 {id:'custom-ring1',slot:'ring1',name:'その他の指輪①',rarity:'Black Mist'},
 {id:'custom-ring2',slot:'ring2',name:'その他の指輪②',rarity:'Black Mist'}
 ];
+
+// Sorcerer-compatible Legendary bases (Black Mist variants). 2026-11-12 catalog refresh.
+// Source: https://www.deskrawl.tools/legendary-items (game 1.0.3 data);
+// new 1.1.11 items below are separately identified.
+// Entries with no verified fixed-value computation carry effect text only.
+const slugName=x=>x.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
+const sorcererBlackMistCatalog=[["weapon","Staff of the Frostwyrm","Ice Shardsがさらに2体の敵へ跳ね返る"],["weapon","Hellstorm Mace","基本攻撃10回ごとに雷撃を発生させる"],["weapon","Amber Skull Staff","移動不能または減速中の敵に対するクリティカルダメージ+100%"],["weapon","Serrated Greatsword of Agony","脆弱状態の敵に対するクリティカル率+30%"],["head","Crown of the Fallen King","撃破後3秒間、攻撃速度+30%"],["head","Circlet of Focus","基本攻撃で集中を最大5スタック獲得。次の強攻撃で消費"],["shoulder","Reaper's Pauldron","固有効果は未照合"],["shoulder","Shell Spike Pauldron","Armorの10%をThornsに加算"],["shoulder","Elemental Burst Pauldron","強攻撃後6秒間、炎・雷・秘術ダメージが20%ずつ増加（最大5スタック）"],["shoulder","Venomfrost Pauldron","エリート・ボスへの冷気・毒ダメージ+90%"],["chest","Thornheart Cuirass","Thornsによるダメージ+500%、最大HP-15%"],["chest","Runeward Vestment","敵のクリティカル攻撃を受けるとスピリットシールドを獲得（CD8秒）"],["chest","Unyielding Cuirass","HP30%未満で被弾すると4秒無敵（CD25秒）"],["gloves","Unstoppable Gauntlets","攻撃ヒットごとにArmor+1%、最大100スタック"],["gloves","Stormcaller Gauntlets","Lightning Stormのクリティカルダメージ+150%"],["gloves","Festering Gauntlets","継続ダメージ+80%"],["gloves","Gauntlets of the Third Beat","基本攻撃3回目の直接ダメージ+100%"],["belt","Endless Mana Belt","HPポーション使用時に最大マナの40%を回復"],["belt","Bottomless Potion Belt","HPポーション所持数+4"],["belt","Battle Draught Belt","HPポーション使用後6秒間、全ダメージ+35%"],["legs","Greaves of the Stalwart Tonic","HPポーション使用後5秒間、ダメージ軽減+30%"],["legs","Manaflow Greaves","撃破後4秒間、マナ自然回復+15"],["legs","Greaves of the Arcane Edge","炎・雷・秘術アビリティのクリティカルダメージ+150%"],["legs","Stoneguard Greaves","他の軽減後に固定300ダメージ軽減（最小1ダメージ）"],["boots","Boots of the Mending Stride","移動中、最大HPの3%を毎秒回復"],["boots","Boots of the Windcaller","撃破後4秒間、移動速度+50%"],["boots","Blooddistiller’s Stride","敵撃破時10%の確率でHPポーションを獲得"],["boots","Rimeguard Treads","Frozenを付与したときNumbing Coldも付与"],["neck","Pendant of the Surging Mind","マナ100消費ごとに4秒間クリティカル率+20%"],["neck","Fire Lord's Necklace","Fire Elementalを1体追加で召喚"],["neck","Stormguard Necklace","固有効果は未照合"],["neck","Pendant of Vigor","HP80%超のとき全ダメージ+75%"],["neck","Prismatic Heart","最も高い属性ダメージボーナスを25%増加"],["ring","Ring of Dragonslayer","敵が1体だけの戦闘時、攻撃速度+35%"],["ring","Ring of the Fourth Flame","Fire Ballの4回目がPyroblastになる"],["ring","Charged Ring","残りマナ量に応じ、アビリティダメージ最大+50%"],["ring","Cryofracture Ring","冷気の強攻撃がBrittleを1スタック付与"],["ring","Ring of Revelation","静止中、基本攻撃ダメージが毎秒+10%、最大20スタック"]];
+for(const [itemSlot,name,effect] of sorcererBlackMistCatalog){
+  for(const slot of itemSlot==='ring'?['ring1','ring2']:[itemSlot]){
+    if(definitions.some(d=>d.slot===slot&&d.name===name))continue;
+    definitions.push({id:'bm-'+slugName(name)+(itemSlot==='ring'?'-'+slot:''),slot,name,rarity:'Black Mist',effect,
+      sourceUrl:'https://www.deskrawl.tools/legendary-items'});
+  }
+}
+// The original ring definitions are single-slot only. Do not change their IDs:
+// saved loadouts reference those IDs. Add mirror definitions for the other slot.
+for(const item of definitions.filter(d=>d.slot==='ring1'||d.slot==='ring2').slice()){
+  const otherSlot=item.slot==='ring1'?'ring2':'ring1';
+  if(!definitions.some(d=>d.slot===otherSlot&&d.name===item.name)){
+    definitions.push({...item,id:item.id+'-'+otherSlot,slot:otherSlot});
+  }
+}
+// Divines usable by a Sorcerer in the planner's existing 11 slots.
+// All Ancient Divine versions use identical regular fixed stats, while unique
+// effects may differ. Unknown Ancient powers are deliberately NOT calculated.
+const moreDivines=[
+  {id:'gladiator',slot:'head',name:'Glorious Gladiator Helmet',rarity:'Divine',effect:'筋力・敏捷・知力+30%（固有効果。自動計算未対応）',sourceUrl:'https://wikily.gg/deskrawl/equipment/glorious-gladiator-helmet/',fixed:[['armor',840],['armorBonus',35],['maxHP',850],['mcr',17],['mana',80],['regen',35],['itemFind',35]]},
+  {id:'undying',slot:'head',name:'Visage of the Undying',rarity:'Divine',effect:'全ダメージを30%軽減（通常版。2026-10-15パッチ）。常時効果',sourceUrl:'https://wikily.gg/deskrawl/equipment/visage-of-the-undying/',fixed:[['armor',840],['maxHP',850],['bonusHP',35],['specialDamage',135],['cdr',17],['potionFind',35]],powerStats:[['allDR',30]]},
+  {id:'soulrender',slot:'weapon',name:'Soulrender',rarity:'Divine',effect:'直接攻撃25回でSoul Impact発動（通常版）',sourceUrl:'https://wikily.gg/deskrawl/equipment/soulrender/',fixed:[['weaponDamage',290],['weaponSpeed',1.2],['slowed',170],['basicAttack',120],['bonusHP',35],['allDR',10],['lifeKill',100],['loh',34]]},
+  {id:'momentum',slot:'ring1',name:'Ring of Momentum',rarity:'Divine',effect:'2026-11-12追加。固定OPと固有効果は未確認のため未計算',sourceUrl:'https://steamdb.info/patchnotes/26604532/',fixed:[]}
+];
+for(const item of moreDivines){
+  if(!definitions.some(d=>d.id===item.id))definitions.push(item);
+}
+for(const item of moreDivines.filter(d=>d.slot==='ring1')){
+  definitions.push({...item,id:item.id+'-ring2',slot:'ring2'});
+}
+// Fixed stat values are shared between regular and Ancient Divine versions.
+// Normal unique powers are intentionally omitted from unknown Ancient variants.
+for(const item of definitions.filter(d=>d.rarity==='Divine'&&!d.isAncient).slice()){
+  if(item.id.startsWith('custom-'))continue;
+  const ancientId='ancient-'+item.id;
+  if(definitions.some(d=>d.id===ancientId))continue;
+  const isVisage=item.id==='undying';
+  definitions.push({...item,id:ancientId,name:item.name+' (Ancient)',isAncient:true,
+    effect:isVisage?'エンシャント版：ダメージ軽減40%（ゲーム内報告に基づく値。要確認）':
+      'エンシャント版：固定OPは通常版と同一。強化された固有効果の値は未確認のため未計算',
+    powerStats:isVisage?[['allDR',40]]:[],
+    sourceUrl:'https://steamdb.info/patchnotes/26604532/'});
+}
+// New 1.1.11 Sorcerer Black Mist variants: slot is inferred from the item
+// name until live tooltip verification; show the uncertainty in the editor.
+const patchSorcererGear=[
+  ['gloves','Rimebound Grasp','Frost Beamは1tickにつき追加マナ5消費。詠唱1秒ごとにCritダメージ+120%（再詠唱時リセット）。部位は名称からの暫定推定'],
+  ['chest','Glacial Aegis','Ice Meteorの効果範囲-50%、攻撃頻度+50%。部位は名称からの暫定推定']
+];
+for(const [slot,name,effect] of patchSorcererGear){
+  definitions.push({id:'bm-patch-'+slugName(name),slot,name:name+'（部位未確認）',rarity:'Black Mist',effect,
+    sourceUrl:'https://steamdb.info/patchnotes/26604532/',slotUnverified:true});
+}
+
 const seedConfigs=[
 ['weapon','grandmother',[],null,'Divine基礎値は公開データに基づく。実際の強化段階は未確認'],
 ['head','iron',[],null,'Divine基礎値は公開データに基づく。実際の強化段階は未確認'],
@@ -121,5 +182,5 @@ const seedConfigs=[
 ];
 function uid(prefix){return prefix+'-'+(globalThis.crypto&&crypto.randomUUID?crypto.randomUUID():Date.now()+'-'+Math.random().toString(36).slice(2))}
 function makeSeed(){const items=[],loadout={};for(const [slot,definitionId,primary,secondary,note] of seedConfigs){const it={id:uid('item'),definitionId,slot,primary:[...primary],secondary:secondary||'',upgrade:0,upgradeKnown:false,overrides:{},gems:[],nickname:'',memo:note,source:'history',owned:null,createdAt:new Date().toISOString()};items.push(it);loadout[slot]=it.id;}const old={id:uid('item'),definitionId:'unyielding',slot:'chest',primary:['healthy','injured','bonusHP','coldDR'],secondary:'loh',upgrade:8,upgradeKnown:true,overrides:{},gems:[],nickname:'旧・LoH胸',memo:'以前の+8試用装備',source:'history',owned:null,createdAt:new Date().toISOString()};items.push(old);const build={id:uid('build'),name:'Stormcaller 通常',loadout,settings:{aura:true,enemyLevel:70,paragonPoints:{maxMana:15},paragonLevel:null,talents:{flameWard:8,arcaneReservoir:8},talentPoints:{arcaneInsight:10,manaFlow:8,stormExecutioner:10,manaRegeneration:1,thunderstruck:1,electricalShield:8,stormMastery:8,staticCharge:1,frozenReservoir:8,electrocuteMana:6,auraWard:8,arcaneExposure:1},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{},notes:'会話履歴による初期下書き。実測値・強化段階は確認が必要。'},createdAt:new Date().toISOString()};return {schemaVersion:1,masterVersion:'conversation-draft-2026-11-06',items,builds:[build],activeBuildId:build.id,measurements:[{id:uid('measurement'),at:'2026-11-04',buildId:build.id,reference:true,values:{critChance:83.2,cdr:76.6,armor:9416,mr:2909,as:1.2,mana:130,stormCost:21},notes:'旧装備のAura発動中の会話上の記録。現在構成の確定値ではない。'}]};}
-window.DBP={petCatalog,petGearAffixes,petGearPrimary,petPassiveList,paragonStats,paragonAllocation,slots,affixes,rules,definitions,gems,gemSocketLimits,gemSocketGroup,gemEffect,makeSeed,uid,limits:{critChance:85,critRed:100,dodge:85,cdr:80,mcr:85,allDR:90,physicalDR:90,fireDR:90,coldDR:90,lightningDR:90,poisonDR:90,arcaneDR:90},version:'black-mist-affixes-2026-11-06'};
+window.DBP={petCatalog,petGearAffixes,petGearPrimary,petPassiveList,paragonStats,paragonAllocation,slots,affixes,rules,definitions,gems,gemSocketLimits,gemSocketGroup,gemEffect,makeSeed,uid,limits:{critChance:85,critRed:100,dodge:85,cdr:80,mcr:85,allDR:90,physicalDR:90,fireDR:90,coldDR:90,lightningDR:90,poisonDR:90,arcaneDR:90},version:'sorcerer-gear-catalog-2026-11-12'};
 })();
