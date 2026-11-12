@@ -620,3 +620,24 @@
 .danger-btn:hover{filter:brightness(1.12)}
 .modal-panel:has(.delete-target){max-width:min(530px,calc(100vw - 24px))}
 @media(max-width:550px){.modal-panel:has(.delete-target) .modal-actions{flex-direction:column-reverse}.modal-panel:has(.delete-target) .modal-actions button{width:100%}}
+
+/* Manual registration reconciliation: compact review of all equipped slots. */
+.review-panel{width:min(850px,100%)}
+.review-progress{display:flex;align-items:baseline;gap:15px;padding:16px;margin:14px 0;border:1px solid var(--line2);border-radius:12px;background:var(--panel2)}
+.review-progress strong{font-size:27px;color:var(--mint)}
+.review-progress span{font-size:12px;color:var(--muted)}
+.review-heading{font-size:14px;margin:22px 0 10px}
+.review-list{display:flex;flex-direction:column;gap:8px}
+.review-row{display:flex;gap:14px;align-items:center;justify-content:space-between;padding:12px;border:1px solid var(--line);border-radius:11px;background:#121b25}
+.review-main{display:flex;flex-direction:column;align-items:flex-start;gap:4px;min-width:0;flex:1}
+.review-main strong{font-size:13px}
+.review-main small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.review-status{font-size:11px;color:var(--gold)}
+.review-status.checked,.review-confirmed{color:var(--mint)}
+.review-status.stale{color:#f4a9a9}
+.review-issues{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
+.review-issues span{background:#3a2e28;border-radius:5px;font-size:10px;color:#edc4a7;padding:4px 6px}
+.review-actions{display:flex;flex-wrap:wrap;gap:6px;justify-content:flex-end}
+.review-actions .btn{font-size:11px;padding:8px 10px}
+.review-confirmed{font-size:11px;font-weight:600}
+@media(max-width:650px){.review-row{align-items:stretch;flex-direction:column}.review-actions{justify-content:flex-start}.review-progress{align-items:flex-start;flex-direction:column;gap:2px}}
