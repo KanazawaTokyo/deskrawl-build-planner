@@ -77,7 +77,7 @@ for(const slot of ['shoulder','gloves','belt','boots']){
  weapon.gems=[{type:'sapphire',tier:7,value:72}];
  const measured=C.calc(state,b);
  assert.equal((measured.sum.cold||0)-(before.sum.cold||0),72,'actual manually entered Perfect Star bonus is counted');
- assert(measured.breakdown.cold.some(x=>x.source.includes('Tier 7')&&x.status==='actual'),'measured gem bonus identified as actual');
+ assert(measured.breakdown.cold.some(x=>x.source.includes('Tier 7')&&x.quality==='actual'),'measured gem bonus identified as actual');
  weapon.gems=[{type:'sapphire',tier:6,value:999}];
  assert.equal((C.calc(state,b).sum.cold||0)-(before.sum.cold||0),50,'old Tier6 verified stat ignores obsolete freeform value');
 }
