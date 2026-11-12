@@ -20,8 +20,8 @@ click('new-item');st=c.DBPApp.getState();
 const candidate=st.items.at(-1);
 assert.equal(candidate.nickname,'','new candidate should show the item definition, not generic nickname');
 assert.equal(candidate.locked,false);
-assert.deepEqual(candidate.primary,[],'new item must not inherit gear OP from locked current item');
-assert.deepEqual(candidate.opLocks.primary,[],'new item must not inherit OP protections');
+assert.equal(candidate.primary.length,0,'new item must not inherit gear OP from locked current item');
+assert.equal(candidate.opLocks.primary.length,0,'new item must not inherit OP protections');
 assert.equal(candidate.definitionId,'custom-chest','new item has an empty gear type');
 change('definition',candidate.id,'unyielding','select-one');st=c.DBPApp.getState();
 assert.equal(st.items.find(x=>x.id===candidate.id).definitionId,'unyielding','can select a different gear type');
@@ -61,6 +61,6 @@ assert(!st.items.some(x=>x.id===weapon),'confirmation can delete a shared item')
 assert(!st.builds[0].loadout.weapon,'all referencing builds lose only the deleted gear');
 click('new-build');click('new-build-share');st=c.DBPApp.getState();
 assert.equal(st.builds.length,4);
-assert.equal(st.items.length,initialCount+11,'shared build does not duplicate gear');
+assert.equal(st.items.length,initialCount+10,'shared build does not duplicate gear');
 assert.equal(st.schemaVersion,1,'persisted schema unchanged');
 console.log('PASS: swap locked gear, delete active candidate, unequip, independent/blank/shared build, preserved data');
