@@ -23,8 +23,11 @@ assert.equal(s.items.find(x=>x.id===item.id).locked,true,'the original locked it
 click('equip',item.id);s=ctx.DBPApp.getState();assert.equal(s.builds[0].loadout.chest,item.id,'can return to a protected item');
 click('duplicate-item',item.id);s=ctx.DBPApp.getState();assert.equal(s.items.at(-1).locked,false,'duplicate of locked gear must be editable');
 click('delete-item',item.id);s=ctx.DBPApp.getState();
-assert(s.items.some(x=>x.id===item.id),'a canceled protected-item deletion keeps the item');
-assert(app.innerHTML.includes('data-action="delete-item"'),'delete stays accessible even on protected items');
+assert(s.items.some(x=>x.id===item.id),'opening protected-item deletion dialog does not delete');
+assert(app.innerHTML.includes('編集保護されている装備です'),'protected deletion is clearly explained');
+assert(app.innerHTML.includes('data-action="confirm-delete-item"'),'protected deletion is available after confirmation');
+click('modal-close');s=ctx.DBPApp.getState();
+assert(s.items.some(x=>x.id===item.id),'canceling protected-item deletion keeps it');
 change('upgrade',candidate.id,5);s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===candidate.id).upgrade,5,'editing an unlocked candidate still works');
 change('locked',item.id,false,'checkbox');s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===item.id).locked,false);assert(!app.innerHTML.includes('<fieldset class="equipment-fields" disabled>'));
 click('equip',candidate.id);s=ctx.DBPApp.getState();assert.equal(s.builds[0].loadout.chest,candidate.id,'unlock permits swapping again');
