@@ -54,7 +54,8 @@ cdr:['クールダウン短縮',15.6,'pct','上限80%'],mcr:['マナ消費軽減
 physicalDR:['物理ダメージ軽減',15.6,'pct','物理限定'],coldDR:['冷気ダメージ軽減',15.6,'pct','冷気限定'],fireDR:['炎ダメージ軽減',15.6,'pct','炎限定'],poisonDR:['毒ダメージ軽減',15.6,'pct','毒限定'],armorBonus:['ボーナスArmor',31.3,'pct','装甲の割合補正'],specialDamage:['特殊攻撃ダメージ',125.1,'pct','スキルによる'],thorns:['反射ダメージ',156,'flat','反射'],potionCharges:['追加ポーション所持数',1,'flat','所持枠'],
 move:['ボーナス移動速度',15.6,'pct','移動速度'],loh:['Life on Hit',31,'flat','命中時回復'],itemFind:['アイテム発見率',31.3,'pct','ドロップ関連'],goldFind:['ゴールド発見率',31.3,'pct','ゴールド関連'],xp:['経験値獲得',31.3,'pct','経験値関連'],manaKill:['撃破時マナ回復',16,'flat','キル時回復'],potionFind:['ポーション発見率',31.3,'pct','ポーション関連'],regen:['HP自然回復',31,'flat','自然回復']
 };
-// Radiant Octagon (Tier 6) only. Effects vary by socket category.
+// Tier 6 auto values verified; Tier 7 Perfect Star has no published values yet.
+// Tier 7 is selectable only with optional manually entered game-observed values.
 // Source: https://deskrawl-db.vercel.app/gems (gem tiers and JP bonus values)
  // Slot limits: https://wikily.gg/deskrawl/equipment-upgrades/sockets
 const gemSocketLimits={weapon:3,head:1,chest:2,legs:2,neck:1,ring1:1,ring2:1};
@@ -67,7 +68,15 @@ const gems={
  sapphire:{name:'サファイア',itemName:'輝くサファイアの八角形',weapon:['cold',50],armor:['bonusHP',18],accessory:['coldDR',15]},
  topaz:{name:'トパーズ',itemName:'輝くトパーズの八角形',weapon:['lightning',50],armor:['dex',30],accessory:['lightningDR',15]}
 };
-function gemEffect(type,slot){const group=gemSocketGroup[slot],data=gems[type]?.[group];return data?{type,group,stat:data[0],value:data[1],tier:6}:null;}
+function gemEffect(type,slot,tier=6,measured=null){
+ const group=gemSocketGroup[slot],data=gems[type]?.[group];if(!data)return null;
+ if(Number(tier)===7){
+  const actual=measured!==null&&measured!==undefined&&measured!==''?Number(measured):null;
+  return {type,group,stat:data[0],value:Number.isFinite(actual)&&actual>=0?actual:null,tier:7,verified:false};
+ }
+ if(Number(tier)!==6)return null;
+ return {type,group,stat:data[0],value:data[1],tier:6,verified:true};
+}
 const common=['int','mr','maxHP','dodge','critRed','critChance','critDamage','cdr','mcr','as','damage','allDamage','bonusHP'];
 const rules={
 weapon:{primary:["int","damage","critDamage","as","basicAttack","strongAttack","specialDamage","fire","cold","lightning","healthy","injured","slowed","immobilized","elite","distant","dot","burned","vulnerable"],secondary:["loh","lifeKill","manaKill"]},
