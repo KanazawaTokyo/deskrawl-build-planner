@@ -111,11 +111,12 @@ const definitions=[
 // Source: https://www.deskrawl.tools/legendary-items (game 1.0.3 data);
 // new 1.1.11 items below are separately identified.
 // Entries with no verified fixed-value computation carry effect text only.
+const slugName=x=>x.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"");
 const sorcererBlackMistCatalog=[["weapon","Staff of the Frostwyrm","Ice Shardsがさらに2体の敵へ跳ね返る"],["weapon","Hellstorm Mace","基本攻撃10回ごとに雷撃を発生させる"],["weapon","Amber Skull Staff","移動不能または減速中の敵に対するクリティカルダメージ+100%"],["weapon","Serrated Greatsword of Agony","脆弱状態の敵に対するクリティカル率+30%"],["head","Crown of the Fallen King","撃破後3秒間、攻撃速度+30%"],["head","Circlet of Focus","基本攻撃で集中を最大5スタック獲得。次の強攻撃で消費"],["shoulder","Reaper's Pauldron","固有効果は未照合"],["shoulder","Shell Spike Pauldron","Armorの10%をThornsに加算"],["shoulder","Elemental Burst Pauldron","強攻撃後6秒間、炎・雷・秘術ダメージが20%ずつ増加（最大5スタック）"],["shoulder","Venomfrost Pauldron","エリート・ボスへの冷気・毒ダメージ+90%"],["chest","Thornheart Cuirass","Thornsによるダメージ+500%、最大HP-15%"],["chest","Runeward Vestment","敵のクリティカル攻撃を受けるとスピリットシールドを獲得（CD8秒）"],["chest","Unyielding Cuirass","HP30%未満で被弾すると4秒無敵（CD25秒）"],["gloves","Unstoppable Gauntlets","攻撃ヒットごとにArmor+1%、最大100スタック"],["gloves","Stormcaller Gauntlets","Lightning Stormのクリティカルダメージ+150%"],["gloves","Festering Gauntlets","継続ダメージ+80%"],["gloves","Gauntlets of the Third Beat","基本攻撃3回目の直接ダメージ+100%"],["belt","Endless Mana Belt","HPポーション使用時に最大マナの40%を回復"],["belt","Bottomless Potion Belt","HPポーション所持数+4"],["belt","Battle Draught Belt","HPポーション使用後6秒間、全ダメージ+35%"],["legs","Greaves of the Stalwart Tonic","HPポーション使用後5秒間、ダメージ軽減+30%"],["legs","Manaflow Greaves","撃破後4秒間、マナ自然回復+15"],["legs","Greaves of the Arcane Edge","炎・雷・秘術アビリティのクリティカルダメージ+150%"],["legs","Stoneguard Greaves","他の軽減後に固定300ダメージ軽減（最小1ダメージ）"],["boots","Boots of the Mending Stride","移動中、最大HPの3%を毎秒回復"],["boots","Boots of the Windcaller","撃破後4秒間、移動速度+50%"],["boots","Blooddistiller’s Stride","敵撃破時10%の確率でHPポーションを獲得"],["boots","Rimeguard Treads","Frozenを付与したときNumbing Coldも付与"],["neck","Pendant of the Surging Mind","マナ100消費ごとに4秒間クリティカル率+20%"],["neck","Fire Lord's Necklace","Fire Elementalを1体追加で召喚"],["neck","Stormguard Necklace","固有効果は未照合"],["neck","Pendant of Vigor","HP80%超のとき全ダメージ+75%"],["neck","Prismatic Heart","最も高い属性ダメージボーナスを25%増加"],["ring","Ring of Dragonslayer","敵が1体だけの戦闘時、攻撃速度+35%"],["ring","Ring of the Fourth Flame","Fire Ballの4回目がPyroblastになる"],["ring","Charged Ring","残りマナ量に応じ、アビリティダメージ最大+50%"],["ring","Cryofracture Ring","冷気の強攻撃がBrittleを1スタック付与"],["ring","Ring of Revelation","静止中、基本攻撃ダメージが毎秒+10%、最大20スタック"]];
 for(const [itemSlot,name,effect] of sorcererBlackMistCatalog){
   for(const slot of itemSlot==='ring'?['ring1','ring2']:[itemSlot]){
     if(definitions.some(d=>d.slot===slot&&d.name===name))continue;
-    definitions.push({id:'bm-'+x=>x.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")(name)+(itemSlot==='ring'?'-'+slot:''),slot,name,rarity:'Black Mist',effect,
+    definitions.push({id:'bm-'+slugName(name)+(itemSlot==='ring'?'-'+slot:''),slot,name,rarity:'Black Mist',effect,
       sourceUrl:'https://www.deskrawl.tools/legendary-items'});
   }
 }
@@ -162,7 +163,7 @@ const patchSorcererGear=[
   ['chest','Glacial Aegis','Ice Meteorの効果範囲-50%、攻撃頻度+50%。部位は名称からの暫定推定']
 ];
 for(const [slot,name,effect] of patchSorcererGear){
-  definitions.push({id:'bm-patch-'+x=>x.toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g,"").replace(/['’]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")(name),slot,name:name+'（部位未確認）',rarity:'Black Mist',effect,
+  definitions.push({id:'bm-patch-'+slugName(name),slot,name:name+'（部位未確認）',rarity:'Black Mist',effect,
     sourceUrl:'https://steamdb.info/patchnotes/26604532/',slotUnverified:true});
 }
 
