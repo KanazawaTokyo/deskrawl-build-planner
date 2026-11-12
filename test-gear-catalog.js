@@ -7,6 +7,15 @@ const D=ctx.DBP, all=D.definitions;
 assert(new Set(all.map(d=>d.id)).size===all.length,'definition IDs must remain unique');
 for(const d of all)assert(D.slots.some(s=>s[0]===d.slot),d.name+' has an unknown slot');
 assert(all.find(x=>x.id==='grandmother'),'old Grandmother ID was removed');
+assert.equal(D.slots.length,11,'back slot must not be introduced');
+assert(!D.slots.some(([slot])=>slot==='back'),'back slot must remain absent');
+const dreadwing=all.find(x=>x.id==='dreadwing'), ancientDreadwing=all.find(x=>x.id==='ancient-dreadwing');
+assert(dreadwing&&dreadwing.slot==='weapon'&&dreadwing.rarity==='Divine','Dreadwing is a divine weapon');
+assert(ancientDreadwing&&ancientDreadwing.slot==='weapon'&&ancientDreadwing.isAncient,'Ancient Dreadwing weapon variant');
+assert.equal(dreadwing.fixed.length,0,'unknown item stats must not be invented');
+assert(!dreadwing.powerStats?.length,'unknown unique power must not be computed');
+assert.equal(ancientDreadwing.fixed.length,0,'Ancient stats must remain unverified');
+
 assert(all.find(x=>x.id==='prism'),'old Prismatic Heart ID was removed');
 assert(all.find(x=>x.id==='schrodinger'),'old Schrodinger ID was removed');
 assert(all.find(x=>x.id==='sage'),'old Elder Sage ID was removed');
