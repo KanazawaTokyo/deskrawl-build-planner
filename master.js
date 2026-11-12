@@ -161,14 +161,49 @@ for(const item of definitions.filter(d=>d.rarity==='Divine'&&!d.isAncient).slice
 }
 // New 1.1.11 Sorcerer Black Mist variants: slot is inferred from the item
 // name until live tooltip verification; show the uncertainty in the editor.
+// v1.1.11 Sorcerer-only Legendaries and their Black Mist variants.
+// Correct slots verified against https://deskrawl-db.vercel.app/en/armor.
+// Keep the old Glacial Aegis chest definition solely for existing saved records;
+// do not offer that erroneous slot for newly created equipment.
 const patchSorcererGear=[
-  ['gloves','Rimebound Grasp','Frost Beamは1tickにつき追加マナ5消費。詠唱1秒ごとにCritダメージ+120%（再詠唱時リセット）。部位は名称からの暫定推定'],
-  ['chest','Glacial Aegis','Ice Meteorの効果範囲-50%、攻撃頻度+50%。部位は名称からの暫定推定']
+  {name:'Rimebound Grasp',slot:'gloves',id:'bm-patch-rimebound-grasp',
+   effect:'フロストビームの1ヒットごとにマナを追加で5消費。追加消費が支払われると、チャネリング1秒ごとにフロストビームのクリティカルダメージ+120%。詠唱ごとにリセット。'},
+  {name:'Glacial Aegis',slot:'neck',id:'bm-glacial-aegis',
+   effect:'アイスメテオの攻撃範囲-50%、攻撃頻度+50%。'}
 ];
-for(const [slot,name,effect] of patchSorcererGear){
-  definitions.push({id:'bm-patch-'+slugName(name),slot,name:name+'（部位未確認）',rarity:'Black Mist',effect,
-    sourceUrl:'https://steamdb.info/patchnotes/26604532/',slotUnverified:true});
+const outdatedGlacial=definitions.find(d=>d.id==='bm-patch-glacial-aegis');
+if(outdatedGlacial){
+  outdatedGlacial.legacyOnly=true;
+  outdatedGlacial.effect='旧データ：この装備の正しい部位は首飾りです。既存データ保護用で新規選択不可。';
+  outdatedGlacial.name='Glacial Aegis（旧・胸の誤登録）';
 }
+for(const item of patchSorcererGear){
+ const url='https://deskrawl-db.vercel.app/en/armor';
+ if(!definitions.some(d=>d.id===item.id))definitions.push({
+  id:item.id,slot:item.slot,name:item.name,rarity:'Black Mist',effect:item.effect,sourceUrl:url
+ });
+ else Object.assign(definitions.find(d=>d.id===item.id),{slot:item.slot,name:item.name,effect:item.effect,sourceUrl:url,slotUnverified:false});
+ // Separate regular Legendary option; no verified numeric rolls are assumed.
+ const regular='legendary-'+slugName(item.name);
+ if(!definitions.some(d=>d.id===regular))definitions.push({
+  id:regular,slot:item.slot,name:item.name,rarity:'Legendary',effect:item.effect,sourceUrl:url
+ });
+}
+// The legacy Glacial chest ID was created by the previous patch loop in
+// older shipped master.js versions. Keep it addressable in existing save files.
+if(!definitions.some(d=>d.id==='bm-patch-glacial-aegis'))
+ definitions.push({id:'bm-patch-glacial-aegis',slot:'chest',name:'Glacial Aegis（旧・胸の誤登録）',
+  rarity:'Black Mist',legacyOnly:true,effect:'旧データ：正しい装備部位は首飾りです。',sourceUrl:'https://deskrawl-db.vercel.app/en/armor'});
+// v1.1.11 Divine effects verified against current class-compatible database.
+for(const item of definitions){
+ if(item.id==='momentum'||item.id==='momentum-ring2')
+  item.effect='攻撃速度ボーナス1%ごとに、基本攻撃・強攻撃ダメージ+1%（固有効果。自動計算未対応）。';
+ if(item.id==='ancient-momentum'||item.id==='ancient-momentum-ring2')
+  item.effect='攻撃速度ボーナス1%ごとに、基本攻撃・強攻撃ダメージ+1.35%（エンシャント固有効果。自動計算未対応）。';
+ if(item.id==='dreadwing'||item.id==='ancient-dreadwing')
+  item.effect='アビリティが直接クリティカルヒットすると武器ダメージボーナスのスタックを獲得。最大数値・持続時間は未確認のため計算対象外。';
+}
+
 
 const seedConfigs=[
 ['weapon','grandmother',[],null,'Divine基礎値は公開データに基づく。実際の強化段階は未確認'],
