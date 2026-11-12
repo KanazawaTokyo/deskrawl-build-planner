@@ -62,4 +62,23 @@ for(const slot of ['shoulder','gloves','belt','boots']){
  state.items.push({id:'spare',definitionId:'custom-chest',slot:'chest',primary:[],gems:[{type:'amethyst'},{type:'amethyst'}],upgrade:0,upgradeKnown:true});
  assert.equal(C.calc(state,b).sum.int||0,before);
 }
-console.log('PASS: all 18 tier-6 gem effects, correct socket count, stacking, legacy input protection, non-socket slots, equipped-only calculations');
+// v1.1.11 Perfect Star: selectable Tier 7, but unpublished values are never invented.
+{
+ const gem=D.gemEffect('sapphire','weapon',7);
+ assert.equal(gem.tier,7);
+ assert.equal(gem.stat,'cold');
+ assert.equal(gem.value,null);
+ const state=D.makeSeed(),b=state.builds[0],weapon=state.items.find(x=>x.id===b.loadout.weapon);
+ const before=C.calc(state,b);
+ weapon.gems=[{type:'sapphire',tier:7,value:null}];
+ const unknown=C.calc(state,b);
+ assert.equal(unknown.sum.cold||0,before.sum.cold||0,'unknown Perfect Star must add no guessed value');
+ assert(unknown.pending.some(x=>x.includes('Perfect Star')),'unverified gem requires warning');
+ weapon.gems=[{type:'sapphire',tier:7,value:72}];
+ const measured=C.calc(state,b);
+ assert.equal((measured.sum.cold||0)-(before.sum.cold||0),72,'actual manually entered Perfect Star bonus is counted');
+ assert(measured.breakdown.cold.some(x=>x.source.includes('Tier 7')&&x.status==='actual'),'measured gem bonus identified as actual');
+ weapon.gems=[{type:'sapphire',tier:6,value:999}];
+ assert.equal((C.calc(state,b).sum.cold||0)-(before.sum.cold||0),50,'old Tier6 verified stat ignores obsolete freeform value');
+}
+console.log('PASS: tier 6 gem catalog and tier 7 Perfect Star verified-only or manually observed values');
