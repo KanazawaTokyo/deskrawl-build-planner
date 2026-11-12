@@ -52,4 +52,9 @@ const item={id:'test-visage',definitionId:ancient.id,slot:'head',upgrade:0,overr
 const totals=ctx.DBPCalc.itemTotal(item);
 assert(totals.some(t=>t.stat==='allDR'&&t.value===40),'Ancient visage damage reduction missing');
 assert(totals.some(t=>t.stat==='armor'&&t.value===840),'Ancient visage fixed stats missing');
+const plus12=ctx.DBPCalc.itemTotal({...item,upgrade:12}).find(t=>t.stat==='armor').value;
+const plus13=ctx.DBPCalc.itemTotal({...item,upgrade:13}).find(t=>t.stat==='armor').value;
+assert(plus13>plus12,'Enlightenment III must improve Divine armor');
+assert.equal(Number((plus13-plus12).toFixed(2)),42,'Enlightenment III adds another 5% of 840 base Armor');
+
 console.log('PASS: Sorcerer Black Mist, Divine and Ancient gear catalog');
