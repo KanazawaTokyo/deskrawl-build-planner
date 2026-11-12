@@ -2,13 +2,14 @@
    All fields are owned by build.settings.pet and use the normal save/sync path. */
 (function(){'use strict';
 const P=window.DBPPets,D=window.DBP,C=window.DBPCalc;
-const changes=new Set(['petMain','petRank','petPassive','petInheritUnlock','petInherit','petEquipUnlock','petGearType','petGearStat','petGearValue']);
+const changes=new Set(['petMain','petRank','petEmpower','petPassive','petInheritUnlock','petInherit','petEquipUnlock','petGearType','petGearStat','petGearValue']);
 const skillOptions=active=>P.minions.flatMap(m=>m.id===active||m.unobtainable?[]:[
   ...m.passives.map(x=>[m.id+'|'+x.id,m.name+' · '+x.label+' +'+C.format(x.stat,x.max)]),
   ...m.abilities.map(x=>[m.id+'|'+x.id,m.name+' · '+x.label+'（時間限定アクティブ）'])
 ]);
 function render({settings,result,E,opt}){
   const pet=settings?.pet||{},main=P.lookup(pet.id),rank=Number(pet.level)||0;
+  const until=Number(pet.empoweredUntil)||0,empowered=until>Date.now();
   const eq=pet.equipment||{},gear=P.gearTypes.find(x=>x.id===eq.id)||P.gearTypes[0];
   const inherited=P.skill(pet.inheritFrom,pet.inheritSkill);
   const inheritedKey=inherited?inherited.petId+'|'+inherited.id:'';
@@ -41,6 +42,9 @@ function render({settings,result,E,opt}){
     '<label class="field"><span>ペット（'+P.minions.length+'体）</span><select data-change="petMain">'+opt('unknown','未選択',pet.id||'unknown')+
     P.minions.map(m=>m.unobtainable?'<option value="'+E(m.id)+'" disabled>'+E(m.name+' · '+(window.DBPJP?.rarity(m.rarity)||m.rarity)+'（入手不可）')+'</option>':opt(m.id,m.name+' · '+(window.DBPJP?.rarity(m.rarity)||m.rarity),main?.id)).join('')+'</select></label>'+
     '<label class="field pet-level"><span>成長レベル +0〜+10</span><input type="number" data-change="petRank" min="0" max="10" step="1" inputmode="numeric" value="'+E(rank)+'"/></label>'+
+    '<div class="notice gentle"><label class="checkbox-row"><input type="checkbox" data-change="petEmpower" '+(empowered?'checked':'')+'/> 48時間の手下強化（同レアリティの手綱を使用済み）</label>'+
+    '<small>'+(empowered?'強化有効（期限：'+E(new Date(until).toLocaleString('ja-JP'))+'）':'強化なし')+
+    ' · 自分のスキルLvが+5。継承先のスキルは対象外。Lv11〜15の数値は未確認のため、自動計算には含めません。</small></div>'+
     '<h3 class="pet-subhead">常時パッシブ（個別の強化レベル）</h3><div class="pet-passive-list">'+passives+'</div>'+
     (actives?'<h3 class="pet-subhead">アクティブ能力（常時ステータスには加算しません）</h3>'+actives:'')+
     (main?'<p class="helper"><a href="'+E(main.sourceUrl)+'" target="_blank" rel="noopener noreferrer">このペットの原典データ</a></p>':'')+
@@ -70,12 +74,16 @@ function change(el,{settings,modify,flash,render}){
   const reject=text=>{render();if(text)flash(text)};
   if(kind==='petMain'){
     if(v!=='unknown'&&(!P.lookup(v)||P.lookup(v).unobtainable))return reject('未登録または現行ゲームで入手できないペットです');
-    modify(()=>{Object.assign(pet,{id:v,level:v==='unknown'?0:10,progressionVersion:1,passiveLevels:{},inheritFrom:'',inheritSkill:''})});return;
+    modify(()=>{Object.assign(pet,{id:v,level:v==='unknown'?0:10,progressionVersion:1,passiveLevels:{},inheritFrom:'',inheritSkill:'',empoweredUntil:null})});return;
   }
   if(kind==='petRank'){
     const n=Number(v);
     if(!Number.isInteger(n)||n<0||n>10)return reject('ペットLvは0〜10の整数です');
     modify(()=>{pet.level=n;pet.progressionVersion=1});return;
+  }
+  if(kind==='petEmpower'){
+    modify(()=>{pet.empoweredUntil=v?Date.now()+48*60*60*1000:null;pet.progressionVersion=1});
+    return;
   }
   if(kind==='petPassive'){
     const p=P.lookup(pet.id)?.passives.find(x=>x.id===el.dataset.key);
