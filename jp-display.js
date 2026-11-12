@@ -101,6 +101,7 @@ const equipmentNamesJP={
  "Glorious Gladiator Helmet": "栄光の剣闘士の兜",
  "Visage of the Undying": "不死者の面貌",
  "Soulrender": "ソウルレンダー",
+ "Dreadwing": "恐怖の翼",
  "Ring of Momentum": "勢いの指輪（仮訳）",
  "Rimebound Grasp": "霜縛りの手甲",
  "Glacial Aegis": "氷河の守り"
