@@ -77,8 +77,8 @@ assert.equal(enemy.outcome,'death');
 assert.equal(enemy.deathTime,4);
 assert.equal(enemy.takenDamage,1000);
 const beamDef=E.simulate(fake,{...base,runeSlots:runeSettings.runeSlots.slice(0,4)}, {},
- {skill:'frostBeam',duration:3,incomingHit:100,incomingEvery:1});
-assert.equal(beamDef.takenDamage,225,'3 hits inside channel get 25% DR');
+ {skill:'frostBeam',duration:2.5,incomingHit:100,incomingEvery:1});
+assert.equal(beamDef.takenDamage,150,'two hits inside channel get 25% DR');
 const runA=run(base,{}, {mode:'sampled',seed:2405,duration:5});
 const runB=run(base,{}, {mode:'sampled',seed:2405,duration:5});
 assert.deepEqual(JSON.parse(JSON.stringify(runA)),JSON.parse(JSON.stringify(runB)),'same RNG seed is exactly replayable');
