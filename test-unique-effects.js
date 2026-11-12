@@ -145,7 +145,7 @@ change('abilityId','flameBreath','select-one');
 assert.equal(current().combat.abilityId,'flameBreath','selecting a skill updates combat conditions');
 assert.equal(current().combat.damageType,'fire','Flame Breath automatically selects Fire');
 assert.equal(current().combat.attackType,'strong','Flame Breath automatically selects Strong Attack');
-click('new-build');click('tab-combat');
+click('new-build');click('new-build-empty');click('tab-combat');
 assert(!app.innerHTML.includes('data-key="elementalStacks"'),'unequipped shoulder should hide stacks');
 assert(!app.innerHTML.includes('data-key="unyieldingActive"'),'unequipped chest should hide immunity');
 console.log('PASS: 11 equipped unique powers, pauldron stacks, Prism, Greaves, Gauntlets, Iron, immunity, belt, UI and per-build sync');
