@@ -104,7 +104,7 @@ const equipmentNamesJP={
  "Rimebound Grasp": "霜縛りの手甲",
  "Glacial Aegis": "氷河の守り"
 };
-const itemEffectTranslations=[["Thorns","棘"],["Numbing Cold","凍える寒さ"],["Brittle","脆化"],["Pyroblast","パイロブラスト"],["Soul Impact","ソウルインパクト"],["Crit","クリティカル"],["tick","ヒット"],["Armor","アーマー"],["HPポーション","ライフポーション"],["Frozen","凍結"]];
+const itemEffectTranslations=[["Healthy","健康な状態"],["Injured","負傷した状態"],["Thorns","棘"],["Numbing Cold","凍える寒さ"],["Brittle","脆化"],["Pyroblast","パイロブラスト"],["Soul Impact","ソウルインパクト"],["Crit","クリティカル"],["tick","ヒット"],["Armor","アーマー"],["HPポーション","ライフポーション"],["Frozen","凍結"]];
 const talents={
  arcaneInsight:'秘術の洞察',searingEdge:'灼熱の刃',frostArmor:'氷の鎧',arcaneReach:'秘術の射程',
  manaFlow:'マナの奔流',flameWard:'炎の守り',manaConduit:'マナ導管',frostMastery:'冷気の熟達',
