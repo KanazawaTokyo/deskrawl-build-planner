@@ -50,6 +50,12 @@ const untranslatedEffects=allEquipment.filter(d=>/[A-Za-z]{3,}/.test(d.effect||'
 assert.equal(untranslatedEffects.length,0,'English unique effects remain: '+untranslatedEffects.join(' | '));
 assert.equal(D.definitions.find(x=>x.id==='undying').name,'不死者の面貌');
 assert.equal(D.definitions.find(x=>x.id==='dreadwing').name,'恐怖の翼');
+assert.equal(D.definitions.find(x=>x.id==='bm-glacial-aegis').name,'氷河の守り');
+assert.equal(D.definitions.find(x=>x.id==='legendary-glacial-aegis').name,'氷河の守り');
+assert.equal(D.definitions.find(x=>x.id==='bm-patch-glacial-aegis').name,'氷河の守り（旧・胸の誤登録）');
+assert.equal(R.sets.absoluteZero.name,'絶対零度');
+assert.equal(R.sets.glacialCataclysm.name,'氷河の大災厄');
+
 assert.equal(D.definitions.find(x=>x.id==='ancient-dreadwing').name,'恐怖の翼（エンシャント）');
 
 assert.equal(D.definitions.find(x=>x.id==='bm-soulfeast-pauldron').name,'魂喰らいの肩甲');
@@ -57,7 +63,7 @@ assert(D.definitions.find(x=>x.id==='bm-soulfeast-pauldron').effect.includes('�
 
 assert.equal(D.definitions.find(x=>x.id==='ancient-undying').name,'不死者の面貌（エンシャント）');
 assert.equal(D.definitions.find(x=>x.id==='schrodinger-ring2').name,'シュレーディンガーの指輪');
-assert.equal(D.definitions.find(x=>x.id==='bm-patch-rimebound-grasp').name,'霜縛りの手甲（部位未確認・仮訳）');
+assert.equal(D.definitions.find(x=>x.id==='bm-patch-rimebound-grasp').name,'霜縛りの手甲');
 assert.equal(D.definitions.find(x=>x.id==='bm-ring-of-dragonslayer-ring2').name,'竜殺しの指輪');
 
 assert(B.skillOptions.some(([id,label])=>id==='lightningStorm'&&label.includes('ライトニングストーム')));
@@ -68,7 +74,7 @@ assert.equal(T.byId.staticCharge.name,'静電チャージ');
 assert.equal(T.byId.elementalFury.name,'精霊の怒り');
 assert.equal(T.byId.arcaneExposure.name,'魔力露出');
 assert.equal(R.sets.stormcaller.name,'嵐呼び');
-assert.equal(R.selectable.length,32);
+assert.equal(R.selectable.length,44);
 assert(P.minions.length===68&&P.minions.every(p=>!/[A-Za-z]{3,}/.test(p.name)),'all 68 minion names localized');
 assert.equal(P.gearTypes.find(p=>p.id==='fine-saddle').slots,3,'pet gear slot counts unchanged');
 assert.equal(c.DBPJP.rarity('Divine'),'ディバイン');
@@ -101,6 +107,15 @@ events.click({target:{closest:()=>({dataset:{action:'slot',value:'weapon'}})}});
 assert(app.innerHTML.includes('【ブラックミスト】フロストワームの杖'));
 assert(app.innerHTML.includes('【ディバイン】恐怖の翼'),'Dreadwing selectable as Divine weapon');
 assert(app.innerHTML.includes('【エンシャント・ディバイン】恐怖の翼（エンシャント）'),'Ancient weapon selectable');
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'neck'}})}});
+assert(app.innerHTML.includes('【ブラックミスト】氷河の守り'),'correct Black Mist necklace selectable');
+assert(app.innerHTML.includes('【レジェンダリー】氷河の守り'),'regular Legendary necklace selectable');
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'gloves'}})}});
+assert(app.innerHTML.includes('【ブラックミスト】霜縛りの手甲'),'correct Black Mist gloves selectable');
+assert(app.innerHTML.includes('【レジェンダリー】霜縛りの手甲'),'regular Legendary gloves selectable');
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'chest'}})}});
+assert(!app.innerHTML.includes('【ブラックミスト】氷河の守り（旧・胸の誤登録）'),'invalid legacy chest excluded from new choices');
+
 
 
 click('tab-stats');
@@ -117,4 +132,4 @@ assert(app.innerHTML.includes('ライトニングストーム')&&app.innerHTML.i
 assert(app.innerHTML.includes('アーマー・魔法耐性による軽減率'));
 assert.equal(c.DBPApp.getState().schemaVersion,1,'cloud schema is unchanged');
 assert.equal(JSON.stringify(c.DBPApp.getState()),saved,'opening every tab does not mutate saved build');
-console.log('PASS: Japanese-first UI across all five tabs, complete base status labels, 41 talents, 68 minions, 32 runes, invariant calculations and saved cloud schema');
+console.log('PASS: Japanese-first UI across all five tabs, complete base status labels, 41 talents, 68 minions, 44 runes, invariant calculations and saved cloud schema');

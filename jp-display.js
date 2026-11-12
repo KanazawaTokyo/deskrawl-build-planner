@@ -18,7 +18,7 @@ const names={
  unyielding:'不屈の胸当て',gauntlets:'ストームコーラーのガントレット',
  bottomless:'底なしポーションベルト',greaves:'秘術の刃のグリーヴ',windcaller:'ウィンドコーラーのブーツ'
 };
-const setNames={stormcaller:'嵐呼び',frozenBarrage:'氷結弾幕',infernalCovenant:'炎獄の契約'};
+const setNames={stormcaller:'嵐呼び',frozenBarrage:'氷結弾幕',infernalCovenant:'炎獄の契約',glacialCataclysm:'氷河の大災厄',absoluteZero:'絶対零度'};
 const pets={
  'armored-horse':'鎧馬','tidewrath-crab-king':'怒濤の蟹王','ancient-shellwarden':'古代の甲羅守護者',
  'ancient-oak-treant':'古代の樫の木の樹人','blue-mammoth':'青いマンモス','dark-elf-mage':'ダークエルフの魔導士',
@@ -104,7 +104,8 @@ const equipmentNamesJP={
  "Dreadwing": "恐怖の翼",
  "Ring of Momentum": "勢いの指輪（仮訳）",
  "Rimebound Grasp": "霜縛りの手甲",
- "Glacial Aegis": "氷河の守り"
+ "Glacial Aegis": "氷河の守り",
+ "Glacial Aegis（旧・胸の誤登録）": "氷河の守り（旧・胸の誤登録）"
 };
 const itemEffectTranslations=[["Healthy","健康な状態"],["Injured","負傷した状態"],["Thorns","棘"],["Numbing Cold","凍える寒さ"],["Brittle","脆化"],["Pyroblast","パイロブラスト"],["Soul Impact","ソウルインパクト"],["Crit","クリティカル"],["tick","ヒット"],["Armor","アーマー"],["HPポーション","ライフポーション"],["Frozen","凍結"]];
 const talents={

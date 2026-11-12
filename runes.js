@@ -60,6 +60,31 @@ const sets={
    4:{label:'Fire ElementalがPyroblastを追加で使用',mechanic:'pyroblast'},
    6:{label:'Fire ElementalがFire Meteorを追加で使用',mechanic:'fire-meteor'}
   }
+ },
+ glacialCataclysm:{
+  name:'Glacial Cataclysm',focusSkill:'iceMeteor',
+  sourceUrl:'https://deskrawl-db.vercel.app/en/runes',
+  // Exact stats/skill ranks of each individual rune are not published.
+  pieces:Array.from({length:6},()=>({unverified:true})),
+  bonuses:{
+   2:{label:'減速中の敵へのダメージ +65%',stat:'slowed',value:65},
+   4:{label:'獲得する冷気ダメージボーナスが50%増加（加算枠への正確な適用方法は検証中）',
+      mechanic:'enhanced-cold-bonuses',bonusPercent:50},
+   6:{label:'アイスメテオが深冷をまとい、1ヒットのダメージが2倍になり、半径2ユニットへ波及',
+      mechanic:'deepfrost-meteor',damageMultiplier:2,splashRadius:2}
+  }
+ },
+ absoluteZero:{
+  name:'Absolute Zero',focusSkill:'frostBeam',
+  sourceUrl:'https://deskrawl-db.vercel.app/en/runes',
+  pieces:Array.from({length:6},()=>({unverified:true})),
+  bonuses:{
+   2:{label:'強攻撃ダメージ +50%',stat:'strongAttack',value:50},
+   4:{label:'フロストビームが基本0.2秒ごとにヒット。詠唱中の被ダメージ25%軽減（他のチャネリング速度補正は別途）',
+      mechanic:'frost-beam-channel',tickSeconds:0.2,channelDamageReduction:25},
+   6:{label:'詠唱0.5秒ごとに1ヒット当たり武器ダメージ係数+200ポイント、長さと幅が初期値の15%ずつ増加。詠唱ごとにリセット',
+      mechanic:'frost-beam-ramp',stepSeconds:0.5,weaponPercentagePoints:200,sizePercent:15}
+  }
  }
 };
 const roman=['I','II','III','IV','V','VI'];
@@ -73,6 +98,7 @@ for(const [setId,set] of Object.entries(sets)){
   const id='set:'+setId+':'+(index+1),part=set.pieces[index];
   catalog[id]={id,rarity:'set',name:set.name+' Rune ('+roman[index]+')',set:setId,piece:index+1,
    skill:part.skill||null,level:part.level||0,stats:part.stat?[{stat:part.stat,value:part.value}]:[],
+   unverifiedPieceStats:Boolean(part.unverified),focusSkill:set.focusSkill||null,
    allowDuplicate:false};
  }
 }

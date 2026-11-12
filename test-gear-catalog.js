@@ -8,6 +8,12 @@ assert(new Set(all.map(d=>d.id)).size===all.length,'definition IDs must remain u
 for(const d of all)assert(D.slots.some(s=>s[0]===d.slot),d.name+' has an unknown slot');
 assert(all.find(x=>x.id==='grandmother'),'old Grandmother ID was removed');
 assert.equal(D.slots.length,11,'back slot must not be introduced');
+assert(all.find(d=>d.id==='bm-glacial-aegis'&&d.slot==='neck'&&d.rarity==='Black Mist'));
+assert(all.find(d=>d.id==='legendary-glacial-aegis'&&d.slot==='neck'&&d.rarity==='Legendary'));
+assert(all.find(d=>d.id==='legendary-rimebound-grasp'&&d.slot==='gloves'&&d.rarity==='Legendary'));
+assert(all.find(d=>d.id==='bm-patch-rimebound-grasp'&&d.slot==='gloves'&&d.rarity==='Black Mist'));
+assert(all.find(d=>d.id==='bm-patch-glacial-aegis'&&d.slot==='chest'&&d.legacyOnly),'old incorrect slot preserved only for old saves');
+
 assert(!D.slots.some(([slot])=>slot==='back'),'back slot must remain absent');
 const dreadwing=all.find(x=>x.id==='dreadwing'), ancientDreadwing=all.find(x=>x.id==='ancient-dreadwing');
 assert(dreadwing&&dreadwing.slot==='weapon'&&dreadwing.rarity==='Divine','Dreadwing is a divine weapon');
@@ -20,7 +26,7 @@ assert(all.find(x=>x.id==='prism'),'old Prismatic Heart ID was removed');
 assert(all.find(x=>x.id==='schrodinger'),'old Schrodinger ID was removed');
 assert(all.find(x=>x.id==='sage'),'old Elder Sage ID was removed');
 for(const name of ['Staff of the Frostwyrm','Rimeguard Treads','Cryofracture Ring',
-  'Venomfrost Pauldron','Soulfeast Pauldron','Stormcaller Gauntlets','Rimebound Grasp（部位未確認）']){
+  'Venomfrost Pauldron','Soulfeast Pauldron','Stormcaller Gauntlets','Rimebound Grasp']){
   assert(all.some(d=>d.name===name&&d.rarity==='Black Mist'),name+' missing');
 }
 const soulfeast=all.find(d=>d.id==='bm-soulfeast-pauldron');
@@ -46,4 +52,9 @@ const item={id:'test-visage',definitionId:ancient.id,slot:'head',upgrade:0,overr
 const totals=ctx.DBPCalc.itemTotal(item);
 assert(totals.some(t=>t.stat==='allDR'&&t.value===40),'Ancient visage damage reduction missing');
 assert(totals.some(t=>t.stat==='armor'&&t.value===840),'Ancient visage fixed stats missing');
+const plus12=ctx.DBPCalc.itemTotal({...item,upgrade:12}).find(t=>t.stat==='armor').value;
+const plus13=ctx.DBPCalc.itemTotal({...item,upgrade:13}).find(t=>t.stat==='armor').value;
+assert(plus13>plus12,'Enlightenment III must improve Divine armor');
+assert.equal(Number((plus13-plus12).toFixed(2)),42,'Enlightenment III adds another 5% of 840 base Armor');
+
 console.log('PASS: Sorcerer Black Mist, Divine and Ancient gear catalog');

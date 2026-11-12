@@ -23,6 +23,14 @@ const nav=app.innerHTML.match(/<nav class="mainnav">([\s\S]*?)<\/nav>/)?.[1]||''
 assert(nav.indexOf('装備')<nav.indexOf('ペット')&&nav.indexOf('ペット')<nav.indexOf('ステータス'));
 change('petMain','flying-fish-king');
 assert.equal(pet().level,10);
+assert(app.innerHTML.includes('data-change="petEmpower"'),'48h empowerment toggle is visible');
+const unempoweredStats=JSON.stringify(calc().sum);
+change('petEmpower',true);
+assert(pet().empoweredUntil>Date.now()+47*60*60*1000,'minion empowerment lasts about 48 hours');
+assert.equal(JSON.stringify(calc().sum),unempoweredStats,'unverified +5 minion ability values must not be invented');
+assert(JSON.parse(store.deskrawl_planner_v01).builds[0].settings.pet.empoweredUntil,'empower expiry persists');
+change('petEmpower',false);
+assert.equal(pet().empoweredUntil,null,'can clear empowerment');
 assert.equal(pet().progressionVersion,1);
 assert.equal(calc().sum.mcr>=15,true);
 const fishMcr=calc().sum.mcr;
