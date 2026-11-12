@@ -13,7 +13,7 @@
 - rankingRuns[]: id,boardId,buildId,buildName,metric,value,duration,rank,deaths,at,source,notes,createdAt,snapshot
 
 旧保存データに2配列がなくても正常表示する。Supabase テーブル・RLS・公開用接続の変更なし。
-すべて既存 JSON バックアップと同期に含まれる。
+すべて既存 JSON バックアップと同期に含まれる。履歴は最大500件まで（ローカル保存容量保護）。
 
 ## 記録の意味
 - time: サーバー表示の時間を秒で入力。小さい方を優先。
