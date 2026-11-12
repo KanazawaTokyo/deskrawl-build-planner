@@ -682,3 +682,9 @@
 .ranking-snapshot-row strong{font-size:12px;white-space:nowrap}
 .ranking-snapshot-row span{font-size:12px;color:var(--muted);text-align:right}
 @media(max-width:760px){.mainnav{overflow-x:auto;white-space:nowrap}.navbtn{flex:none}.ranking-metrics{grid-template-columns:1fr}.ranking-form{grid-template-columns:1fr}.ranking-form .field:has(textarea){grid-column:auto}.ranking-heading,.ranking-build-row,.ranking-run-row{flex-direction:column;align-items:stretch}.ranking-build-actions,.ranking-run-actions{justify-content:flex-start}.ranking-overview,.ranking-builds,.ranking-runs{padding:15px}.ranking-build-add{flex-direction:column;align-items:stretch}.ranking-build-add .field{max-width:none;width:100%}}
+
+.ranking-snapshot-row>div:first-child{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.ranking-snapshot-row small{font-size:10px;color:var(--faint);overflow-wrap:anywhere}
+.ranking-snapshot-json{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:15px}
+.ranking-snapshot-json summary{cursor:pointer;color:var(--muted);font-size:12px}
+.ranking-snapshot-json pre{max-height:320px;overflow:auto;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}
