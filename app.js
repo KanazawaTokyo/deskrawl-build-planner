@@ -3,7 +3,7 @@ const D=window.DBP,C=window.DBPCalc;
 const PU=window.DBPPetUI||null;
 const LS='deskrawl_planner_v01',CFG='deskrawl_planner_cloud_v01',SESSION='deskrawl_planner_session_v01';
 let state;try{const raw=localStorage.getItem(LS);state=raw?JSON.parse(raw):D.makeSeed();if(!state||state.schemaVersion!==1)throw Error('Invalid saved schema');}catch(e){state=D.makeSeed()}
-let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',optimizerPosition:'primary:0',optimizerSelected:'',settingsOpen:false,settingsTab:'paragon',combatSkillsOpen:true,talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',cloudNote:'',status:'local',dirty:false};
+let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',optimizerPosition:'primary:0',optimizerSelected:'',settingsOpen:false,settingsTab:'paragon',combatSkillsOpen:true,talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',rankingBoardId:'',rankingPreset:'boss',rankingRunId:'',cloudNote:'',status:'local',dirty:false};
 let cloudCfg;try{const builtIn=window.DBP_CLOUD_CONFIG;const local=JSON.parse(localStorage.getItem(CFG)||'null');cloudCfg=builtIn?.url&&builtIn?.key?builtIn:local}catch(e){cloudCfg=window.DBP_CLOUD_CONFIG||null}
 let session;try{session=JSON.parse(localStorage.getItem(SESSION)||'null')}catch(e){session=null}
 let cloudRevision=0,cloudSaveTimer=null,cloudBusy=false,cloudDirty=false,cloudSyncBlocked=false;const app=document.getElementById('app');const toast=document.getElementById('toast');
@@ -24,14 +24,14 @@ const isOpLocked=(it,kind,idx)=>kind==='primary'?Boolean(it?.opLocks?.primary?.[
 const lockedOpCount=it=>[0,1,2,3].filter(i=>isOpLocked(it,'primary',i)).length+(isOpLocked(it,'secondary')?1:0);
 const qualityOf=code=>code==='actual'?'実測補正':code==='verified'?'公開データ確認済':code==='estimated'?'推定':code==='calculated'?'ルールに基づく計算':'会話履歴・要検証';
 function flash(msg){toast.textContent=msg;toast.classList.add('show');clearTimeout(flash.timer);flash.timer=setTimeout(()=>toast.classList.remove('show'),3200)}
-function validateState(s){if(!s||s.schemaVersion!==1||!Array.isArray(s.items)||!Array.isArray(s.builds)||!s.builds.length)throw Error('データ形式が一致しません');if(s.items.length>10000||s.builds.length>1000||s.lockedSets!==undefined&&(!Array.isArray(s.lockedSets)||s.lockedSets.length>60))throw Error('データ量が大きすぎます');const ids=new Set(s.items.map(i=>i.id));if(ids.size!==s.items.length)throw Error('装備IDが重複しています');return s}
+function validateState(s){if(!s||s.schemaVersion!==1||!Array.isArray(s.items)||!Array.isArray(s.builds)||!s.builds.length)throw Error('データ形式が一致しません');if(s.items.length>10000||s.builds.length>1000||s.rankingBoards!==undefined&&(!Array.isArray(s.rankingBoards)||s.rankingBoards.length>100)||s.rankingRuns!==undefined&&(!Array.isArray(s.rankingRuns)||s.rankingRuns.length>3000)||s.lockedSets!==undefined&&(!Array.isArray(s.lockedSets)||s.lockedSets.length>60))throw Error('データ量が大きすぎます');const ids=new Set(s.items.map(i=>i.id));if(ids.size!==s.items.length)throw Error('装備IDが重複しています');return s}
 function save(){localStorage.setItem(LS,JSON.stringify(state));cloudDirty=true;ui.dirty=true;ui.status=cloudSyncBlocked?'conflict':session&&cloudCfg?'saving':'local';render();if(session&&cloudCfg&&!cloudSyncBlocked){clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(pushCloud,900)}}
 function modify(fn){fn();save()}
 function render(){const b=build();if(!b)return;app.innerHTML=`<div class="shell"><header class="topbar"><div class="brand"><div class="brand-symbol">✧</div><div><div class="brand-title">DESKRAWL <span>ビルドプランナー</span></div><div class="brand-sub">ソーサラー <span class="dot">·</span> 嵐呼び <span class="dot">·</span> v0.1</div></div></div><div class="header-right"><span class="sync-status ${ui.status}"><i></i>${{local:'ローカル保存',saving:'同期中',synced:'クラウド同期済み',error:'同期失敗',conflict:'競合を検知'}[ui.status]||'ローカル保存'}</span><button class="icon-btn" data-action="backup" title="JSONバックアップ">⇩</button><button class="icon-btn" data-action="import" title="JSONバックアップから復元">⇧</button><button class="icon-btn" data-action="cloud" title="同期・ログイン">☁</button></div></header>
 <div class="profile-strip"><div class="profile-control"><span class="field-legend">使用中のビルド</span><select id="buildSelect" class="profile-select">${state.builds.map(x=>opt(x.id,x.name,x.id===b.id?x.id:'' )).join('')}</select></div><div class="profile-buttons"><button class="btn new-build-main" data-action="new-build">＋ 新しい一式を作る</button><button class="text-btn" data-action="duplicate-build" title="装備個体を共有してビルド設定を複製します">参照共有で複製</button><button class="text-btn" data-action="rename-build">名前変更</button><button class="icon-btn subtle" data-action="delete-build" title="ビルド削除">⌫</button><button class="text-btn" data-action="compare-builds">ビルド比較</button><button class="btn outline" data-action="input-review">登録照合</button><button class="btn outline ai-export-open" data-action="ai-export">AI分析用に出力</button></div></div>
 ${renderLockedSets()}
-<nav class="mainnav"><button class="navbtn ${ui.tab==='equipment'?'active':''}" data-action="tab-equipment"><span>◈</span> 装備 <small>装備</small></button><button class="navbtn ${ui.tab==='talent'?'active':''}" data-action="tab-talent"><span>✧</span> タレント <small>戦闘タレント</small></button><button class="navbtn ${ui.tab==='pet'?'active':''}" data-action="tab-pet"><span>♜</span> ペット <small>ペット</small></button><button class="navbtn ${ui.tab==='stats'?'active':''}" data-action="tab-stats"><span>▦</span> ステータス <small>能力値</small></button><button class="navbtn ${ui.tab==='combat'?'active':''}" data-action="tab-combat"><span>◫</span> ダメージ・軽減 <small>ダメージ計算</small></button><div class="navhint">装備候補と計算結果を分けて管理</div></nav>
-${ui.tab==='equipment'?renderEquipment():ui.tab==='talent'?renderTalent():ui.tab==='pet'?renderPet():ui.tab==='combat'?renderCombat():renderStats()}
+<nav class="mainnav"><button class="navbtn ${ui.tab==='equipment'?'active':''}" data-action="tab-equipment"><span>◈</span> 装備 <small>装備</small></button><button class="navbtn ${ui.tab==='talent'?'active':''}" data-action="tab-talent"><span>✧</span> タレント <small>戦闘タレント</small></button><button class="navbtn ${ui.tab==='pet'?'active':''}" data-action="tab-pet"><span>♜</span> ペット <small>ペット</small></button><button class="navbtn ${ui.tab==='stats'?'active':''}" data-action="tab-stats"><span>▦</span> ステータス <small>能力値</small></button><button class="navbtn ${ui.tab==='combat'?'active':''}" data-action="tab-combat"><span>◫</span> ダメージ・軽減 <small>ダメージ計算</small></button><button class="navbtn ${ui.tab==='ranking'?'active':''}" data-action="tab-ranking"><span>♛</span> ランキング <small>記録・比較</small></button><div class="navhint">装備候補と計算結果を分けて管理</div></nav>
+${ui.tab==='equipment'?renderEquipment():ui.tab==='talent'?renderTalent():ui.tab==='pet'?renderPet():ui.tab==='combat'?renderCombat():ui.tab==='ranking'?window.DBPRankings?.render({state,selectedBoardId:ui.rankingBoardId,E,opt})||'<main class="workspace">ランキングモジュールを読み込めませんでした。</main>':renderStats()}
 <footer class="footer"><span>ゲームデータ · ${E(D.version.split('-').slice(-3).join('-'))}</span><span>ディバイン固定OP・ランク6の宝石を登録済み · 強化後の端数・固有効果はゲーム内表示と照合してください</span></footer></div>${renderModal()}`;}
 function renderLockedSets(){
  const sets=lockedSets(),selected=selectedLockedSet(),ready=canSaveLockedSet(),filled=equippedSlots(),total=D.slots.length;
@@ -238,6 +238,17 @@ else if(ui.settingsTab==='base')body=`<p class="helper">装備外の基礎値の
 return `<div class="side-panel settings-panel"><div class="side-title"><div><small>BUILD CONFIGURATION</small><h2>ビルド設定</h2></div><button class="icon-btn" data-action="close-settings">×</button></div><label class="field"><span>設定項目</span><select id="settingsCategory">${[['paragon','パラゴン'],['runes','ルーン'],['consumables','ポーション・料理'],['base','装備外の基礎値']].map(x=>opt(x[0],x[1],ui.settingsTab)).join('')}</select></label><div class="setting-form">${body}</div><div class="notice gentle">設定変更はこのビルドだけに反映。共有装備は別ビルドでも使用できます。</div></div>`;}
 function settingNumber(key,label,value,min=0,max=9999){return `<label class="field"><span>${E(label)}</span><input type="number" min="${min}" max="${max}" step="any" data-change="setting" data-key="${E(key)}" value="${E(value)}" /></label>`;}
 function renderModal(){if(!ui.modal)return '';let content='';
+const RK=window.DBPRankings;
+if(ui.modal==='ranking-board-new')content=RK?.boardModal({board:null,preset:ui.rankingPreset,E,opt})||'ランキング機能を読み込めませんでした';
+if(ui.modal==='ranking-board-edit')content=RK?.boardModal({board:RK.boardById(state,ui.rankingBoardId),E,opt})||'ランキング機能を読み込めませんでした';
+if(ui.modal==='ranking-run-new'){
+ const board=RK?.boardById(state,ui.rankingBoardId);
+ content=board?RK.runModal({board,state,E,opt}):'ランキングを選択してください';
+}
+if(ui.modal==='ranking-run-detail'){
+ const run=RK?.runById(state,ui.rankingRunId);
+ content=run?RK.runDetailModal({state,run,E}):'記録が見つかりません';
+}
 if(ui.modal==='input-review')content=window.DBPInputReview?.render(state,build(),E,titleOf)||'<p class="notice">登録照合モジュールを読み込めませんでした。</p>';
 if(ui.modal==='delete-item'){
  const item=getItem(ui.deleteTargetId);
@@ -275,7 +286,7 @@ if(ui.modal==='ai-export'){
  <p class="helper">出力には装備・ビルドのメモも含みます。内容を確認してから共有してください。認証トークン、クラウドの接続情報、他のビルドは含みません。</p>`;
 }
 if(ui.modal==='compare-builds'){const x=state.builds.find(y=>y.id===ui.compareBuildId)||state.builds.find(y=>y.id!==build().id);const a=C.calc(state,build()),b=x?C.calc(state,x):null;content=`<div class="modal-title"><h2>ビルド間比較</h2><button data-action="modal-close" class="icon-btn">×</button></div><label class="field"><span>比較対象</span><select id="otherBuild">${state.builds.filter(z=>z.id!==build().id).map(z=>opt(z.id,z.name,x?.id)).join('')}</select></label>${x?`<div class="compare-columns"><div class="compare-item"><small>現在のビルド</small><b>${E(build().name)}</b></div><div class="compare-icon">↔</div><div class="compare-item"><small>比較対象</small><b>${E(x.name)}</b></div></div><h3 class="table-heading">主要ステータス差分（部分計算）</h3><div class="data-table">${C.priority.map(k=>{const d=(b.raw[k]||0)-(a.raw[k]||0);return `<div class="data-row"><div><strong>${E(C.labels[k])}</strong><span>${C.format(k,a.raw[k]||0)} → ${C.format(k,b.raw[k]||0)}</span></div><b class="${d>0?'positive':d<0?'negative':'neutral'}">${d>0?'+':''}${C.format(k,d)}</b></div>`}).join('')}</div><h3 class="table-heading">装備差分</h3>${D.slots.filter(([s])=>build().loadout[s]!==x.loadout[s]).map(([s,label])=>`<div class="data-row"><strong>${label}</strong><span>${E(titleOf(getItem(build().loadout[s])))} → ${E(titleOf(getItem(x.loadout[s])))}</span></div>`).join('')||'<div class="notice">装備の組み合わせは同一です。パラゴン・バフの差などを確認してください。</div>'}`:'<div class="empty">比較できる別ビルドがありません。複製して作成してください。</div>'}<div class="notice gentle">ビルドごとにオーラ・タレント等の条件が異なる場合、それも含めた比較です。数値は未校正データを含みます。</div>`;}
-return `<div class="modal-backdrop" data-action="modal-close"><div class="modal-panel ${ui.modal==='input-review'?'review-panel':''}" role="dialog" aria-modal="true">${content}</div></div>`;}
+return `<div class="modal-backdrop" data-action="modal-close"><div class="modal-panel ${ui.modal==='input-review'?'review-panel':ui.modal.startsWith('ranking-')?'ranking-modal':''}" role="dialog" aria-modal="true">${content}</div></div>`;}
 // ---------- mutations ----------
 function act(action,id,value,el){const b=build();switch(action){
 case 'stat-preset':{
@@ -297,7 +308,8 @@ case 'dps-duration':{
  case 'combat-open-runes':ui.tab='stats';ui.settingsOpen=true;ui.settingsTab='runes';render();break;
  case 'combat-toggle-settings':ui.combatSkillsOpen=!ui.combatSkillsOpen;render();break;
  case 'combat-debuffs':{if(value!=='on'&&value!=='off')return;modify(()=>{b.settings.combat??={};for(const key of window.DBPCombat.debuffKeys)b.settings.combat[key]=value==='on'});return;}
- case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-talent':ui.tab='talent';ui.settingsOpen=false;render();break;case 'tab-pet':ui.tab='pet';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;case 'tab-combat':ui.tab='combat';ui.settingsOpen=false;render();break;case 'combat-defense-type':{const type=window.DBPCombat?.validateInput('defenseType',value);if(type)modify(()=>{b.settings.combat??={};b.settings.combat.defenseType=type});break;}
+ case 'tab-ranking':ui.tab='ranking';ui.settingsOpen=false;ui.modal='';render();break;
+case 'tab-equipment':ui.tab='equipment';ui.settingsOpen=false;render();break;case 'tab-talent':ui.tab='talent';ui.settingsOpen=false;render();break;case 'tab-pet':ui.tab='pet';ui.settingsOpen=false;render();break;case 'tab-stats':ui.tab='stats';render();break;case 'tab-combat':ui.tab='combat';ui.settingsOpen=false;render();break;case 'combat-defense-type':{const type=window.DBPCombat?.validateInput('defenseType',value);if(type)modify(()=>{b.settings.combat??={};b.settings.combat.defenseType=type});break;}
 case 'talent-add':
 case 'talent-remove':{
  const T=window.DBPTalents;
@@ -445,7 +457,95 @@ case 'new-build-share':{
  flash(mode==='copy'?'独立した装備の一式を作成しました':mode==='share'?'装備共有のビルドを作成しました':'空のビルドを作成しました');break;}
 case 'duplicate-build':{const name=prompt('複製するビルド名',b.name+' コピー');if(!name?.trim())return;modify(()=>{const cp=JSON.parse(JSON.stringify(b));cp.id=D.uid('build');cp.name=name.trim().slice(0,100);cp.createdAt=new Date().toISOString();state.builds.push(cp);state.activeBuildId=cp.id});flash('装備参照を共有して複製しました');break}
 case 'rename-build':{const name=prompt('ビルド名を変更',b.name);if(name?.trim())modify(()=>{b.name=name.trim().slice(0,100)});break}
-case 'delete-build':{if(state.builds.length<2){flash('最後のビルドは削除できません');return}if(!confirm('ビルド「'+b.name+'」を削除しますか？ 装備保管庫と測定履歴は残ります。'))return;modify(()=>{state.builds=state.builds.filter(x=>x.id!==b.id);state.activeBuildId=state.builds[0].id;ui.itemId=null});break}
+case 'delete-build':{if(state.builds.length<2){flash('最後のビルドは削除できません');return}if(!confirm('ビルド「'+b.name+'」を削除しますか？ 装備保管庫と測定履歴は残ります。ランキングの挑戦記録も保存されます。'))return;modify(()=>{state.builds=state.builds.filter(x=>x.id!==b.id);for(const board of state.rankingBoards||[])board.buildIds=(board.buildIds||[]).filter(id=>id!==b.id);state.activeBuildId=state.builds[0].id;ui.itemId=null});break}
+case 'ranking-new-board':ui.rankingPreset='boss';ui.modal='ranking-board-new';render();break;
+case 'ranking-preset':if(!Object.hasOwn(window.DBPRankings.templates,value))return;ui.rankingPreset=value;render();break;
+case 'ranking-create-board':{
+ const RK=window.DBPRankings;
+ try{
+  let result;
+  modify(()=>{result=RK.addBoard(state,rankingBoardFields());RK.linkBuild(state,result.id,b.id);
+   ui.rankingBoardId=result.id;ui.modal='';ui.tab='ranking';});
+  flash('ランキングを登録しました。現在のビルドを紐付けました。');
+ }catch(e){flash(e.message)}
+ break;
+}
+case 'ranking-edit-board':ui.modal='ranking-board-edit';render();break;
+case 'ranking-update-board':{
+ try{modify(()=>{window.DBPRankings.updateBoard(state,ui.rankingBoardId,rankingBoardFields());ui.modal=''});flash('ランキング条件を更新しました')}
+ catch(e){flash(e.message)}break;
+}
+case 'ranking-archive-board':{
+ const RK=window.DBPRankings,board=RK.boardById(state,ui.rankingBoardId);
+ if(!board)return;
+ if(!board.archived&&!confirm('このランキングを終了扱いにしますか？記録は保持します。'))return;
+ try{modify(()=>RK.setArchived(state,board.id,!board.archived));flash(board.archived?'ランキングを再開しました':'ランキングを終了扱いにしました')}
+ catch(e){flash(e.message)}
+ break;
+}
+case 'ranking-delete-board':{
+ const RK=window.DBPRankings,board=RK.boardById(state,ui.rankingBoardId);
+ if(!board)return;
+ if(RK.runs(state).some(x=>x.boardId===board.id)){flash('挑戦記録があるため削除できません。終了扱いにしてください');return}
+ if(!confirm('ランキング「'+board.name+'」を削除しますか？紐付けしたビルドや装備自体は残ります。'))return;
+ try{modify(()=>{RK.deleteEmptyBoard(state,board.id);ui.rankingBoardId=RK.boards(state)[0]?.id||''});flash('空のランキングを削除しました')}
+ catch(e){flash(e.message)}
+ break;
+}
+case 'ranking-link-build':{
+ const RK=window.DBPRankings,id=rankingField('rankingAttachBuild');
+ try{modify(()=>RK.linkBuild(state,ui.rankingBoardId,id));flash('ビルドを紐付けました')}
+ catch(e){flash(e.message)}
+ break;
+}
+case 'ranking-unlink-build':{
+ const RK=window.DBPRankings,board=RK.boardById(state,ui.rankingBoardId);
+ if(!board||!board.buildIds?.includes(id))return;
+ if(!confirm('このランキングとの紐付けを解除しますか？ビルド・装備・実戦記録は残ります。'))return;
+ try{modify(()=>RK.unlinkBuild(state,board.id,id));flash('紐付けを解除しました')}
+ catch(e){flash(e.message)}
+ break;
+}
+case 'ranking-duplicate-build':
+case 'ranking-copy-active':{
+ const RK=window.DBPRankings,source=action==='ranking-copy-active'?b.id:id;
+ const board=RK.boardById(state,ui.rankingBoardId);if(!board||board.archived)return;
+ if(!confirm('元の装備と設定を独立複製し、このランキング用ビルドを作成しますか？'))return;
+ try{let result;modify(()=>{result=RK.copyBuildForBoard(state,board.id,source);state.activeBuildId=result.id;ui.itemId=null});
+  flash('独立したランキング用ビルドを作成しました')}
+ catch(e){flash(e.message)}
+ break;
+}
+case 'ranking-activate-build':
+ if(!state.builds.some(x=>x.id===id))return;
+ modify(()=>{state.activeBuildId=id;ui.tab='equipment';ui.itemId=null;ui.modal=''});
+ break;
+case 'ranking-new-run':{
+ const board=window.DBPRankings.boardById(state,ui.rankingBoardId);if(!board||board.archived)return;
+ ui.modal='ranking-run-new';render();break;
+}
+case 'ranking-save-run':{
+ try{
+  const RK=window.DBPRankings,id=rankingField('rankingRunBuild');
+  const fields={value:rankingField('rankingRunValue'),duration:rankingField('rankingRunDuration'),
+   at:rankingField('rankingRunDate'),rank:rankingField('rankingRunRank'),
+   deaths:rankingField('rankingRunDeaths'),source:rankingField('rankingRunSource'),notes:rankingField('rankingRunNotes')};
+  modify(()=>{RK.addRun(state,ui.rankingBoardId,id,fields);ui.modal=''});
+  flash('ゲーム内の実戦記録と当時のビルドを保存しました');
+ }catch(e){flash(e.message)}
+ break;
+}
+case 'ranking-run-detail':{
+ const r=window.DBPRankings.runById(state,id);
+ if(!r||r.boardId!==ui.rankingBoardId)return;
+ ui.rankingRunId=id;ui.modal='ranking-run-detail';render();break;
+}
+case 'ranking-delete-run':{
+ const RK=window.DBPRankings,r=RK.runById(state,id);
+ if(!r||r.boardId!==ui.rankingBoardId)return;
+ if(!confirm('挑戦日 '+r.at+' の記録を削除しますか？この操作は元に戻せません。'))return;
+ modify(()=>RK.deleteRun(state,id));flash('実戦記録を削除しました');break;
+}
 case 'compare-builds':ui.compareBuildId=state.builds.find(x=>x.id!==b.id)?.id||'';ui.modal='compare-builds';render();break;
 case 'input-review':ui.modal='input-review';render();break;
 case 'review-edit-item':{
@@ -504,6 +604,13 @@ case 'measurement-save':{const fields=['critChance','critRed','cdr','mcr','dodge
 }
 }
 function defaultSettings(){return {aura:true,enemyLevel:70,paragonPoints:{},paragonLevel:null,talentPoints:{},talents:{flameWard:0,arcaneReservoir:0},pet:{id:'unknown',level:0,inherit:''},potion:'none',food:'none',utility:'none',base:{}}}
+function rankingField(id){return document.getElementById(id)?.value??''}
+function rankingBoardFields(){
+ return {name:rankingField('rankingName'),season:rankingField('rankingSeason'),
+  map:rankingField('rankingMap'),category:rankingField('rankingCategory'),metric:rankingField('rankingMetric'),
+  target:rankingField('rankingTarget'),tieDuration:rankingField('rankingTieDuration'),
+  notes:rankingField('rankingNotes')};
+}
 function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=getItem(id),v=el.type==='checkbox'?el.checked:el.value;
  if(PU?.isChange(kind)){PU.change(el,{settings:b.settings,modify,flash,render});return}
  if(kind==='optimizer-position'){const p=window.DBPOpOptimizer?.position(ui.slot,v);if(!p)return;ui.optimizerPosition=v;ui.optimizerSelected='';render();return;}
@@ -603,7 +710,7 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
 function itKey(el){return el.dataset.key}
 app.addEventListener('click',e=>{const el=e.target.closest('[data-action]');if(!el)return;const {action,id,value}=el.dataset;if(action==='modal-close'&&e.target.closest('.modal-panel')&&e.target!==el)return;act(action==='talent-add'&&e.shiftKey?'talent-remove':action,id,value,el)});
 app.addEventListener('contextmenu',e=>{const el=e.target.closest?.('[data-action="talent-add"]');if(!el||!window.DBPTalents)return;e.preventDefault();act('talent-remove',null,el.dataset.value,el)});
-app.addEventListener('change',e=>{const el=e.target;if(el.id==='buildSelect'){state.activeBuildId=el.value;ui.itemId=null;save();return}if(el.id==='lockedSetSelect'){ui.selectedSetId=el.value;render();return}if(el.id==='settingsCategory'){ui.settingsTab=el.value;render();return}if(el.id==='otherBuild'){ui.compareBuildId=el.value;render();return}if(el.dataset.change)changed(el)});
+app.addEventListener('change',e=>{const el=e.target;if(el.id==='rankingBoardSelect'){ui.rankingBoardId=el.value;render();return}if(el.id==='buildSelect'){state.activeBuildId=el.value;ui.itemId=null;save();return}if(el.id==='lockedSetSelect'){ui.selectedSetId=el.value;render();return}if(el.id==='settingsCategory'){ui.settingsTab=el.value;render();return}if(el.id==='otherBuild'){ui.compareBuildId=el.value;render();return}if(el.dataset.change)changed(el)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.modal){ui.modal='';render()}});
 window.addEventListener('storage',e=>{if(e.key===LS&&e.newValue&&e.newValue!==JSON.stringify(state)){ui.status='conflict';flash('別タブでの変更を検知しました。バックアップを確認してください。');render()}});
 // File import control created independently of app render.
