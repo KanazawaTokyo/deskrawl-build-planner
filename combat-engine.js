@@ -12,7 +12,7 @@ const defaults=Object.freeze({
  incomingHit:null,incomingEvery:null,incomingType:'physical'
 });
 const numeric={
- duration:[5,120],enemyHp:[1,1e14],seed:[1,4294967295],
+ duration:[0.5,120],enemyHp:[1,1e14],seed:[1,4294967295],
  stormInterval:[0.15,10],stormHits:[1,3],frostTick:[0.05,1],
  frostCooldown:[0,20],manaRegen:[0,1e6],initialMana:[0,1e7],
  novaCooldown:[0.2,120],incomingHit:[0,1e12],incomingEvery:[0.1,30]
@@ -221,7 +221,7 @@ function simulate(stats,settings={},context={},source={}){
   const next=events.shift();if(next.t>o.duration+eps)break;
   moveTo(next.t);processed++;
   if(processed>3500){warnings.push('イベント数上限に達して計算を中断しました');break;}
-  if(next.type==='action')action();
+  if(next.type==='action'&&now<o.duration-eps)action();
   else if(next.type==='beamTick')beamTick(next.detail.id);
   else if(next.type==='beamEnd'){
    if(channel?.active&&channel.id===next.detail.id){
