@@ -77,7 +77,7 @@ function render({state,build,compareId}){
   '<div class="engine-fields">'+
   select('skill','使用スキル',o.skill,[['lightningStorm','ライトニングストーム'],['frostBeam','フロストビーム']])+
   select('mode','確率の扱い',o.mode,[['expected','期待値（再現性重視）'],['sampled','乱数1試行（Seed固定）']])+
-  number('duration','制限時間（秒）',o.duration,'5〜120秒。討伐した場合は途中で終了','30')+
+  number('duration','制限時間（秒）',o.duration,'0.5〜120秒。討伐した場合は途中で終了','30')+
   number('enemyHp','仮想敵の最大HP',o.enemyHp,'空欄なら討伐時間を算出しません。架空のHPを確定値として扱わない','未入力')+
   number('initialMana','開始Mana',o.initialMana,'空欄は装備から計算した最大Mana','最大値')+
   number('manaRegen','Mana自然回復（毎秒）',o.manaRegen,'空欄は登録済み能力値を使います','登録値')+
