@@ -28,16 +28,37 @@ function validateState(s){if(!s||s.schemaVersion!==1||!Array.isArray(s.items)||!
 function save(){localStorage.setItem(LS,JSON.stringify(state));cloudDirty=true;ui.dirty=true;ui.status=cloudSyncBlocked?'conflict':session&&cloudCfg?'saving':'local';render();if(session&&cloudCfg&&!cloudSyncBlocked){clearTimeout(cloudSaveTimer);cloudSaveTimer=setTimeout(pushCloud,900)}}
 function modify(fn){fn();save()}
 function render(){const b=build();if(!b)return;if(ui.tab==='ranking'&&window.DBPRankings&&!window.DBPRankings.boardById(state,ui.rankingBoardId))ui.rankingBoardId=window.DBPRankings.boards(state)[0]?.id||'';app.innerHTML=`<div class="shell"><header class="topbar"><div class="brand"><div class="brand-symbol">✧</div><div><div class="brand-title">DESKRAWL <span>ビルドプランナー</span></div><div class="brand-sub">ソーサラー <span class="dot">·</span> 嵐呼び <span class="dot">·</span> v0.1</div></div></div><div class="header-right"><span class="sync-status ${ui.status}"><i></i>${{local:'ローカル保存',saving:'同期中',synced:'クラウド同期済み',error:'同期失敗',conflict:'競合を検知'}[ui.status]||'ローカル保存'}</span><button class="icon-btn" data-action="backup" title="JSONバックアップ">⇩</button><button class="icon-btn" data-action="import" title="JSONバックアップから復元">⇧</button><button class="icon-btn" data-action="cloud" title="同期・ログイン">☁</button></div></header>
-<div class="profile-strip"><div class="profile-control"><span class="field-legend">使用中のビルド</span><select id="buildSelect" class="profile-select">${state.builds.map(x=>opt(x.id,x.name,x.id===b.id?x.id:'' )).join('')}</select></div><div class="profile-buttons"><button class="btn new-build-main" data-action="new-build">＋ 新しい一式を作る</button><button class="text-btn" data-action="duplicate-build" title="装備個体を共有してビルド設定を複製します">参照共有で複製</button><button class="text-btn" data-action="rename-build">名前変更</button><button class="icon-btn subtle" data-action="delete-build" title="ビルド削除">⌫</button><button class="text-btn" data-action="compare-builds">ビルド比較</button><button class="btn outline" data-action="input-review">登録照合</button><button class="btn outline ai-export-open" data-action="ai-export">AI分析用に出力</button></div></div>
-${renderLockedSets()}
+<div class="profile-strip build-toolbar" aria-label="ビルド管理"><div class="profile-control"><label for="buildSelect" class="field-legend">使用中のビルド</label><select id="buildSelect" class="profile-select">${state.builds.map(x=>opt(x.id,x.name,x.id===b.id?x.id:'' )).join('')}</select></div><div class="profile-buttons"><button class="btn new-build-main" data-action="new-build">＋ 新しいビルド</button><button class="btn outline" data-action="compare-builds" ${state.builds.length<2?'disabled title="比較には2つ以上のビルドが必要です"':''}>比較</button><button class="text-btn build-version-button" data-action="saved-sets-open" title="過去に手動保存した一式と復元"><span aria-hidden="true">▣</span> 保存版 <span class="build-version-count">${lockedSets().length}</span></button><details class="profile-more"><summary class="text-btn" aria-label="ビルドのその他の操作">その他 <span aria-hidden="true">⌄</span></summary><div class="profile-more-menu"><button data-action="rename-build">名前を変更</button><button data-action="duplicate-build" title="現在の装備を他ビルドと共有します。編集すると共有先にも反映されます">装備を共有して複製</button><button data-action="input-review">登録照合</button><button data-action="ai-export">AI分析用に出力</button><div class="more-separator"></div><button class="more-danger" data-action="delete-build" ${state.builds.length<2?'disabled':''}>このビルドを削除</button></div></details></div></div>
 <nav class="mainnav"><button class="navbtn ${ui.tab==='equipment'?'active':''}" data-action="tab-equipment"><span>◈</span> 装備 <small>装備</small></button><button class="navbtn ${ui.tab==='talent'?'active':''}" data-action="tab-talent"><span>✧</span> タレント <small>戦闘タレント</small></button><button class="navbtn ${ui.tab==='pet'?'active':''}" data-action="tab-pet"><span>♜</span> ペット <small>ペット</small></button><button class="navbtn ${ui.tab==='stats'?'active':''}" data-action="tab-stats"><span>▦</span> ステータス <small>能力値</small></button><button class="navbtn ${ui.tab==='combat'?'active':''}" data-action="tab-combat"><span>◫</span> ダメージ・軽減 <small>ダメージ計算</small></button><button class="navbtn ${ui.tab==='engine'?'active':''}" data-action="tab-engine"><span>⚙</span> 戦闘実験 <small>時系列計算</small></button><button class="navbtn ${ui.tab==='ranking'?'active':''}" data-action="tab-ranking"><span>♛</span> ランキング <small>記録・比較</small></button><div class="navhint">装備候補と計算結果を分けて管理</div></nav>
 ${ui.tab==='equipment'?renderEquipment():ui.tab==='talent'?renderTalent():ui.tab==='pet'?renderPet():ui.tab==='combat'?renderCombat():ui.tab==='engine'?renderEngine():ui.tab==='ranking'?window.DBPRankings?.render({state,selectedBoardId:ui.rankingBoardId,E,opt})||'<main class="workspace">ランキングモジュールを読み込めませんでした。</main>':renderStats()}
 <footer class="footer"><span>ゲームデータ · ${E(D.version.split('-').slice(-3).join('-'))}</span><span>ディバイン固定OP・ランク6の宝石を登録済み · 強化後の端数・固有効果はゲーム内表示と照合してください</span></footer></div>${renderModal()}`;}
-function renderLockedSets(){
- const sets=lockedSets(),selected=selectedLockedSet(),ready=canSaveLockedSet(),filled=equippedSlots(),total=D.slots.length;
- const options=sets.map(x=>opt(x.id,x.name,x.id===selected?.id?x.id:'' )).join('');
- return `<section class="saved-set-strip" aria-label="現在のビルドの一式保存"><div class="saved-set-label"><span class="saved-set-symbol">▣</span><div><b>一式スナップショット</b><small>${filled}/${total} 部位装備済み${ready?' · 保存可能':' · 11部位が揃うと保存できます'}</small></div></div><div class="saved-set-controls"><select id="lockedSetSelect" aria-label="保存した一式を選択" ${sets.length?'':'disabled'}>${sets.length?options:opt('','保存した一式なし','')}</select><button class="text-btn saved-set-save" data-action="save-locked-set" ${ready?'':'disabled title="全11部位の装備を揃えてください"'}>＋ 現在の一式を保存</button><button class="text-btn saved-set-load" data-action="load-locked-set" ${selected?'':'disabled'}>別ビルドで開く</button><button class="icon-btn subtle saved-set-delete" data-action="delete-locked-set" title="選択した一式スナップショットを削除" ${selected?'':'disabled'}>⌫</button></div></section>`;
+function renderSavedVersions(){
+ const sets=lockedSets(),selected=selectedLockedSet(),ready=canSaveLockedSet();
+ const filled=equippedSlots(),total=D.slots.length;
+ const choices=sets.map(x=>opt(x.id,x.name,x.id===selected?.id?x.id:'')).join('');
+ const date=selected?.createdAt&&Number.isFinite(Date.parse(selected.createdAt))?
+  new Date(selected.createdAt).toLocaleDateString('ja-JP'):'日付未記録';
+ const preview=selected?D.slots.map(([slot,label])=>{
+  const item=selected.gear?.[slot];
+  return `<div class="saved-version-slot"><span>${E(label)}</span><strong>${E(titleOf(item))}</strong></div>`;
+ }).join(''):'';
+ return `<div class="modal-title"><h2>保存版・復元</h2><button data-action="modal-close" class="icon-btn" aria-label="閉じる">×</button></div>
+ <p class="helper">保存版は、手動で残す<strong>編集できない一式の控え</strong>です。自動変更履歴ではありません。装備11部位とタレント・ルーン・ペットなどの設定を保存し、復元時には独立した新しいビルドを作成します。</p>
+ <div class="saved-version-quick">
+  <div><strong>現在のビルドを保存</strong><small>${E(build().name)} · ${filled}/${total}部位登録済み</small></div>
+  <button class="btn" data-action="save-locked-set" ${ready&&sets.length<60?'':'disabled'}>＋ 保存版を作成</button>
+ </div>
+ ${!ready?'<p class="helper saved-version-warning">保存版の作成には装備11部位すべてが必要です。編集中の空欄ビルドはそのまま保存できます。</p>':''}
+ <div class="saved-version-list-head"><h3>保存済みの一式</h3><span>${sets.length} / 60件</span></div>
+ ${selected?`<label class="field" for="lockedSetSelect"><span>開く保存版を選択</span><select id="lockedSetSelect">${choices}</select></label>
+ <section class="saved-version-detail"><strong>${E(selected.name)}</strong><div class="saved-version-meta">保存日：${E(date)} · 元のビルド：${E(selected.sourceBuild||'不明')}</div>
+ <details><summary>保存した装備11部位を確認</summary><div class="saved-version-grid">${preview}</div></details>
+ <p class="helper">「別ビルドとして復元」は元の保存版と現在のビルドを変更せず、新しい編集用ビルドを作ります。装備個体は複製され、所持状況は未確認として扱います。</p>
+ <div class="saved-version-actions"><button class="btn" data-action="load-locked-set">別ビルドとして復元</button><button class="text-btn saved-version-delete" data-action="delete-locked-set">この保存版を削除</button></div></section>`
+ :'<div class="saved-version-empty"><strong>保存版はありません</strong><p>現在の一式を保存すれば、今後の装備変更後でも元の構成に戻せます。</p></div>'}
+ <p class="helper">ビルドは通常どおり自動保存されます。保存版は比較・復元のために意図的に残すもので、ゲーム内ランキングの実戦履歴とは別です。</p>`;
 }
+
 function renderEquipment(){let b=build(),id=b.loadout?.[ui.slot],current=getItem(id),candidateItems=state.items.filter(x=>x.slot===ui.slot),select=getItem(ui.itemId)||current;if(!select&&candidateItems.length)select=candidateItems[0];return `<main class="workspace equipment-workspace"><aside class="gear-rail"><div class="section-label"><span>装備一覧</span><span class="muted small">全11部位</span></div><div class="gear-list">${D.slots.map(([key,label])=>{const it=getItem(b.loadout?.[key]);const dd=def(it);return `<button class="gear-slot ${ui.slot===key?'selected':''} ${it?.locked?'is-locked':''}" data-action="slot" data-value="${key}"><span class="slot-icon" ${it?.locked?'title="固定中・編集不可"':''}>${slotIcon(key)}</span><span class="slot-content"><small>${E(label)} <em>${E(window.DBPJP?.rarity(dd?.rarity)||dd?.rarity||'—')}</em></small><strong>${E(titleOf(it))}</strong><span class="slot-ops">${it?.primary?.length?it.primary.map(a=>D.affixes[a]?.[0]||a).join(' / '):it?(dd?.rarity==='Divine'?'固定OP '+(dd.fixed?.length||0)+'種':'OP未登録'):'装備なし'}</span>${lockedOpCount(it)?`<span class="slot-required">✦ 必須OP ${lockedOpCount(it)}</span>`:''}</span><span class="slot-right">${it?.locked?'<span class="lock-indicator">固定</span>':''}${it?`<span class="level">${it.upgradeKnown?stage(it.upgrade):'強化未確認'}</span>`:''}<span class="chev">›</span></span></button>`}).join('')}</div></aside><section class="detail-column">${renderEquipmentHeader(current,select,candidateItems)}${ui.detail==='optimize'?'':renderCandidateList(candidateItems,current,select)}${ui.detail==='optimize'?renderOpOptimizer():ui.detail==='compare'?renderComparison(current,select):renderEditor(select,current)}</section></main>`;}
 function renderOpOptimizer(){return window.DBPOpOptimizerUI?window.DBPOpOptimizerUI.render({state,build:build(),slot:ui.slot,positionId:ui.optimizerPosition,selectedKey:ui.optimizerSelected,E,opt}):'<div class="card">OP最適化機能の読み込みが必要です。</div>'}
 function renderEquipmentHeader(current,selected,all){
@@ -271,7 +292,8 @@ if(ui.modal==='delete-item'){
  }
 }
 
-if(ui.modal==='new-build')content=`<div class="modal-title"><h2>新しいビルド・一式を作成</h2><button data-action="modal-close" class="icon-btn" aria-label="閉じる">×</button></div>
+if(ui.modal==='saved-sets')content=renderSavedVersions();
+ if(ui.modal==='new-build')content=`<div class="modal-title"><h2>新しいビルド・一式を作成</h2><button data-action="modal-close" class="icon-btn" aria-label="閉じる">×</button></div>
  <label class="field"><span>ビルド名</span><input id="newBuildName" maxlength="100" value="${E(build().name+' 新構成')}" /></label>
  <div class="new-build-options">
  <button class="new-build-option" data-action="new-build-copy"><strong>現在の一式をコピーして始める</strong><span>装備と設定をコピー。元の装備は変更せず、コピー側の固定は解除します。</span><b>おすすめ</b></button>
@@ -290,7 +312,7 @@ if(ui.modal==='ai-export'){
  <p class="helper">出力には装備・ビルドのメモも含みます。内容を確認してから共有してください。認証トークン、クラウドの接続情報、他のビルドは含みません。</p>`;
 }
 if(ui.modal==='compare-builds'){const x=state.builds.find(y=>y.id===ui.compareBuildId)||state.builds.find(y=>y.id!==build().id);const a=C.calc(state,build()),b=x?C.calc(state,x):null;content=`<div class="modal-title"><h2>ビルド間比較</h2><button data-action="modal-close" class="icon-btn">×</button></div><label class="field"><span>比較対象</span><select id="otherBuild">${state.builds.filter(z=>z.id!==build().id).map(z=>opt(z.id,z.name,x?.id)).join('')}</select></label>${x?`<div class="compare-columns"><div class="compare-item"><small>現在のビルド</small><b>${E(build().name)}</b></div><div class="compare-icon">↔</div><div class="compare-item"><small>比較対象</small><b>${E(x.name)}</b></div></div><h3 class="table-heading">主要ステータス差分（部分計算）</h3><div class="data-table">${C.priority.map(k=>{const d=(b.raw[k]||0)-(a.raw[k]||0);return `<div class="data-row"><div><strong>${E(C.labels[k])}</strong><span>${C.format(k,a.raw[k]||0)} → ${C.format(k,b.raw[k]||0)}</span></div><b class="${d>0?'positive':d<0?'negative':'neutral'}">${d>0?'+':''}${C.format(k,d)}</b></div>`}).join('')}</div><h3 class="table-heading">装備差分</h3>${D.slots.filter(([s])=>build().loadout[s]!==x.loadout[s]).map(([s,label])=>`<div class="data-row"><strong>${label}</strong><span>${E(titleOf(getItem(build().loadout[s])))} → ${E(titleOf(getItem(x.loadout[s])))}</span></div>`).join('')||'<div class="notice">装備の組み合わせは同一です。パラゴン・バフの差などを確認してください。</div>'}`:'<div class="empty">比較できる別ビルドがありません。複製して作成してください。</div>'}<div class="notice gentle">ビルドごとにオーラ・タレント等の条件が異なる場合、それも含めた比較です。数値は未校正データを含みます。</div>`;}
-return `<div class="modal-backdrop" data-action="modal-close"><div class="modal-panel ${ui.modal==='input-review'?'review-panel':ui.modal.startsWith('ranking-')?'ranking-modal':''}" role="dialog" aria-modal="true">${content}</div></div>`;}
+return `<div class="modal-backdrop" data-action="modal-close"><div class="modal-panel ${ui.modal==='input-review'?'review-panel':ui.modal.startsWith('ranking-')?'ranking-modal':ui.modal==='saved-sets'?'saved-versions-panel':''}" role="dialog" aria-modal="true">${content}</div></div>`;}
 // ---------- mutations ----------
 function act(action,id,value,el){const b=build();switch(action){
 case 'stat-preset':{
@@ -423,6 +445,7 @@ case 'confirm-delete-item':{
 }
 case 'compare-equal':ui.compareMode='equal';render();break;case 'compare-actual':ui.compareMode='actual';render();break;
 case 'stat':if(!window.DBPStatsView.statKeys.includes(value))return;ui.selectedStat=value;ui.settingsOpen=false;render();break;case 'settings':ui.settingsOpen=true;render();break;case 'close-settings':ui.settingsOpen=false;render();break;
+case 'saved-sets-open':ui.modal='saved-sets';render();break;
 case 'save-locked-set':{if(!canSaveLockedSet()){flash('一式保存には11部位の装備が必要です。固定は不要です。');return}
  if(lockedSets().length>=60){flash('一式の保存は最大60件です。不要なセットを削除してください。');return}
  const name=prompt('保存する一式の名前',b.name+' 保存版');if(!name?.trim())return;
@@ -435,11 +458,11 @@ case 'load-locked-set':{const saved=selectedLockedSet();if(!saved)return;
  if(!valid){flash('保存した一式の装備データが不正です。JSONバックアップを確認してください。');return}
  if(state.builds.length>=1000||state.items.length+D.slots.length>10000){flash('ビルドまたは装備の保存上限に達しています。');return}
  if(!confirm('「'+saved.name+'」を独立した新しいビルドで開きますか？\n元の一式は変更しません。'))return;
- modify(()=>{const loadout={};D.slots.forEach(([slot])=>{const item=clone(saved.gear[slot]);item.id=D.uid('item');item.locked=false;item.createdAt=new Date().toISOString();item.source='saved-set';state.items.push(item);loadout[slot]=item.id});
+ modify(()=>{const loadout={};D.slots.forEach(([slot])=>{const item=clone(saved.gear[slot]);item.id=D.uid('item');item.locked=false;item.owned=null;item.createdAt=new Date().toISOString();item.source='saved-set';state.items.push(item);loadout[slot]=item.id});
  const id=D.uid('build');state.builds.push({id,name:(saved.name+'（編集用）').slice(0,100),loadout,settings:clone(saved.settings||defaultSettings()),createdAt:new Date().toISOString()});
- state.activeBuildId=id;ui.itemId=null;ui.slot='weapon';ui.detail='edit';ui.tab='equipment'});
- flash('元の一式を保持したまま、新しいビルドを作成しました');break}
-case 'delete-locked-set':{const saved=selectedLockedSet();if(!saved||!confirm('保存した固定セット「'+saved.name+'」を削除しますか？\n既存ビルドと装備には影響しません。'))return;modify(()=>{state.lockedSets=lockedSets().filter(x=>x.id!==saved.id);ui.selectedSetId=state.lockedSets[0]?.id||null});flash('保存済みの固定セットを削除しました');break}
+ state.activeBuildId=id;ui.itemId=null;ui.slot='weapon';ui.detail='edit';ui.tab='equipment';ui.modal=''});
+ flash('元の保存版を保持したまま、編集用の新しいビルドを作成しました');break}
+case 'delete-locked-set':{const saved=selectedLockedSet();if(!saved||!confirm('保存版「'+saved.name+'」を削除しますか？\n既存ビルドと装備には影響しません。'))return;modify(()=>{state.lockedSets=lockedSets().filter(x=>x.id!==saved.id);ui.selectedSetId=state.lockedSets[0]?.id||null});flash('保存済みの固定セットを削除しました');break}
 case 'new-build':ui.modal='new-build';render();break;
 case 'new-build-copy':
 case 'new-build-empty':
