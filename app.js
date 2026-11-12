@@ -54,7 +54,7 @@ return `<div class="editor card"><div class="card-heading"><div><h2>装備設定
 ${isDiv?renderDivineSection(it,dd):`<div class="form-title"><b>主要OP</b><span>4枠 · 必要なOPを個別に固定</span></div><div class="affix-list">${Array.from({length:4},(_,idx)=>{const key=it.primary?.[idx]||'';const v=key?C.valueOf(it,key,idx):null;const locked=isOpLocked(it,'primary',idx);return `<div class="affix-row affix-lockable ${locked?'op-is-locked':''}"><span class="affix-index">0${idx+1}</span><select data-change="primary" data-id="${it.id}" data-idx="${idx}" ${locked?'disabled title="必須OPの固定を解除してから変更してください"':''}>${opt('','未設定',key)}${key&&!allowed.primary.includes(key)?opt(key,(D.affixes[key]?.[0]||key)+'（旧データ・現在候補外）',key):''}${allowed.primary.map(id=>opt(id,D.affixes[id][0],key)).join('')}</select><label class="op-lock-toggle" title="${locked?'固定解除すると変更できます':'このOPを必須として固定'}"><input type="checkbox" data-change="op-lock-primary" data-id="${it.id}" data-idx="${idx}" aria-label="主要OP ${idx+1}を必須として固定" ${locked?'checked':''} ${key?'':'disabled'}/><span>必須</span></label><div class="affix-value"><b>${v?(D.affixes[key][2]==='pct'?'+':'+' )+C.format(key,v.value):'—'}</b><small>${v?qualityOf(v.status):'—'}</small></div></div>`}).join('')}</div><div class="form-title"><b>補助OP</b><span>1枠</span></div><div class="affix-row affix-lockable secondary ${isOpLocked(it,'secondary')?'op-is-locked':''}"><span class="affix-index">S</span><select data-change="secondary" data-id="${it.id}" ${isOpLocked(it,'secondary')?'disabled title="必須OPの固定を解除してから変更してください"':''}>${opt('','未設定',it.secondary)}${it.secondary&&!allowed.secondary.includes(it.secondary)?opt(it.secondary,(D.affixes[it.secondary]?.[0]||it.secondary)+'（旧データ・現在候補外）',it.secondary):''}${allowed.secondary.map(id=>opt(id,D.affixes[id][0],it.secondary)).join('')}</select><label class="op-lock-toggle" title="${isOpLocked(it,'secondary')?'固定解除すると変更できます':'このOPを必須として固定'}"><input type="checkbox" data-change="op-lock-secondary" data-id="${it.id}" aria-label="補助OPを必須として固定" ${isOpLocked(it,'secondary')?'checked':''} ${it.secondary?'':'disabled'}/><span>必須</span></label><div class="affix-value"><b>${it.secondary?'+'+C.format(it.secondary,C.valueOf(it,it.secondary,'s').value):'—'}</b><small>参考基礎値</small></div></div><div class="notice gentle">ブラックミストの基準値と強化配分（+1〜+10、開光Ⅰ・Ⅱ）は公開ゲームデータのルールに従って計算します。端数処理や個別装備の例外は要検証です。個別の実測値は下の「数値補正」から記録できます。</div><details class="advanced"><summary>個別OPの実測値を入力（任意）</summary><div class="override-fields">${[...(it.primary||[]).map((a,idx)=>[a,idx]),...(it.secondary?[[it.secondary,'s']]:[])].filter(x=>x[0]).map(([key,idx])=>{const mapKey=key+':'+idx+':'+it.upgrade;return `<label class="field"><span>${E(D.affixes[key]?.[0]||key)} · ${E(stage(it.upgrade))}</span><input type="number" step="any" data-change="override" data-id="${it.id}" data-key="${mapKey}" ${idx==='s'?isOpLocked(it,'secondary')?'disabled':'':isOpLocked(it,'primary',idx)?'disabled':''} placeholder="ゲーム内の実数値" value="${E(it.overrides?.[mapKey]??'')}" /></label>`}).join('')}</div></details>`}
 ${!isDiv&&dd?.effect?`<div class="notice gentle"><b>装備固有効果</b>：${E(dd.effect)}${dd.sourceUrl?` <a href="${E(dd.sourceUrl)}" target="_blank" rel="noopener noreferrer">出典</a>`:''}</div>`:''}
 ${renderGemSection(it)}
-<label class="field"><span>メモ・固有効果の確認内容</span><textarea data-change="memo" data-id="${it.id}" rows="2">${E(it.memo||'')}</textarea></label></fieldset><div class="editor-bottom"><div class="small muted">${counts>1?'⚠ '+counts+'ビルドで共有中。変更すると全ビルドに反映されます。':'編集内容は自動保存されます。装備を外しても保管庫には残ります。'}</div><div class="actions"><button class="text-btn" data-action="duplicate-item" data-id="${it.id}">個体を複製</button>${!same?`<button class="btn" data-action="equip" data-id="${it.id}">この候補を装備する</button>`:''}<button class="danger-link" data-action="delete-item" data-id="${it.id}" ${it.locked?'disabled title="固定を解除してください"':''}>削除</button></div></div></div>`;}
+<label class="field"><span>メモ・固有効果の確認内容</span><textarea data-change="memo" data-id="${it.id}" rows="2">${E(it.memo||'')}</textarea></label></fieldset><div class="editor-bottom"><div class="small muted">${counts>1?'⚠ '+counts+'ビルドで共有中。OP・強化値の変更は全ビルドに反映。削除時も影響するビルドを確認します。':'編集内容は自動保存されます。装備を外しても保管庫には残ります。'}</div><div class="actions"><button class="text-btn" data-action="duplicate-item" data-id="${it.id}">個体を複製</button>${!same?`<button class="btn" data-action="equip" data-id="${it.id}">この候補を装備する</button>`:''}<button class="danger-link" data-action="delete-item" data-id="${it.id}" title="保存した候補を完全に削除します。共有ビルドへの影響を確認します。">候補を削除</button></div></div></div>`;}
 function renderGemSection(it){
  const group=D.gemSocketGroup[it.slot],max=D.gemSocketLimits[it.slot]||0;
  if(!max)return `<div class="form-title"><b>宝石・ソケット</b><span>ソケットなし</span></div><div class="notice gentle">この部位には宝石を装着できません。</div>`;
@@ -325,25 +325,46 @@ case 'optimizer-save':{
 }
 case 'mode-edit':ui.detail='edit';render();break;case 'mode-compare':ui.detail='compare';if(!ui.itemId){const other=state.items.find(i=>i.slot===ui.slot&&i.id!==b.loadout[ui.slot]);ui.itemId=other?.id||b.loadout[ui.slot]}render();break;
 case 'select-item':ui.itemId=id;render();break;
-case 'new-item':modify(()=>{const template=equipment(ui.slot),x=template?{...template}:{definitionId:'custom-'+ui.slot,slot:ui.slot,primary:[],secondary:'',upgrade:0,gems:[],memo:''};const copy={...x,id:D.uid('item'),primary:[...(x.primary||[])],overrides:{},gems:(x.gems||[]).map(z=>({...z})),nickname:'',upgrade:0,upgradeKnown:false,locked:false,opLocks:{primary:[...(x.opLocks?.primary||[])],secondary:Boolean(x.opLocks?.secondary)},source:'user',owned:null,memo:'',createdAt:new Date().toISOString()};state.items.push(copy);ui.itemId=copy.id;ui.detail='edit'});flash('新しい候補を作成しました');break;
+case 'new-item':{
+ if(state.items.length>=10000){flash('装備候補の登録上限に達しています');return}
+ modify(()=>{
+  // A new item must NEVER inherit another item's OP locks, fixed values, or name.
+  // To reuse an existing item's exact properties, use "個体を複製" explicitly.
+  const copy={id:D.uid('item'),definitionId:'custom-'+ui.slot,slot:ui.slot,
+   primary:[],secondary:'',upgrade:0,upgradeKnown:false,overrides:{},gems:[],
+   nickname:'',locked:false,opLocks:{primary:[],secondary:false},
+   source:'user',owned:null,memo:'',createdAt:new Date().toISOString()};
+  state.items.push(copy);ui.itemId=copy.id;ui.detail='edit';
+ });flash('空の装備候補を追加しました。装備名を選んでください。');break;}
 case 'duplicate-item':{const src=getItem(id);if(!src)return;modify(()=>{const cp=JSON.parse(JSON.stringify(src));cp.id=D.uid('item');cp.locked=false;cp.nickname=(src.nickname||def(src)?.name||'候補')+' のコピー';cp.createdAt=new Date().toISOString();state.items.push(cp);ui.itemId=cp.id;ui.detail='edit'});flash('装備個体を複製しました');break}
-case 'equip':{const it=getItem(id);if(!it||it.slot!==ui.slot)return;const previous=getItem(b.loadout[it.slot]);
- if(previous?.id===it.id){ui.itemId=it.id;render();return}
- if(!confirm('「'+titleOf(it)+'」を'+slotLabel(it.slot)+'へ装備しますか？\n現在の装備は保管庫に残ります。'))return;
+case 'equip':{const it=getItem(id);
+ if(!it){flash('装備候補が見つかりません。ページを再読み込みしてください。');return}
+ if(it.slot!==ui.slot){ui.slot=it.slot}
+ if(b.loadout[it.slot]===it.id){ui.itemId=it.id;ui.detail='edit';render();flash('すでに装備しています');return}
+ // Equipping is reversible: the previous item is kept in the shared library.
+ // Do not block it on edit protection, OP locks, or a native confirm dialog.
  modify(()=>{b.loadout[it.slot]=it.id;ui.itemId=it.id;ui.detail='edit'});
- flash('「'+slotLabel(it.slot)+'」を変更しました');break;}
+ flash('「'+titleOf(it)+'」を'+slotLabel(it.slot)+'に装備しました');break;}
 case 'unequip':{const current=equipment(ui.slot);if(!current)return;
  if(!confirm('「'+titleOf(current)+'」をこのビルドから外しますか？\n装備は削除されず保管庫に残ります。'))return;
  modify(()=>{delete b.loadout[ui.slot];ui.itemId=current.id;ui.detail='edit'});
  flash('装備を外しました。保管庫に残っています。');break;}
-case 'delete-item':{const x=getItem(id);if(!x)return;
- if(x.locked){flash('編集保護中です。装備詳細の「固定」を解除すると削除できます。');return}
+case 'delete-item':{const x=getItem(id);if(!x){flash('装備候補が見つかりません');return}
  const refs=state.builds.filter(profile=>Object.values(profile.loadout||{}).includes(id));
- if(refs.length>1||refs.length===1&&refs[0].id!==b.id){flash('他のビルドで使用中のため削除できません。ビルド側で装備を外してください。');return}
- const equippedHere=refs.length===1;
- if(!confirm('「'+titleOf(x)+'」を削除しますか？'+(equippedHere?'\n現在のビルドからも外します。':'')+'\nこの操作は取り消せません。'))return;
- modify(()=>{if(equippedHere)delete b.loadout[x.slot];state.items=state.items.filter(z=>z.id!==id);ui.itemId=null});
- flash('候補を削除しました');break}
+ const names=refs.map(profile=>profile.name).join('、');
+ const protectText=x.locked?'\nこの装備は編集保護されています。保護も解除して削除します。':'';
+ const refsText=refs.length?'\n使用中のビルド（'+refs.length+'件）：'+names+'\nすべてのビルドからこの装備を外します。':'';
+ const message='「'+titleOf(x)+'」を保管庫から完全に削除しますか？'+protectText+refsText+
+  '\n\nこの操作は取り消せません。保存済みの一式スナップショットは残ります。';
+ if(!confirm(message))return;
+ if((x.locked||refs.length>1)&&!confirm('最終確認：この装備を本当に削除しますか？\n'+(refs.length?'使用中の'+refs.length+'ビルドからも外されます。':'編集保護された装備です。')))return;
+ modify(()=>{
+  for(const profile of refs)for(const [slot,itemId] of Object.entries(profile.loadout||{}))
+   if(itemId===id)delete profile.loadout[slot];
+  state.items=state.items.filter(z=>z.id!==id);
+  ui.itemId=null;ui.detail='edit';
+ });
+ flash('装備候補を削除しました（'+refs.length+'ビルドから解除）');break}
 case 'compare-equal':ui.compareMode='equal';render();break;case 'compare-actual':ui.compareMode='actual';render();break;
 case 'stat':if(!window.DBPStatsView.statKeys.includes(value))return;ui.selectedStat=value;ui.settingsOpen=false;render();break;case 'settings':ui.settingsOpen=true;render();break;case 'close-settings':ui.settingsOpen=false;render();break;
 case 'save-locked-set':{if(!canSaveLockedSet()){flash('一式保存には11部位の装備が必要です。固定は不要です。');return}
