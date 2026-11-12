@@ -107,6 +107,15 @@ events.click({target:{closest:()=>({dataset:{action:'slot',value:'weapon'}})}});
 assert(app.innerHTML.includes('【ブラックミスト】フロストワームの杖'));
 assert(app.innerHTML.includes('【ディバイン】恐怖の翼'),'Dreadwing selectable as Divine weapon');
 assert(app.innerHTML.includes('【エンシャント・ディバイン】恐怖の翼（エンシャント）'),'Ancient weapon selectable');
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'neck'}})}});
+assert(app.innerHTML.includes('【ブラックミスト】氷河の守り'),'correct Black Mist necklace selectable');
+assert(app.innerHTML.includes('【レジェンダリー】氷河の守り'),'regular Legendary necklace selectable');
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'gloves'}})}});
+assert(app.innerHTML.includes('【ブラックミスト】霜縛りの手甲'),'correct Black Mist gloves selectable');
+assert(app.innerHTML.includes('【レジェンダリー】霜縛りの手甲'),'regular Legendary gloves selectable');
+events.click({target:{closest:()=>({dataset:{action:'slot',value:'chest'}})}});
+assert(!app.innerHTML.includes('【ブラックミスト】氷河の守り（旧・胸の誤登録）'),'invalid legacy chest excluded from new choices');
+
 
 
 click('tab-stats');
