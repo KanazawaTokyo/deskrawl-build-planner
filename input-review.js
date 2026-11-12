@@ -48,7 +48,7 @@ function itemProblems(it,slot){
  for(const gem of it.gems||[]){
   if(!gem?.type)continue;
   if(!D.gems[gem.type])problems.push('未対応の宝石があります');
-  if(Number(gem.tier)===7&&!Number.isFinite(Number(gem.value)))problems.push('Tier 7宝石の実測値が未登録です');
+  if(Number(gem.tier)===7&&(gem.value===null||gem.value===undefined||gem.value===''||!Number.isFinite(Number(gem.value))))problems.push('Tier 7宝石の実測値が未登録です');
  }
  return [...new Set(problems)];
 }
