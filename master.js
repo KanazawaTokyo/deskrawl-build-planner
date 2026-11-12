@@ -134,6 +134,9 @@ for(const item of definitions.filter(d=>d.slot==='ring1'||d.slot==='ring2').slic
 const moreDivines=[
   {id:'gladiator',slot:'head',name:'Glorious Gladiator Helmet',rarity:'Divine',effect:'筋力・敏捷・知力+30%（固有効果。自動計算未対応）',sourceUrl:'https://wikily.gg/deskrawl/equipment/glorious-gladiator-helmet/',fixed:[['armor',840],['armorBonus',35],['maxHP',850],['mcr',17],['mana',80],['regen',35],['itemFind',35]]},
   {id:'undying',slot:'head',name:'Visage of the Undying',rarity:'Divine',effect:'全ダメージを30%軽減（通常版。2026-10-15パッチ）。常時効果',sourceUrl:'https://wikily.gg/deskrawl/equipment/visage-of-the-undying/',fixed:[['armor',840],['maxHP',850],['bonusHP',35],['specialDamage',135],['cdr',17],['potionFind',35]],powerStats:[['allDR',30]]},
+  {id:'dreadwing',slot:'weapon',name:'Dreadwing',rarity:'Divine',
+    effect:'2026年11月12日追加の新ディバイン武器「恐怖の翼」。固有効果・固定OP・武器速度・武器ダメージは資料未確認のため、自動計算には含めていません。',
+    sourceUrl:'https://steamdb.info/patchnotes/26604532/',fixed:[]},
   {id:'soulrender',slot:'weapon',name:'Soulrender',rarity:'Divine',effect:'直接攻撃25回でSoul Impact発動（通常版）',sourceUrl:'https://wikily.gg/deskrawl/equipment/soulrender/',fixed:[['weaponDamage',290],['weaponSpeed',1.2],['slowed',170],['basicAttack',120],['bonusHP',35],['allDR',10],['lifeKill',100],['loh',34]]},
   {id:'momentum',slot:'ring1',name:'Ring of Momentum',rarity:'Divine',effect:'2026-11-12追加。固定OPと固有効果は未確認のため未計算',sourceUrl:'https://steamdb.info/patchnotes/26604532/',fixed:[]}
 ];
