@@ -327,14 +327,62 @@ case 'mode-edit':ui.detail='edit';render();break;case 'mode-compare':ui.detail='
 case 'select-item':ui.itemId=id;render();break;
 case 'new-item':modify(()=>{const template=equipment(ui.slot),x=template?{...template}:{definitionId:'custom-'+ui.slot,slot:ui.slot,primary:[],secondary:'',upgrade:0,gems:[],memo:''};const copy={...x,id:D.uid('item'),primary:[...(x.primary||[])],overrides:{},gems:(x.gems||[]).map(z=>({...z})),nickname:'',upgrade:0,upgradeKnown:false,locked:false,opLocks:{primary:[...(x.opLocks?.primary||[])],secondary:Boolean(x.opLocks?.secondary)},source:'user',owned:null,memo:'',createdAt:new Date().toISOString()};state.items.push(copy);ui.itemId=copy.id;ui.detail='edit'});flash('新しい候補を作成しました');break;
 case 'duplicate-item':{const src=getItem(id);if(!src)return;modify(()=>{const cp=JSON.parse(JSON.stringify(src));cp.id=D.uid('item');cp.locked=false;cp.nickname=(src.nickname||def(src)?.name||'候補')+' のコピー';cp.createdAt=new Date().toISOString();state.items.push(cp);ui.itemId=cp.id;ui.detail='edit'});flash('装備個体を複製しました');break}
-case 'equip':{const it=getItem(id);if(!it)return;const previous=getItem(b.loadout[it.slot]);if(previous?.locked&&previous.id!==it.id){flash('現在の装備が固定中です。先に固定を解除してください。');return}if(!confirm('「'+titleOf(it)+'」をこのビルドへ装備しますか？\n以前の装備も保管庫に残ります。'))return;modify(()=>{b.loadout[it.slot]=it.id;ui.itemId=it.id;ui.detail='edit'});flash('このビルドの装備を変更しました');break;}
-case 'delete-item':{const x=getItem(id);if(!x)return;if(x.locked){flash('固定中の装備は削除できません。先に固定を解除してください。');return}const n=countRefs(id);if(n){flash(n+'ビルドで参照中のため削除できません。先に装備を外してください。');return}if(!confirm('この装備候補を削除しますか？ この操作は取り消せません。'))return;modify(()=>{state.items=state.items.filter(z=>z.id!==id);ui.itemId=null});break}
+case 'equip':{const it=getItem(id);if(!it||it.slot!==ui.slot)return;const previous=getItem(b.loadout[it.slot]);
+ if(previous?.id===it.id){ui.itemId=it.id;render();return}
+ if(!confirm('「'+titleOf(it)+'」を'+slotLabel(it.slot)+'へ装備しますか？\n現在の装備は保管庫に残ります。'))return;
+ modify(()=>{b.loadout[it.slot]=it.id;ui.itemId=it.id;ui.detail='edit'});
+ flash('「'+slotLabel(it.slot)+'」を変更しました');break;}
+case 'unequip':{const current=equipment(ui.slot);if(!current)return;
+ if(!confirm('「'+titleOf(current)+'」をこのビルドから外しますか？\n装備は削除されず保管庫に残ります。'))return;
+ modify(()=>{delete b.loadout[ui.slot];ui.itemId=current.id;ui.detail='edit'});
+ flash('装備を外しました。保管庫に残っています。');break;}
+case 'delete-item':{const x=getItem(id);if(!x)return;
+ if(x.locked){flash('編集保護中です。装備詳細の「固定」を解除すると削除できます。');return}
+ const refs=state.builds.filter(profile=>Object.values(profile.loadout||{}).includes(id));
+ if(refs.length>1||refs.length===1&&refs[0].id!==b.id){flash('他のビルドで使用中のため削除できません。ビルド側で装備を外してください。');return}
+ const equippedHere=refs.length===1;
+ if(!confirm('「'+titleOf(x)+'」を削除しますか？'+(equippedHere?'\n現在のビルドからも外します。':'')+'\nこの操作は取り消せません。'))return;
+ modify(()=>{if(equippedHere)delete b.loadout[x.slot];state.items=state.items.filter(z=>z.id!==id);ui.itemId=null});
+ flash('候補を削除しました');break}
 case 'compare-equal':ui.compareMode='equal';render();break;case 'compare-actual':ui.compareMode='actual';render();break;
 case 'stat':if(!window.DBPStatsView.statKeys.includes(value))return;ui.selectedStat=value;ui.settingsOpen=false;render();break;case 'settings':ui.settingsOpen=true;render();break;case 'close-settings':ui.settingsOpen=false;render();break;
-case 'save-locked-set':{if(!canSaveLockedSet()){flash('全11部位の装備を固定してから保存してください。');return}if(lockedSets().length>=60){flash('固定セットは最大60件です。不要なセットを削除してください。');return}const name=prompt('保存する一式の名前',b.name+' 固定セット');if(!name?.trim())return;modify(()=>{const gear={};D.slots.forEach(([slot])=>{gear[slot]=clone(equipment(slot))});const saved={id:D.uid('set'),name:name.trim().slice(0,100),createdAt:new Date().toISOString(),sourceBuild:b.name,gear,settings:clone(b.settings||defaultSettings())};state.lockedSets??=[];state.lockedSets.push(saved);ui.selectedSetId=saved.id});flash('固定した11部位を一式保存しました');break}
-case 'load-locked-set':{const saved=selectedLockedSet();if(!saved)return;const valid=D.slots.every(([slot])=>saved.gear?.[slot]?.slot===slot&&saved.gear[slot].locked===true);if(!valid){flash('保存セットの装備データが不正です。JSONバックアップを確認してください。');return}if(state.builds.length>=1000||state.items.length+D.slots.length>10000){flash('ビルドまたは装備の保存上限に達しています。');return}if(!confirm('「'+saved.name+'」を新しいビルドとして呼び出しますか？\n現在のビルドと保存済み一式は変更しません。'))return;modify(()=>{const loadout={};D.slots.forEach(([slot])=>{const item=clone(saved.gear[slot]);item.id=D.uid('item');item.locked=true;item.createdAt=new Date().toISOString();item.source='saved-set';state.items.push(item);loadout[slot]=item.id});const id=D.uid('build');state.builds.push({id,name:(saved.name+'（読込）').slice(0,100),loadout,settings:clone(saved.settings||defaultSettings()),createdAt:new Date().toISOString()});state.activeBuildId=id;ui.itemId=null;ui.slot='weapon';ui.detail='edit'});flash('固定セットを新しいビルドとして呼び出しました');break}
+case 'save-locked-set':{if(!canSaveLockedSet()){flash('一式保存には11部位の装備が必要です。固定は不要です。');return}
+ if(lockedSets().length>=60){flash('一式の保存は最大60件です。不要なセットを削除してください。');return}
+ const name=prompt('保存する一式の名前',b.name+' 保存版');if(!name?.trim())return;
+ modify(()=>{const gear={};D.slots.forEach(([slot])=>{gear[slot]=clone(equipment(slot))});
+ const saved={id:D.uid('set'),name:name.trim().slice(0,100),createdAt:new Date().toISOString(),sourceBuild:b.name,gear,settings:clone(b.settings||defaultSettings())};
+ state.lockedSets??=[];state.lockedSets.push(saved);ui.selectedSetId=saved.id});
+ flash('現在の一式を保存しました。装備は固定されていません。');break}
+case 'load-locked-set':{const saved=selectedLockedSet();if(!saved)return;
+ const valid=D.slots.every(([slot])=>saved.gear?.[slot]?.slot===slot);
+ if(!valid){flash('保存した一式の装備データが不正です。JSONバックアップを確認してください。');return}
+ if(state.builds.length>=1000||state.items.length+D.slots.length>10000){flash('ビルドまたは装備の保存上限に達しています。');return}
+ if(!confirm('「'+saved.name+'」を独立した新しいビルドで開きますか？\n元の一式は変更しません。'))return;
+ modify(()=>{const loadout={};D.slots.forEach(([slot])=>{const item=clone(saved.gear[slot]);item.id=D.uid('item');item.locked=false;item.createdAt=new Date().toISOString();item.source='saved-set';state.items.push(item);loadout[slot]=item.id});
+ const id=D.uid('build');state.builds.push({id,name:(saved.name+'（編集用）').slice(0,100),loadout,settings:clone(saved.settings||defaultSettings()),createdAt:new Date().toISOString()});
+ state.activeBuildId=id;ui.itemId=null;ui.slot='weapon';ui.detail='edit';ui.tab='equipment'});
+ flash('元の一式を保持したまま、新しいビルドを作成しました');break}
 case 'delete-locked-set':{const saved=selectedLockedSet();if(!saved||!confirm('保存した固定セット「'+saved.name+'」を削除しますか？\n既存ビルドと装備には影響しません。'))return;modify(()=>{state.lockedSets=lockedSets().filter(x=>x.id!==saved.id);ui.selectedSetId=state.lockedSets[0]?.id||null});flash('保存済みの固定セットを削除しました');break}
-case 'new-build':{const name=prompt('新しいビルド名','Stormcaller 新規');if(!name?.trim())return;modify(()=>{const id=D.uid('build');state.builds.push({id,name:name.trim().slice(0,100),loadout:{},settings:defaultSettings(),createdAt:new Date().toISOString()});state.activeBuildId=id;ui.slot='weapon';ui.itemId=null});flash('ビルドを作成しました');break}
+case 'new-build':ui.modal='new-build';render();break;
+case 'new-build-copy':
+case 'new-build-empty':
+case 'new-build-share':{
+ if(state.builds.length>=1000){flash('ビルドの保存上限に達しています');return}
+ const mode=action.slice('new-build-'.length),equipped=Object.values(b.loadout||{}).filter(x=>Boolean(getItem(x)));
+ if(mode==='copy'&&state.items.length+equipped.length>10000){flash('装備の登録上限に達しています');return}
+ const value=document.getElementById('newBuildName')?.value||b.name+' 新構成';
+ if(!value.trim()){flash('ビルド名を入力してください');return}
+ modify(()=>{const loadout={};
+ if(mode==='share')Object.assign(loadout,b.loadout);
+ if(mode==='copy')for(const [slot,itemId] of Object.entries(b.loadout||{})){
+   const item=getItem(itemId);if(!item)continue;
+   const cp=clone(item);cp.id=D.uid('item');cp.locked=false;cp.createdAt=new Date().toISOString();cp.source='build-copy';
+   state.items.push(cp);loadout[slot]=cp.id;
+ }
+ const id=D.uid('build');state.builds.push({id,name:value.trim().slice(0,100),loadout,
+ settings:mode==='empty'?defaultSettings():clone(b.settings||defaultSettings()),createdAt:new Date().toISOString()});
+ state.activeBuildId=id;ui.slot='weapon';ui.itemId=null;ui.detail='edit';ui.tab='equipment';ui.modal=''});
+ flash(mode==='copy'?'独立した装備の一式を作成しました':mode==='share'?'装備共有のビルドを作成しました':'空のビルドを作成しました');break;}
 case 'duplicate-build':{const name=prompt('複製するビルド名',b.name+' コピー');if(!name?.trim())return;modify(()=>{const cp=JSON.parse(JSON.stringify(b));cp.id=D.uid('build');cp.name=name.trim().slice(0,100);cp.createdAt=new Date().toISOString();state.builds.push(cp);state.activeBuildId=cp.id});flash('装備参照を共有して複製しました');break}
 case 'rename-build':{const name=prompt('ビルド名を変更',b.name);if(name?.trim())modify(()=>{b.name=name.trim().slice(0,100)});break}
 case 'delete-build':{if(state.builds.length<2){flash('最後のビルドは削除できません');return}if(!confirm('ビルド「'+b.name+'」を削除しますか？ 装備保管庫と測定履歴は残ります。'))return;modify(()=>{state.builds=state.builds.filter(x=>x.id!==b.id);state.activeBuildId=state.builds[0].id;ui.itemId=null});break}
