@@ -79,9 +79,12 @@ function calc(doc,build,sub={}){
       if(enabled(category)&&!(category==='unique'&&sub.sourceFilters?.powers?.[def?.id]===false))add(e.stat,e.value,(def?.name||item.nickname||slot)+' · '+labels[e.stat],e.status);
     }
     if(enabled('gems'))for(const [index,gem] of (item.gems||[]).entries()){
-      const effect=D.gemEffect(gem?.type,slot);
-      if(effect)add(effect.stat,effect.value,`${def?.name||slot} · ソケット${index+1} · ${D.gems[gem.type].name}（Tier 6）`,'verified');
-      else if(gem?.type)pending.push(`${slot} · ソケット${index+1}：旧形式・未対応の宝石は集計外`);
+      const effect=D.gemEffect(gem?.type,slot,gem?.tier||6,gem?.value);
+      if(effect&&Number.isFinite(effect.value)){
+        add(effect.stat,effect.value,`${def?.name||slot} · ソケット${index+1} · ${D.gems[gem.type].name}（Tier ${effect.tier}${effect.verified?'':'・実測値'}）`,effect.verified?'verified':'actual');
+      }else if(effect?.tier===7){
+        pending.push(`${slot} · ソケット${index+1}：Perfect Star（Tier 7）の数値未確認。入力するまで補正は加算しません。`);
+      }else if(gem?.type)pending.push(`${slot} · ソケット${index+1}：旧形式・未対応の宝石は集計外`);
     }
   }
   const s=build.settings||{};const base=s.base||{};
