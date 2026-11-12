@@ -84,12 +84,14 @@ change('upgradeKnown',weaponId,true,'checkbox');
 click('input-review');
 assert.match(app.innerHTML,/ゲーム画面と照合した/);
 click('review-confirm-item',weaponId);
-assert.equal(inApp.inputReviews.items[weaponId].checkedAt.length>0,true);
-assert.equal(ctx.DBPInputReview.report(inApp,appBuild).items[0].status,'checked');
+const confirmed=ctx.DBPApp.getState();
+assert.equal(confirmed.inputReviews.items[weaponId].checkedAt.length>0,true);
+assert.equal(ctx.DBPInputReview.report(confirmed,confirmed.builds[0]).items[0].status,'checked');
 click('review-edit-item',null,'weapon');
 change('upgrade',weaponId,'8');
-assert.equal(inApp.items.find(x=>x.id===weaponId).upgradeKnown,false,
+const updated=ctx.DBPApp.getState();
+assert.equal(updated.items.find(x=>x.id===weaponId).upgradeKnown,false,
  'changing the enhancement stage invalidates its confirmation');
-assert.equal(ctx.DBPInputReview.report(inApp,appBuild).items[0].status,'incomplete');
-assert.equal(inApp.schemaVersion,1);
+assert.equal(ctx.DBPInputReview.report(updated,updated.builds[0]).items[0].status,'incomplete');
+assert.equal(updated.schemaVersion,1);
 console.log('PASS: dashboard navigation, editor ownership, enhancement invalidation, persisted confirmations');
