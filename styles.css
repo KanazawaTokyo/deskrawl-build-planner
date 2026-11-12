@@ -641,3 +641,50 @@
 .review-actions .btn{font-size:11px;padding:8px 10px}
 .review-confirmed{font-size:11px;font-weight:600}
 @media(max-width:650px){.review-row{align-items:stretch;flex-direction:column}.review-actions{justify-content:flex-start}.review-progress{align-items:flex-start;flex-direction:column;gap:2px}}
+
+/* Ranking Lab — season-specific builds and measured run journal */
+.ranking-workspace{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.ranking-workspace .page-heading{margin-bottom:0}
+.ranking-topbar{display:flex;gap:12px;align-items:flex-end;justify-content:space-between;flex-wrap:wrap}
+.ranking-board-picker{flex:1;min-width:240px;max-width:600px}
+.ranking-board-picker select{width:100%;background:var(--panel2);border:1px solid var(--line2);color:var(--text);padding:11px;border-radius:10px}
+.ranking-empty{display:flex;flex-direction:column;align-items:flex-start;gap:14px;padding:25px}
+.ranking-empty p{color:var(--muted);line-height:1.7}
+.ranking-overview,.ranking-builds,.ranking-runs{padding:22px}
+.ranking-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.ranking-heading h2{font-size:20px;margin:7px 0}
+.ranking-heading p{font-size:12px}
+.ranking-actions{display:flex;gap:4px;flex-wrap:wrap}
+.ranking-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:20px 0 12px}
+.ranking-metrics>div{padding:15px;border-radius:12px;border:1px solid var(--line);background:var(--panel2);display:flex;flex-direction:column;gap:8px}
+.ranking-metrics small{font-size:11px;color:var(--muted)}
+.ranking-metrics strong{font-size:18px;font-variant-numeric:tabular-nums;word-break:break-word}
+.ranking-gap{font-size:12px;color:var(--mint);margin-bottom:12px}
+.ranking-build-list,.ranking-run-list{display:flex;flex-direction:column;gap:9px;margin:16px 0}
+.ranking-build-row,.ranking-run-row{display:flex;gap:15px;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:11px;padding:12px 14px;background:#111923}
+.ranking-build-row>div:first-child,.ranking-run-row>div:first-child{min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px}
+.ranking-build-row strong,.ranking-run-row strong{font-size:14px;overflow-wrap:anywhere}
+.ranking-build-row small,.ranking-run-row small{font-size:11px;color:var(--muted);overflow-wrap:anywhere}
+.ranking-build-actions,.ranking-run-actions{display:flex;gap:3px;flex-wrap:wrap;justify-content:flex-end}
+.ranking-build-add{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.ranking-build-add .field{min-width:190px;flex:1;max-width:450px}
+.ranking-build-add select{width:100%}
+.ranking-modal{width:min(720px,100%)}
+.ranking-presets{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.ranking-presets .text-btn{background:var(--panel2);border:1px solid var(--line2)}
+.ranking-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px 14px;margin-top:18px}
+.ranking-form .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.ranking-form .field:has(textarea){grid-column:1/-1}
+.ranking-form input,.ranking-form select,.ranking-form textarea{width:100%;min-width:0;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:10px;color:var(--text)}
+.ranking-snapshot{border:1px solid var(--line);border-radius:11px;margin:16px 0;overflow:hidden}
+.ranking-snapshot-row{display:flex;align-items:center;gap:16px;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.ranking-snapshot-row:last-child{border-bottom:0}
+.ranking-snapshot-row strong{font-size:12px;white-space:nowrap}
+.ranking-snapshot-row span{font-size:12px;color:var(--muted);text-align:right}
+@media(max-width:760px){.mainnav{overflow-x:auto;white-space:nowrap}.navbtn{flex:none}.ranking-metrics{grid-template-columns:1fr}.ranking-form{grid-template-columns:1fr}.ranking-form .field:has(textarea){grid-column:auto}.ranking-heading,.ranking-build-row,.ranking-run-row{flex-direction:column;align-items:stretch}.ranking-build-actions,.ranking-run-actions{justify-content:flex-start}.ranking-overview,.ranking-builds,.ranking-runs{padding:15px}.ranking-build-add{flex-direction:column;align-items:stretch}.ranking-build-add .field{max-width:none;width:100%}}
+
+.ranking-snapshot-row>div:first-child{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.ranking-snapshot-row small{font-size:10px;color:var(--faint);overflow-wrap:anywhere}
+.ranking-snapshot-json{border:1px solid var(--line);border-radius:10px;padding:12px 14px;margin-top:15px}
+.ranking-snapshot-json summary{cursor:pointer;color:var(--muted);font-size:12px}
+.ranking-snapshot-json pre{max-height:320px;overflow:auto;font-size:11px;white-space:pre-wrap;overflow-wrap:anywhere}
