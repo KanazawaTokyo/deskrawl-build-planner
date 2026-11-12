@@ -4,7 +4,7 @@ const code=file=>fs.readFileSync(__dirname+'/'+file,'utf8');
 const ctx={window:null,console,Math,Date,JSON,Set,Map,Number,String,Array,URL,URLSearchParams,Blob,
  crypto:require('node:crypto').webcrypto};ctx.window=ctx;ctx.addEventListener=()=>{};vm.createContext(ctx);
 for(const file of ['master.js','runes.js','pets.js','talents.js','calc.js','combat.js','cloud-config.js',
- 'pet-ui.js','talent-ui.js','combat-ui.js','stats-view.js','jp-display.js','ai-export.js'])
+ 'pet-ui.js','talent-ui.js','combat-ui.js','stats-view.js','jp-display.js','input-review.js','ai-export.js'])
  vm.runInContext(code(file),ctx,{filename:file});
 const D=ctx.DBP,E=ctx.DBPAIExport,reportOf=E.buildReport;
 const state=D.makeSeed(),build=state.builds[0];
@@ -16,6 +16,9 @@ assert.equal(parsed.version,1);
 assert.equal(parsed.exportedAt,stamp);
 assert.equal(parsed.buildName,build.name);
 assert.equal(parsed.equipment.length,11,'all eleven equipped slots exported');
+assert.equal(parsed.registrationReview.complete,0,'historical defaults are not verified');
+assert.equal(parsed.registrationReview.total,17,'eleven equipped items and six setting groups');
+assert.equal(parsed.gameMasterVersion,D.version);
 assert.equal(parsed.configuration.runes.slots.length,6,'six rune slots retained including empty slots');
 assert.equal(parsed.configuration.talents.spent,70);
 assert.equal(parsed.configuration.talents.allocations.length,12);
