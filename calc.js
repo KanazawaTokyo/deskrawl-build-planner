@@ -29,7 +29,7 @@ const talentSpecialStats=['basicCritChance','basicRange','basicManaGain','frostC
 const priority=['critChance','critRed','mr','dodge','cdr','mcr'];
 const full=[...talentSpecialStats,...priority,'bonusArmor','bonusMR','stunned','bleeding','poisoned','healingReceived','materialFind','strBonus','thornsBonus','manaRegen','manaBonus','regenBonus','lohBonus',...extraStats,'weaponDamage','weaponSpeed','weaponDps','strongAttack','abilityLevels','maxHP','armor','int','critDamage','lightning','allDamage','damage','healthy','injured','elite','as','bonusHP','mana','move','loh','itemFind','manaKill','goldFind','physicalDR','coldDR','fireDR','arcane','physical','poison','fire','cold','str','dex','thorns','arcaneDR','poisonDR','lightningDR'];
 const armorSlots=new Set(['head','shoulder','chest','gloves','legs','boots']);
-function multiplier(level,pos=0,count=6){const n=Math.max(0,Math.min(12,Number(level)||0));const steps=2*Math.min(n,10);const awarded=Math.floor(steps/count)+(pos<steps%count?1:0);return 1+.05*awarded+(n>=11?.05:0)+(n>=12?.05:0);}
+function multiplier(level,pos=0,count=6){const n=Math.max(0,Math.min(13,Number(level)||0));const steps=2*Math.min(n,10);const awarded=Math.floor(steps/count)+(pos<steps%count?1:0);return 1+.05*awarded+(n>=11?.05:0)+(n>=12?.05:0)+(n>=13?.05:0);}
 function factor(item,idx,level){if(item.slot==='weapon'){const pos=idx==='s'?6:Number(idx)+2;return multiplier(level,pos,7);}const hasArmor=armorSlots.has(item.slot);const count=hasArmor?6:5;const pos=idx==='armor'?0:(idx==='s'?(hasArmor?5:4):(Number(idx)+(hasArmor?1:0)));return multiplier(level,pos,count)}
 function valueOf(item,affixId,idx,level){const a=affixes[affixId];if(!a)return null;const selected=level===undefined?item.upgrade:level;const key=affixId+':'+idx+':'+selected;const over=item.overrides?.[key];if(over!==undefined&&over!==null&&over!=='')return {value:Number(over),status:'actual'};return {value:Number((a[1]*factor(item,idx,selected)).toFixed(2)),status:selected===0?'history':'calculated'};}
 function itemTotal(item,level){
@@ -37,7 +37,7 @@ const out=[];const def=definitions.find(x=>x.id===item.definitionId);const selec
 if(def?.rarity==='Divine'){
   // Fixed tooltip-order values. An upgrade awards 2 x 5%-steps per level,
   // distributed cyclically across speed/damage/Armor and fixed attributes.
-  // Enlightenment I/II adds 5% to each number (baseline additive).
+  // Enlightenment I/II/III adds 5% to each number (baseline additive).
   const fixed=def.fixed||[];const round=n=>Number(n.toFixed(2));
   fixed.forEach(([stat,base],idx)=>{
     const overrideKey='div:'+stat+':'+idx+':'+selected;
@@ -89,6 +89,7 @@ function calc(doc,build,sub={}){
     const runes=window.DBPRunes.selection(s);
     for(const effect of runes.effects)add(effect.stat,effect.value,effect.source,'verified');
     for(const issue of runes.issues)pending.push('ルーン：'+issue);
+    if(runes.equipped.some(r=>r.unverifiedPieceStats))pending.push('新セットルーン：個別OPとスキルLvが未確認のため計算に含めていません。2セット等の確認済み補正は反映しています。');
   }
   const tal=T?T.allocation(s):null;
   // Hero Lv70: known base stats; apply once when using the full talent tree.
