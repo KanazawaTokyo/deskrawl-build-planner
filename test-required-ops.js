@@ -22,8 +22,15 @@ change('definition',item.id,'custom-chest');s=ctx.DBPApp.getState();assert.equal
 change('upgrade',item.id,3);s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===item.id).upgrade,3,'unrelated fields editable');
 change('primary',item.id,'',1);s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===item.id).primary[1],'');
 change('op-lock-primary',item.id,true,1);s=ctx.DBPApp.getState();assert(!s.items.find(x=>x.id===item.id).opLocks.primary[1],'blank OP cannot be locked');
-click('new-item');s=ctx.DBPApp.getState();const cp=s.items.at(-1);assert.equal(cp.opLocks.primary[0],true,'candidate carries required OP');assert.equal(cp.locked,false);
-change('op-lock-primary',cp.id,false,0);s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===item.id).opLocks.primary[0],true,'candidate change independent');
+click('new-item');s=ctx.DBPApp.getState();const cp=s.items.at(-1);
+assert.equal(cp.locked,false);
+assert.deepEqual(cp.primary,[],'new gear must have no inherited OP');
+assert.deepEqual(cp.opLocks.primary,[],'new gear must have no inherited required locks');
+assert.equal(cp.definitionId,'custom-chest','new gear starts empty for explicit type selection');
+change('definition',cp.id,'unyielding');s=ctx.DBPApp.getState();
+assert.equal(s.items.find(x=>x.id===cp.id).definitionId,'unyielding','a new gear item accepts a new definition');
+assert.equal(s.items.find(x=>x.id===item.id).opLocks.primary[0],true,'new candidate changes never affect the original');
+
 click('duplicate-item',item.id);s=ctx.DBPApp.getState();assert.equal(s.items.at(-1).opLocks.primary[0],true);
 if(item.secondary){change('op-lock-secondary',item.id,true);s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===item.id).opLocks.secondary,true);change('secondary',item.id,'');s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===item.id).secondary,item.secondary)}
 change('locked',item.id,true);change('op-lock-primary',item.id,false,0);s=ctx.DBPApp.getState();assert.equal(s.items.find(x=>x.id===item.id).opLocks.primary[0],true,'whole-gear lock takes priority');
