@@ -22,12 +22,12 @@ const tracked={
 };
 function itemSignature(it){
  if(!it)return '';
- return JSON.stringify([it.slot,it.definitionId,it.primary||[],it.secondary||'',
+ return JSON.stringify([D.version,it.slot,it.definitionId,it.primary||[],it.secondary||'',
   it.upgrade,it.upgradeKnown,it.overrides||{},it.gems||[],it.owned??null]);
 }
 function settingsSignature(settings,key){
  const fields=tracked[key];
- return fields?JSON.stringify(fields.map(k=>settings?.[k]??null)):'';
+ return fields?JSON.stringify([D.version,...fields.map(k=>settings?.[k]??null)]):'';
 }
 function itemProblems(it,slot){
  const problems=[];
