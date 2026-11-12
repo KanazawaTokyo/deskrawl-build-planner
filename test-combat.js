@@ -176,6 +176,7 @@ assert.equal(B.skillRank(obsoleteRanks,skillStats,'lightningStorm').runeBonus,0,
 assert.equal(JSON.parse(local.deskrawl_planner_v01).builds[0].settings.combat.defenseType,'physical');
 // A new build without the ring can opt into special cases independently.
 click('new-build');
+click('new-build-empty');
 click('tab-combat');
 assert(!app.innerHTML.includes('シュレーディンガーの指輪を装備中'));
 change('forceHealthy',true,'checkbox');
