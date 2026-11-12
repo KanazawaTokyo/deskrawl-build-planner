@@ -105,6 +105,7 @@ assert.equal(JSON.stringify(ctx.DBPApp.getState().items),gameBefore,'no equipmen
 const d=ctx.DBPAIExport.buildReport(ctx.DBPApp.getState(),ctx.DBPApp.getState().builds[0]);
 assert.equal(d.configuration.sustainedDpsSettings.duration,60,'ChatGPT export carries sustained DPS scenario');
 click('new-build');
+click('new-build-empty');
 click('tab-combat');
 assert.equal(ctx.DBPApp.getState().builds.at(-1).settings.dps,undefined,'a new build starts with default DPS inputs');
 console.log('PASS: 15/30/60s Stormcaster Mana timeline, CDR/MCR, rank8 Nova, read-only damage reuse, UI, per-build save and AI export');
