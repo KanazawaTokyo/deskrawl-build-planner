@@ -578,3 +578,28 @@
 @media(max-width:1100px){.dps-summary{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:780px){.dps-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:500px){.dps-fields,.dps-details{grid-template-columns:minmax(0,1fr)}.dps-stat strong{font-size:19px}.dps-summary{gap:7px}.dps-stat{padding:10px}}
+
+
+/* Equipment workflow: primary actions are independent from editing protection. */
+.new-build-main{white-space:nowrap;padding:10px 14px}
+.gear-workflow-bar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:19px 20px;border:1px solid #395d56;border-radius:13px;background:linear-gradient(115deg,#172d2e,#17212d)}
+.gear-workflow-bar h1{font-size:20px;margin:7px 0 5px;overflow-wrap:anywhere}
+.gear-workflow-bar p{font-size:11px;line-height:1.7;color:var(--muted);max-width:510px}
+.gear-workflow-actions{display:flex;align-items:flex-end;flex-direction:column;gap:7px;flex:none}
+.gear-workflow-actions .text-btn{color:#d8a6aa}
+.candidate-card{order:0}
+.candidate-entry{display:flex;align-items:center;gap:9px;border:1px solid #2d3743;border-radius:10px;background:#111821;padding:4px}
+.candidate-entry.active{border-color:#4c887b;background:#192a2c}
+.candidate-entry .candidate{flex:1;min-width:0;border:0;background:transparent;padding:8px}
+.candidate-entry .candidate:hover{background:#1c2d32}
+.candidate-entry .candidate small{line-height:1.5}
+.candidate-entry .candidate-status{font-size:11px;color:var(--mint);font-weight:700;white-space:nowrap;padding:0 12px}
+.candidate-equip{flex:none;min-height:36px;margin-right:5px}
+.new-build-options{display:grid;gap:10px}
+.new-build-option{border:1px solid #364859;border-radius:11px;background:#101b25;color:var(--text);padding:16px 18px;display:flex;flex-direction:column;gap:8px;text-align:left;position:relative}
+.new-build-option:hover,.new-build-option:focus-visible{border-color:var(--mint);background:#18312e}
+.new-build-option strong{font-size:13px}
+.new-build-option span{font-size:11px;color:var(--muted);line-height:1.65;padding-right:65px}
+.new-build-option b{position:absolute;right:14px;top:14px;background:#28493d;color:#b8f0d9;border-radius:7px;padding:4px 7px;font-size:10px}
+@media(max-width:1100px){.gear-workflow-bar{align-items:flex-start;flex-direction:column}.gear-workflow-actions{align-items:flex-start;flex-direction:row;flex-wrap:wrap}}
+@media(max-width:650px){.new-build-main{width:100%}.gear-workflow-bar{padding:15px}.gear-workflow-actions{width:100%}.gear-workflow-actions .btn{flex:1}.candidate-entry{gap:5px}.candidate-entry .candidate{padding:8px 5px}.candidate-equip{padding:10px 9px;font-size:11px}.candidate-entry .candidate-status{padding:0 5px}.new-build-option span{padding-right:0}.new-build-option b{position:static;align-self:flex-start}}
