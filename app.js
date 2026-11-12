@@ -226,6 +226,23 @@ else if(ui.settingsTab==='base')body=`<p class="helper">装備外の基礎値の
 return `<div class="side-panel settings-panel"><div class="side-title"><div><small>BUILD CONFIGURATION</small><h2>ビルド設定</h2></div><button class="icon-btn" data-action="close-settings">×</button></div><label class="field"><span>設定項目</span><select id="settingsCategory">${[['paragon','パラゴン'],['runes','ルーン'],['consumables','ポーション・料理'],['base','装備外の基礎値']].map(x=>opt(x[0],x[1],ui.settingsTab)).join('')}</select></label><div class="setting-form">${body}</div><div class="notice gentle">設定変更はこのビルドだけに反映。共有装備は別ビルドでも使用できます。</div></div>`;}
 function settingNumber(key,label,value,min=0,max=9999){return `<label class="field"><span>${E(label)}</span><input type="number" min="${min}" max="${max}" step="any" data-change="setting" data-key="${E(key)}" value="${E(value)}" /></label>`;}
 function renderModal(){if(!ui.modal)return '';let content='';
+if(ui.modal==='delete-item'){
+ const item=getItem(ui.deleteTargetId);
+ if(!item){
+  content='<div class="modal-title"><h2>装備候補が見つかりません</h2><button type="button" data-action="modal-close" class="icon-btn" aria-label="閉じる">×</button></div><p class="helper">すでに削除済みか、別の操作で変更された可能性があります。</p><div class="modal-actions"><button type="button" class="btn" data-action="modal-close">閉じる</button></div>';
+ }else{
+  const refs=state.builds.filter(profile=>Object.values(profile.loadout||{}).includes(item.id));
+  const active=refs.some(profile=>profile.id===build().id);
+  content=`<div class="modal-title"><h2>装備候補を削除</h2><button type="button" data-action="modal-close" class="icon-btn" aria-label="閉じる">×</button></div>
+  <div class="delete-target"><small>削除する装備</small><strong>${E(titleOf(item))}</strong><span>${E(slotLabel(item.slot))} · ${E(window.DBPJP?.rarity(def(item)?.rarity)||def(item)?.rarity||'装備')} · ID末尾 ${E(item.id.slice(-8))}</span></div>
+  <p class="helper">この装備候補を保管庫から完全に削除します。<strong>元には戻せません。</strong> 装備候補が複数あり同じ名前でも、対象は上のIDの1件だけです。</p>
+  ${item.locked?'<div class="delete-warning">編集保護されている装備です。削除を確定するとこの装備個体も削除されます。</div>':''}
+  ${refs.length?`<div class="delete-impact"><strong>影響を受けるビルド：${refs.length}件</strong><ul>${refs.map(profile=>`<li>${E(profile.name)}${profile.id===build().id?'（使用中のビルド）':''}</li>`).join('')}</ul><p>削除すると、これらのビルドから該当装備だけが外れます。ほかの装備は変更されません。</p></div>`:'<div class="delete-impact">この装備を使用中のビルドはありません。</div>'}
+  <p class="helper">保存済みの一式スナップショットは削除されません。</p>
+  <div class="modal-actions"><button type="button" class="btn outline" data-action="modal-close">キャンセル</button><button type="button" class="btn danger-btn" data-action="confirm-delete-item" data-id="${E(item.id)}">この装備を削除する</button></div>`;
+ }
+}
+
 if(ui.modal==='new-build')content=`<div class="modal-title"><h2>新しいビルド・一式を作成</h2><button data-action="modal-close" class="icon-btn" aria-label="閉じる">×</button></div>
  <label class="field"><span>ビルド名</span><input id="newBuildName" maxlength="100" value="${E(build().name+' 新構成')}" /></label>
  <div class="new-build-options">
@@ -349,22 +366,31 @@ case 'unequip':{const current=equipment(ui.slot);if(!current)return;
  if(!confirm('「'+titleOf(current)+'」をこのビルドから外しますか？\n装備は削除されず保管庫に残ります。'))return;
  modify(()=>{delete b.loadout[ui.slot];ui.itemId=current.id;ui.detail='edit'});
  flash('装備を外しました。保管庫に残っています。');break;}
-case 'delete-item':{const x=getItem(id);if(!x){flash('装備候補が見つかりません');return}
+case 'delete-item':{
+ const item=getItem(id);
+ if(!item){flash('装備候補が見つかりません。ページを再読み込みしてください。');return}
+ ui.deleteTargetId=item.id;ui.modal='delete-item';render();break;
+}
+case 'confirm-delete-item':{
+ // Only the currently displayed delete dialog can authorize a deletion.
+ if(ui.modal!=='delete-item'||id!==ui.deleteTargetId){flash('削除対象をもう一度選択してください');return}
+ const item=getItem(id);
+ if(!item){ui.modal='';ui.deleteTargetId=null;render();flash('対象の装備は見つかりません');return}
  const refs=state.builds.filter(profile=>Object.values(profile.loadout||{}).includes(id));
- const names=refs.map(profile=>profile.name).join('、');
- const protectText=x.locked?'\nこの装備は編集保護されています。保護も解除して削除します。':'';
- const refsText=refs.length?'\n使用中のビルド（'+refs.length+'件）：'+names+'\nすべてのビルドからこの装備を外します。':'';
- const message='「'+titleOf(x)+'」を保管庫から完全に削除しますか？'+protectText+refsText+
-  '\n\nこの操作は取り消せません。保存済みの一式スナップショットは残ります。';
- if(!confirm(message))return;
- if((x.locked||refs.length>1)&&!confirm('最終確認：この装備を本当に削除しますか？\n'+(refs.length?'使用中の'+refs.length+'ビルドからも外されます。':'編集保護された装備です。')))return;
+ const name=titleOf(item),number=refs.length;
  modify(()=>{
-  for(const profile of refs)for(const [slot,itemId] of Object.entries(profile.loadout||{}))
+  for(const profile of state.builds)for(const [slot,itemId] of Object.entries(profile.loadout||{})){
    if(itemId===id)delete profile.loadout[slot];
-  state.items=state.items.filter(z=>z.id!==id);
-  ui.itemId=null;ui.detail='edit';
+  }
+  state.items=state.items.filter(candidate=>candidate.id!==id);
+  ui.itemId=null;
+  ui.deleteTargetId=null;
+  ui.modal='';
+  ui.detail='edit';
  });
- flash('装備候補を削除しました（'+refs.length+'ビルドから解除）');break}
+ flash('「'+name+'」を削除しました（使用ビルド '+number+'件の装備を解除）');
+ break;
+}
 case 'compare-equal':ui.compareMode='equal';render();break;case 'compare-actual':ui.compareMode='actual';render();break;
 case 'stat':if(!window.DBPStatsView.statKeys.includes(value))return;ui.selectedStat=value;ui.settingsOpen=false;render();break;case 'settings':ui.settingsOpen=true;render();break;case 'close-settings':ui.settingsOpen=false;render();break;
 case 'save-locked-set':{if(!canSaveLockedSet()){flash('一式保存には11部位の装備が必要です。固定は不要です。');return}
