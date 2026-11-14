@@ -1,0 +1,103 @@
+{
+  "id": "sorcerer-training-dummy-2026-11-14",
+  "title": "ソーサラー 嵐呼び6/6 訓練用ダミー（動画実測）",
+  "source": {
+    "type": "player-video",
+    "url": "https://i.gyazo.com/c856cea2075af4f943db4d4c58984311.mp4",
+    "recordedAtLocalDate": "2026-11-14",
+    "durationVideoSeconds": 37.249,
+    "frameRate": 21.477,
+    "width": 1280,
+    "height": 126
+  },
+  "combat": {
+    "skills": [
+      "electrocute",
+      "lightningStorm",
+      "iceNova",
+      "flameAura"
+    ],
+    "runes": "Stormcaller 6/6（前回報告からの引継ぎ。録画だけでは厳密な6枠内訳を照合できない）",
+    "buildExportReference": "嵐呼び 11/12（2026-11-12のエクスポート。録画時に完全一致するとは未確認）"
+  },
+  "measurement": {
+    "resetAtVideoSecondApprox": 0.6,
+    "displayUnit": "B (10億)",
+    "observedDpsB": 4.7,
+    "observedDpsAbsolute": 4700000000,
+    "displayIsRunningAverageInference": true,
+    "points": [
+      {
+        "videoSecond": 0.6,
+        "totalDamageB": 0,
+        "displayDpsB": 0
+      },
+      {
+        "videoSecond": 5,
+        "totalDamageB": 19,
+        "displayDpsB": 4.4
+      },
+      {
+        "videoSecond": 10.6,
+        "totalDamageB": 47,
+        "displayDpsB": 4.7
+      },
+      {
+        "videoSecond": 20.6,
+        "totalDamageB": 94,
+        "displayDpsB": 4.7
+      },
+      {
+        "videoSecond": 30.6,
+        "totalDamageB": 141,
+        "displayDpsB": 4.7
+      },
+      {
+        "videoSecond": 37.1,
+        "totalDamageB": 173,
+        "displayDpsB": 4.7
+      }
+    ],
+    "quality": "UI display rounded to ~0.1B/s for DPS; cumulative total generally whole B. Image crop not sufficient to count all individual overlapping hits."
+  },
+  "visibleDebuffs": [
+    {
+      "label": "燃焼",
+      "observedAtVideoSeconds": [
+        16,
+        16.5
+      ],
+      "detail": "0.5秒ごとに火炎ダメージ"
+    },
+    {
+      "label": "脆弱",
+      "observedAtVideoSeconds": [
+        17,
+        17.5
+      ],
+      "detail": "受けるダメージ+30%"
+    },
+    {
+      "label": "名前判読不能の累積被ダメ増加",
+      "observedAtVideoSeconds": [
+        18,
+        19,
+        19.5
+      ],
+      "detail": "最大10スタック・残り4秒"
+    },
+    {
+      "label": "ボスの不屈",
+      "observedAtVideoSeconds": [
+        18.5
+      ],
+      "detail": "行動制御の効果を受けにくくする"
+    }
+  ],
+  "warnings": [
+    "Video starts with approximately 941B pre-reset history; use data only from the reset at around 0.6s.",
+    "Burn, Vulnerable, stacking amplification and pet attacks are not completely modeled in combat runtime v2.",
+    "Latest saved build at the exact video time is not automatically available; the 11/12 export is historical and contains unverified equipment.",
+    "Do not treat fitting one benchmark as validation of general ranking time predictions."
+  ]
+}
