@@ -29,9 +29,11 @@ function abilitySelect(index,value){
 function card(result,title){
  if(!result.ok)return '<section class="card simulation-score"><h2>'+E(title)+'</h2><p class="notice">'+E(result.reason)+'</p></section>';
  const done=result.outcome==='clear';
- const state=done?'クリア · '+fmt(result.finishTime,2)+'秒':result.outcome==='death'?
+ const state=done?'クリア · '+fmt(result.finishTime,2)+'秒':result.outcome==='dummy-finished'?
+  'ダミー測定完了 · '+fmt(result.elapsed,2)+'秒':result.outcome==='death'?
   '死亡 · '+fmt(result.deathTime,2)+'秒':result.outcome==='timeout'?'制限時間終了':'イベント上限で中断';
  const d=result.damageBySource,entries=[
+  ['平均DPS',fmt(result.averageDps,0)],
   ['総ダメージ',fmt(result.totalDamage,0)],['有効ダメージ',fmt(result.appliedDamage,0)],
   ['落雷',fmt(result.stormHits,0)+'ヒット'],['雷球',fmt(result.ballPulses,0)+'パルス'],
   ['Mana残量',fmt(result.manaEnd,1)+' / '+fmt(result.manaMax,0)],
@@ -83,7 +85,7 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
   ?second.finishTime-base.finishTime:null;
  const others=state.builds.filter(x=>x.id!==build.id);
  const count=Runes.selection(build.settings||{}).counts.stormcaller||0;
- const noHP=o.enemyHP==null;
+ const noHP=o.enemyHP==null&&o.mode!=='dummy';
  const actual=Rule.actualStormRotation;
  const matchesActual=o.slots.every((id,i)=>id===actual[i]);
  let html='<main class="workspace simulation-workspace">'+
@@ -95,9 +97,11 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
   '<span>敵HP・出現数・間隔はゲームで確認するか、仮定として指定してください</span></div></div>'+
   '<div class="sim-core-inputs">'+
   select('mode','戦闘形式',o.mode,modes)+
+  (o.mode==='dummy'?'<div class="sim-dummy-note">実測と比較：ダミーは不死・敵撃破時のMana回復なし。攻撃・バフは指定時間まで継続します。敵の状態異常やペット攻撃はまだ未校正です。</div>':'')+
   numeric('duration','制限時間（秒）',o.duration,'予測を終了する時間','180')+
-  numeric('enemyHP','通常敵のHP',o.enemyHP,'必須。実測が不明なら仮定の値を入力','例：100000000')+
-  numeric('observedTime','実測クリア時間（秒）',o.observedTime,'任意。予測誤差の比較専用','例：116')+
+  (o.mode==='dummy'?numeric('observedDps','実測DPS',o.observedDps,'未入力なら実測との差は計算しません','例：4700000000'):
+   numeric('enemyHP','通常敵のHP',o.enemyHP,'必須。実測が不明なら仮定の値を入力','例：100000000')+
+   numeric('observedTime','実測クリア時間（秒）',o.observedTime,'任意。予測誤差の比較専用','例：116'))+
   (o.mode==='single'?'':numeric('enemiesPerWave','1ウェーブの敵の数',o.enemiesPerWave,'3などの仮定値を指定'))+
   (o.mode==='waves'?numeric('waveCount','総ウェーブ数',o.waveCount,'ゲーム内の値を確認', '21')+
    numeric('spawnGap','撃破から次の出現まで（秒）',o.spawnGap,'ゲーム内の動画で校正','4'):'')+
@@ -128,6 +132,7 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
    '<button class="btn outline" data-action="lab-apply-known-rotation">この4スキルを適用</button>')+'</div>'+
   '<div class="sim-slot-grid">'+o.slots.map((id,i)=>abilitySelect(i,id)).join('')+'</div></div>'+
   '<p class="helper">フレイムオーラは敵への直接攻撃ではなく、5秒間のクリティカル強化です（Lv10時：率+10pt、ダメージ+140%）。自動戦闘中のみ発動します。</p>'+
+  (o.mode==='dummy'?'<button class="btn outline" data-action="lab-apply-dummy-benchmark">11月14日の実測（4.7B DPS）を入力</button>':'')+
   '<p class="helper">変更した条件は現在のビルドに保存されます。変更前後の比較は同じ敵条件を使用します。</p></section>'+
   '<div class="sim-comparison">'+card(base,build.name)+
   '<section class="card simulation-alternative"><div class="card-heading"><div><h2>ビルド比較</h2><span>ルーンだけの仮想変更も実際の装備データを変更しません</span></div></div>'+
@@ -143,22 +148,28 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
    (comparison<0?' · 候補の方が速い':comparison>0?' · 現在の方が速い':' · 同じ時間')+'</p>':
    '<p class="helper">両構成が制限時間内にクリアした場合のみ、タイム差を評価します。未クリアなら強さの順位は断定しません。</p>')+
    '<p class="helper">※ルーン仮想比較は6枠すべてを置換した極端な試験条件です。実際の最適装備を推奨する結果ではありません。</p></section></div>'+
-  (o.observedTime!==null&&base.ok?'<section class="card sim-calibration"><h2>実測との照合</h2>'+
+  (o.mode==='dummy'&&o.observedDps!==null&&base.ok?
+   '<section class="card sim-calibration"><h2>ダミー実測との照合</h2>'+
+   '<p>実測 '+fmt(o.observedDps,0)+' DPS ／ 予測 '+fmt(base.averageDps,0)+
+   ' DPS ／ 誤差 '+fmt(Math.abs(base.averageDps-o.observedDps)/o.observedDps*100,2)+'%</p>'+
+   '<p class="helper">これはモデルの残差であり、精度保証ではありません。燃焼/脆弱/積層デバフ/ペット等は未校正。条件変更だけで一致させることは避けてください。</p></section>':
+   o.mode!=='dummy'&&o.observedTime!==null&&base.ok?'<section class="card sim-calibration"><h2>実測との照合</h2>'+
    (base.outcome==='clear'?'<p>実測 '+fmt(o.observedTime,2)+'秒 ／ 予測 '+fmt(base.finishTime,2)+'秒 ／ 絶対誤差 '+fmt(Math.abs(base.finishTime-o.observedTime),2)+'秒</p>':
     '<p>モデルは時間内にクリアしていません。実測に対する時間誤差を算出できません。</p>')+
    '<p class="helper">実測に合わせて係数を自動調整していません。別の実戦データで再検証してください。</p></section>':'')+
   '<section class="card sim-trials"><div class="card-heading"><div><h2>クリティカル変動の確認</h2><span>固定Seedの5試行 · 敵AIなどは未サンプリング</span></div>'+
   '<button class="btn outline" data-action="lab-run-trials" '+(noHP?'disabled':'')+'>5回試行</button></div>'+
-  (trials?.ok?'<p>クリア率 '+fmt(trials.clearRate*100,0)+'% · 中央値 '+fmt(trials.median,2)+
+  (trials?.ok&&o.mode==='dummy'?'<p>5回試行済み（ダミーはクリアタイムではなくDPSで比較してください）</p>':
+  trials?.ok?'<p>クリア率 '+fmt(trials.clearRate*100,0)+'% · 中央値 '+fmt(trials.median,2)+
    '秒 · 最短 '+fmt(trials.fastest,2)+'秒 · 最長 '+fmt(trials.slowest,2)+'秒</p>':
    '<p class="helper">必要なときに実行します。5回の試行だけで統計的な有意差は断定できません。</p>')+'</section>'+
-  '<section class="card sim-sweep"><div class="card-heading"><div><h2>難易度による優劣の変化</h2><span>通常敵HPを0.25・0.5・1・2・4倍に変更した同条件比較</span></div>'+
+  (o.mode==='dummy'?'':'<section class="card sim-sweep"><div class="card-heading"><div><h2>難易度による優劣の変化</h2><span>通常敵HPを0.25・0.5・1・2・4倍に変更した同条件比較</span></div>'+
    '<button class="btn outline" data-action="lab-run-sweep" '+(noHP||!candidate?'disabled':'')+'>HP別に比較</button></div>'+
    (sweep?.ok?'<div class="sim-sweep-scroll"><table class="sim-sweep-table"><thead><tr><th>HP倍率</th><th>現在</th><th>比較候補</th><th>判定</th></tr></thead><tbody>'+
      sweep.rows.map(x=>'<tr><td>'+fmt(x.factor,2)+'倍</td><td>'+fmt(x.baselineTime,2)+'</td><td>'+fmt(x.candidateTime,2)+'</td><td>'+E(x.status)+'</td></tr>').join('')+
      '</tbody></table></div><p class="helper">'+E(sweep.notice)+'</p>':
      '<p class="helper">計算結果から候補のHP境界を探すための実験です。現在の敵のHPを入力すると実行できます。</p>')+
-   '</section>'+
+   '</section>')+
   (base.ok?eventTable(base):'');
  html+='<details class="card sim-coverage"><summary>計算の信頼性・未対応ルール</summary>'+
   '<p class="helper">未対応の効果を「0である」と断定しません。精度を保証しない理由を表示します。</p>'+
