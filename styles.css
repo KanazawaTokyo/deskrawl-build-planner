@@ -756,3 +756,46 @@
 @media(max-width:980px){.build-toolbar{flex-direction:column;align-items:stretch}.build-toolbar .profile-control{max-width:none;width:100%}.build-toolbar .profile-buttons{justify-content:flex-start}}
 @media(max-width:760px){.build-toolbar{padding:12px 0 14px;gap:11px}.build-toolbar .profile-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%}.build-toolbar .new-build-main{grid-column:1/-1;width:100%}.build-toolbar .profile-buttons>.btn,.build-toolbar .build-version-button,.build-toolbar .profile-more summary{width:100%;min-height:41px;justify-content:center}.build-toolbar .profile-more{min-width:0}.build-toolbar .profile-control{gap:8px}.profile-more-menu{right:0}.saved-version-grid{grid-template-columns:1fr 1fr}}
 @media(max-width:460px){.build-toolbar .profile-buttons>.btn,.build-toolbar .build-version-button,.build-toolbar .profile-more summary{padding:9px 5px;font-size:11px}.build-version-button{gap:4px}.saved-version-quick{flex-direction:column;align-items:stretch}.saved-version-quick .btn{width:100%}.saved-version-grid{grid-template-columns:1fr}.saved-version-actions{flex-direction:column;align-items:stretch}.saved-version-actions>*{width:100%}}
+
+
+/* Combat Lab v2: compact comparison-first layout, advanced assumptions hidden until needed. */
+.sim-view-switch{width:100%;display:flex;flex-wrap:wrap;gap:9px;align-items:center;margin:4px 0 15px;padding:0 4px}
+.sim-view-switch .btn{min-height:38px}
+.simulation-workspace{max-width:1250px;margin:auto;display:flex;flex-direction:column;gap:17px}
+.simulation-workspace .page-heading{margin-bottom:0}
+.sim-focusbar{border:1px solid var(--line2);background:#18242e;border-radius:10px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:12px 15px;font-size:12px;color:var(--muted)}
+.sim-focusbar strong{color:var(--text)}
+.simulation-config,.simulation-score,.simulation-alternative,.sim-calibration,.sim-trials{padding:20px}
+.sim-core-inputs,.sim-advanced-grid,.sim-slot-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:15px 0}
+.simulation-workspace .field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.simulation-workspace .field>span{font-size:12px;font-weight:650;line-height:1.5}
+.simulation-workspace .field>small{font-size:10px;color:var(--muted);line-height:1.5}
+.simulation-workspace .field input,.simulation-workspace .field select{color:var(--text);background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:10px 11px;width:100%;min-width:0}
+.sim-advanced{border:1px solid var(--line2);border-radius:11px;padding:12px 15px;margin:13px 0;background:#111b24}
+.sim-advanced>summary{font-size:12px;color:var(--mint);cursor:pointer;font-weight:650}
+.sim-slot-title{display:flex;align-items:center;justify-content:space-between;gap:10px;font-weight:650;font-size:13px;flex-wrap:wrap;margin-top:15px}
+.sim-slot-title small{font-size:11px;color:var(--muted);font-weight:400}
+.sim-comparison{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.simulation-score,.simulation-alternative{min-width:0}
+.sim-result-line{font-weight:750;font-size:19px;margin:12px 0 18px}
+.sim-mini-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.sim-mini-metrics>div{min-width:0;border-radius:9px;padding:10px;background:var(--panel2);border:1px solid var(--line);display:flex;flex-direction:column;gap:8px}
+.sim-mini-metrics small{font-size:10px;color:var(--muted)}
+.sim-mini-metrics strong{font-size:14px;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.sim-damage-list{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.sim-damage-list>div{display:flex;justify-content:space-between;gap:12px;border-bottom:1px solid var(--line);font-size:11px;padding-bottom:6px}
+.sim-comparison .engine-pending{margin-top:16px}
+.sim-compare-controls{margin:16px 0}
+.sim-delta{color:var(--mint);font-weight:750;font-size:15px;margin:16px 0}
+.sim-calibration p,.sim-trials p{margin:12px 0;font-size:13px;line-height:1.7}
+.sim-trials .card-heading{align-items:center}
+.sim-logs,.sim-coverage{padding:16px 20px}
+.sim-logs>summary,.sim-coverage>summary{font-weight:700;cursor:pointer;font-size:13px}
+.sim-log-head,.sim-log-row{display:grid;grid-template-columns:64px 1fr 75px 45px;gap:9px;border-bottom:1px solid var(--line);padding:8px 5px;font-size:11px}
+.sim-log-head{color:var(--muted);margin-top:15px}
+.sim-log-row>span:nth-child(3){text-align:right;font-variant-numeric:tabular-nums}
+.sim-coverage h3{font-size:12px;margin:16px 0 8px}
+.sim-coverage li{font-size:11px;line-height:1.7;margin:5px 0}
+@media(max-width:1120px){.sim-core-inputs,.sim-advanced-grid,.sim-slot-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:760px){.sim-comparison{grid-template-columns:1fr}.simulation-config,.simulation-score,.simulation-alternative,.sim-calibration,.sim-trials{padding:15px}.sim-view-switch .btn{flex:1}.sim-result-line{font-size:17px}}
+@media(max-width:540px){.sim-core-inputs,.sim-advanced-grid,.sim-slot-grid{grid-template-columns:1fr}.sim-mini-metrics{grid-template-columns:1fr 1fr}.sim-logs,.sim-coverage{padding:12px}.sim-log-head,.sim-log-row{grid-template-columns:47px 1fr 54px 28px;gap:4px;font-size:10px}}
