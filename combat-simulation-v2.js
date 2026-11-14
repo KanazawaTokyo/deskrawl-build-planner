@@ -134,17 +134,21 @@ function simulate(stats,settings={},context={},raw={}){
   if(target.hp<=EPS){
    output.kills++;
    const reward=Math.max(0,n(effective.manaKill));
-   mana=Math.min(maxMana,mana+reward);output.manaFromKills+=Math.min(reward,maxMana);
+   const actual=Math.min(reward,maxMana-mana);
+   mana+=actual;output.manaFromKills+=actual;
    log('kill',{id:target.id,from:source,manaReward:reward});
    checkWaveClear();
   }
  }
  function hit(e,ability,source,overrides={}){
   if(!e||e.hp<=EPS)return 0;
+  const {critDamageBonus=0,...options}=overrides;
   const dyn={...ctxBase,abilityId:ability,enemyHealth:e.hp/e.maxHP*100,
    elite:e.boss||ctxBase.elite,elementalStacks:shoulderUntil>time-EPS?shoulderStacks:0,
-   ...overrides};
-  const h=Combat.attack(stats,settings,dyn,context);
+   ...options};
+  const dynamicStats=critDamageBonus?{...stats,effective:{...effective,
+   critDamage:n(effective.critDamage)+critDamageBonus}}:stats;
+  const h=Combat.attack(dynamicStats,settings,dyn,context);
   const damage=chanceCrit?
    (random()<h.critChance/100?h.critical?.final:h.normal?.final):h.expected;
   if(!Number.isFinite(damage)||damage<0)return 0;
@@ -161,7 +165,8 @@ function simulate(stats,settings={},context={},raw={}){
   const chance=rank/8;
   const gain=rank?50+10*rank:0;
   const reward=chanceCrit?(random()<chance?gain:0):chance*gain;
-  mana=Math.min(maxMana,mana+reward);output.manaRestored+=reward;
+  const actual=Math.min(reward,maxMana-mana);
+  mana+=actual;output.manaRestored+=actual;
   log('nova-recover',{reward});
  }
  function emitStorm(){
@@ -217,7 +222,8 @@ function simulate(stats,settings={},context={},raw={}){
   for(const enemy of [...oldTargets]){
    if(enemy.hp>EPS&&Math.abs(enemy.x-point)<=o.splashRadius+EPS){
     hit(enemy,'other','beam',{skillPercent:percent,skillFlat:0,damageType:'cold',attackType:'strong',
-     lightningAbility:false,elementalStacks:channel.stacks});
+     lightningAbility:false,elementalStacks:channel.stacks,
+     critDamageBonus:rime?120*Math.floor((elapsed+EPS)/1):0});
    }
   }
   output.beamTicks++;log('beam-tick',{percent});
@@ -237,7 +243,8 @@ function simulate(stats,settings={},context={},raw={}){
   if(category==='basic'){
    const gain=skill.manaGain+Math.max(0,n(effective.basicManaGain))+
     (id==='electrocute'?Math.max(0,n(effective.electrocuteManaGain)):0);
-   mana=Math.min(maxMana,mana+gain);output.manaRestored+=gain;
+   const actual=Math.min(gain,maxMana-mana);
+   mana+=actual;output.manaRestored+=actual;
    const target=nearest();
    if(target){
     if(id==='flameLightning'){
