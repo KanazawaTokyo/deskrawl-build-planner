@@ -3,7 +3,7 @@ const D=window.DBP,C=window.DBPCalc;
 const PU=window.DBPPetUI||null;
 const LS='deskrawl_planner_v01',CFG='deskrawl_planner_cloud_v01',SESSION='deskrawl_planner_session_v01';
 let state;try{const raw=localStorage.getItem(LS);state=raw?JSON.parse(raw):D.makeSeed();if(!state||state.schemaVersion!==1)throw Error('Invalid saved schema');}catch(e){state=D.makeSeed()}
-let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',optimizerPosition:'primary:0',optimizerSelected:'',settingsOpen:false,settingsTab:'paragon',combatSkillsOpen:true,talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',rankingBoardId:'',rankingPreset:'boss',rankingRunId:'',engineCompareBuildId:'',labView:'new',labCompareMode:'runes',labCompareBuildId:'',labTrials:null,cloudNote:'',status:'local',dirty:false};
+let ui={tab:'equipment',slot:'chest',itemId:null,detail:'edit',compareMode:'equal',equalLevel:10,selectedStat:'mr',optimizerPosition:'primary:0',optimizerSelected:'',settingsOpen:false,settingsTab:'paragon',combatSkillsOpen:true,talentSelected:'arcaneInsight',modal:'',mobileDetails:false,compareBuildId:'',rankingBoardId:'',rankingPreset:'boss',rankingRunId:'',engineCompareBuildId:'',labView:'new',labCompareMode:'runes',labCompareBuildId:'',labTrials:null,labSweep:null,cloudNote:'',status:'local',dirty:false};
 let cloudCfg;try{const builtIn=window.DBP_CLOUD_CONFIG;const local=JSON.parse(localStorage.getItem(CFG)||'null');cloudCfg=builtIn?.url&&builtIn?.key?builtIn:local}catch(e){cloudCfg=window.DBP_CLOUD_CONFIG||null}
 let session;try{session=JSON.parse(localStorage.getItem(SESSION)||'null')}catch(e){session=null}
 let cloudRevision=0,cloudSaveTimer=null,cloudBusy=false,cloudDirty=false,cloudSyncBlocked=false;const app=document.getElementById('app');const toast=document.getElementById('toast');
@@ -160,7 +160,7 @@ function renderEngine(){
  const main=!useNew?
   window.DBPCombatEngineUI?.render({state,build:build(),compareId:ui.engineCompareBuildId}):
   window.DBPSimulationLabUI?.render({state,build:build(),compareMode:ui.labCompareMode,
-   compareBuildId:ui.labCompareBuildId,trials:ui.labTrials});
+   compareBuildId:ui.labCompareBuildId,trials:ui.labTrials,sweep:ui.labSweep});
  return basic+(main||'<main class="workspace"><p class="notice">戦闘エンジンを読み込めませんでした。</p></main>');
 }
 function renderStats(){
@@ -347,6 +347,12 @@ case 'lab-view-legacy':ui.labView='legacy';render();break;
 case 'lab-run-trials':{
  const lab=window.DBPSimulationV2,opts=window.DBPSimulationRules.normalize(b.settings?.lab||{}).config;
  ui.labTrials=lab.runSeeds(state,b,opts);render();
+ break;
+}
+case 'lab-run-sweep':{
+ const opts=window.DBPSimulationRules.normalize(b.settings?.lab||{}).config;
+ const candidate=window.DBPSimulationLabUI?.alternate(state,b,ui.labCompareMode,ui.labCompareBuildId);
+ ui.labSweep=window.DBPSimulationV2.sweep(state,b,candidate,opts);render();
  break;
 }
 case 'tab-ranking':ui.tab='ranking';ui.settingsOpen=false;ui.modal='';render();break;
@@ -657,7 +663,7 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
  if(kind==='lab'){
   const Rule=window.DBPSimulationRules,key=el.dataset.key;
   if(!Rule)return;
-  if(key==='compareMode'){ui.labCompareMode=v;ui.labTrials=null;render();return;}
+  if(key==='compareMode'){ui.labCompareMode=v;ui.labTrials=null;ui.labSweep=null;render();return;}
   let next;
   if(key==='mode'){if(!Object.hasOwn(Rule.kinds,v))return;next=v}
   else if(key==='stormTargetMode'){
@@ -683,7 +689,7 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
    const idx=Number(key.slice(-1)),slots=[...Rule.normalize(b.settings.lab).config.slots];
    slots[idx]=next;b.settings.lab.slots=slots;
   }else{b.settings.lab[key]=next;if(key==='mode'&&next==='waves'&&Number(b.settings.lab.waveCount||0)<2)b.settings.lab.waveCount=5;}
-   ui.labTrials=null;});
+   ui.labTrials=null;ui.labSweep=null;});
   return;
  }
  if(kind==='engine'){
@@ -805,7 +811,7 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
 function itKey(el){return el.dataset.key}
 app.addEventListener('click',e=>{const el=e.target.closest('[data-action]');if(!el)return;const {action,id,value}=el.dataset;if(action==='modal-close'&&e.target.closest('.modal-panel')&&e.target!==el)return;act(action==='talent-add'&&e.shiftKey?'talent-remove':action,id,value,el)});
 app.addEventListener('contextmenu',e=>{const el=e.target.closest?.('[data-action="talent-add"]');if(!el||!window.DBPTalents)return;e.preventDefault();act('talent-remove',null,el.dataset.value,el)});
-app.addEventListener('change',e=>{const el=e.target;if(el.id==='simCompareBuild'){ui.labCompareBuildId=el.value;ui.labTrials=null;render();return}if(el.id==='engineCompareBuild'){ui.engineCompareBuildId=el.value;render();return}if(el.id==='rankingBoardSelect'){ui.rankingBoardId=el.value;render();return}if(el.id==='buildSelect'){state.activeBuildId=el.value;ui.itemId=null;save();return}if(el.id==='lockedSetSelect'){ui.selectedSetId=el.value;render();return}if(el.id==='settingsCategory'){ui.settingsTab=el.value;render();return}if(el.id==='otherBuild'){ui.compareBuildId=el.value;render();return}if(el.dataset.change)changed(el)});
+app.addEventListener('change',e=>{const el=e.target;if(el.id==='simCompareBuild'){ui.labCompareBuildId=el.value;ui.labTrials=null;ui.labSweep=null;render();return}if(el.id==='engineCompareBuild'){ui.engineCompareBuildId=el.value;render();return}if(el.id==='rankingBoardSelect'){ui.rankingBoardId=el.value;render();return}if(el.id==='buildSelect'){state.activeBuildId=el.value;ui.itemId=null;save();return}if(el.id==='lockedSetSelect'){ui.selectedSetId=el.value;render();return}if(el.id==='settingsCategory'){ui.settingsTab=el.value;render();return}if(el.id==='otherBuild'){ui.compareBuildId=el.value;render();return}if(el.dataset.change)changed(el)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&ui.modal){ui.modal='';render()}});
 window.addEventListener('storage',e=>{if(e.key===LS&&e.newValue&&e.newValue!==JSON.stringify(state)){ui.status='conflict';flash('別タブでの変更を検知しました。バックアップを確認してください。');render()}});
 // File import control created independently of app render.
