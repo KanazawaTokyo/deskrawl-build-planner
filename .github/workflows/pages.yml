@@ -44,6 +44,7 @@ jobs:
           node test-op-optimizer.js
           node test-dps-sim.js
           node test-combat-engine.js
+          node test-simulation-v2.js
       - name: Build website
         run: node scripts/build.js
       - name: Configure GitHub Pages
