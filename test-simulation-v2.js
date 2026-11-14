@@ -39,7 +39,7 @@ assert(ranked.ok,ranked.reason);
 assert.equal(ranked.events.find(x=>x.type==='cast').id,'lightningCloud',
  'slot 4 must be selected before 3/2/1');
 assert(ranked.skillCasts.iceNova>=1,'nova should cast later when in range');
-const basic=sim({initialMana:5,enemyHP:1e8,duration:4});
+const basic=sim({initialMana:5,enemyHP:1e8,duration:5});
 assert(basic.ok,basic.reason);
 assert(basic.skillCasts.electrocute>0,'basic recovers Mana when strong insufficient');
 assert(basic.skillCasts.lightningStorm>0,'after sufficient basic attacks a strong attack is possible');
