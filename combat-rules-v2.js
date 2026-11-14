@@ -35,7 +35,7 @@ const skills={
   quality:'approximate',notes:'燃焼DoT・半径は未校正'}
 };
 const defaults=Object.freeze({
- mode:'single',duration:180,enemyHP:null,observedTime:null,waveCount:1,enemiesPerWave:3,spawnGap:4,
+ mode:'single',duration:180,enemyHP:null,observedTime:null,observedDps:null,waveCount:1,enemiesPerWave:3,spawnGap:4,
  initialDelay:0,bossEvery:0,bossMultiplier:8,enemySpacing:0.7,
  playerRange:10,enemyDistance:3,stormStrikeDelay:0.12,stormTargetMode:'spread',
  splashRadius:1,ballRadius:1.8,ballPulseInterval:1,beamTick:null,
@@ -44,7 +44,7 @@ const defaults=Object.freeze({
  slots:['electrocute','lightningStorm','iceNova','flameAura']
 });
 const limits=Object.freeze({
- duration:[0.5,900],enemyHP:[1,1e15],observedTime:[0.001,900],waveCount:[1,60],enemiesPerWave:[1,12],spawnGap:[0,60],
+ duration:[0.5,900],enemyHP:[1,1e15],observedTime:[0.001,900],observedDps:[1,1e15],waveCount:[1,60],enemiesPerWave:[1,12],spawnGap:[0,60],
  initialDelay:[0,60],bossEvery:[0,60],bossMultiplier:[1,1000],enemySpacing:[0,8],
  playerRange:[1,100],enemyDistance:[0,100],stormStrikeDelay:[0,2],
  splashRadius:[0,10],ballRadius:[0,10],ballPulseInterval:[0.05,6],
@@ -53,8 +53,8 @@ const limits=Object.freeze({
  enemyIncoming:[0,1e11],enemyAttackEvery:[0.1,60]
 });
 const integers=new Set(['waveCount','enemiesPerWave','bossEvery','seed']);
-const nullable=new Set(['enemyHP','observedTime','beamTick','manaRegen','initialMana']);
-const kinds={single:'単体敵',pack:'敵の集団',waves:'複数ウェーブ'};
+const nullable=new Set(['enemyHP','observedTime','observedDps','beamTick','manaRegen','initialMana']);
+const kinds={single:'単体敵',pack:'敵の集団',waves:'複数ウェーブ',dummy:'訓練用ダミー'};
 function normalize(source={}){
  const value={...defaults,slots:[...defaults.slots]},issues=[];
  if(!source||typeof source!=='object'||Array.isArray(source))return {config:value,issues:['戦闘条件はオブジェクトで指定してください']};
@@ -81,8 +81,9 @@ function normalize(source={}){
   if(!Number.isFinite(n)||n<min||n>max||(integers.has(key)&&!Number.isSafeInteger(n)))issues.push(key+'は'+min+'〜'+max+'の範囲で指定してください');
   else value[key]=n;
  }
- if(value.mode==='single'){value.waveCount=1;value.enemiesPerWave=1;}
+ if(value.mode==='single'||value.mode==='dummy'){value.waveCount=1;value.enemiesPerWave=1;}
  if(value.mode==='pack')value.waveCount=1;
+ if(value.mode==='dummy')value.bossEvery=0;
  if(value.mode==='waves'&&value.waveCount<2)issues.push('ウェーブ戦では2ウェーブ以上必要です');
  if(value.bossEvery>value.waveCount&&value.bossEvery!==0)issues.push('ボス出現周期がウェーブ数を超えています');
  return {config:value,issues};
@@ -98,7 +99,8 @@ const requiredGameRules=[
  ['petAI','ペットの戦闘行動','missing','現在はプレイヤー火力から除外'],
  ['enemyAI','敵移動・ターゲット・ウェーブ','approximate','入力された位置・周期だけを再現'],
  ['statusEffects','燃焼・凍結・感電など','missing','状態異常による行動・DoTは未計算'],
- ['recordCalibration','実測値との校正','missing','現段階では自動校正しない']
+ ['trainingDummy','訓練用ダミーの不死・時間窓DPS','partial','敵HP・撃破時効果を除外。状態異常・ペットなどは未校正'],
+ ['recordCalibration','実測値との校正','partial','実測DPSと差を表示するだけで自動調整しない']
 ];
 const actualStormRotation=Object.freeze(['electrocute','lightningStorm','iceNova','flameAura']);
 function skillLevel(settings={},stats={},id){
