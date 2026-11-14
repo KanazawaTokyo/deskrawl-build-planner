@@ -153,10 +153,11 @@ function renderCombat(){
   return combatUI?combatUI.render(stats,b.settings||{},context,{skillsOpen:ui.combatSkillsOpen,dpsPanel}):'<div class="notice">計算モジュールを読み込めませんでした。再読み込みしてください。</div>';
 }
 function renderEngine(){
- const basic='<div class="sim-view-switch"><button class="btn '+(ui.labView==='new'?'':'outline')+
-  '" data-action="lab-view-new">複数敵・Wave研究</button><button class="btn '+(ui.labView==='legacy'?'':'outline')+
+ const useNew=ui.labView==='new'&&Boolean(window.DBPSimulationLabUI);
+ const basic='<div class="sim-view-switch"><button class="btn '+(useNew?'':'outline')+
+  '" data-action="lab-view-new">複数敵・Wave研究</button><button class="btn '+(!useNew?'':'outline')+
   '" data-action="lab-view-legacy">旧単体モデル</button></div>';
- const main=ui.labView==='legacy'?
+ const main=!useNew?
   window.DBPCombatEngineUI?.render({state,build:build(),compareId:ui.engineCompareBuildId}):
   window.DBPSimulationLabUI?.render({state,build:build(),compareMode:ui.labCompareMode,
    compareBuildId:ui.labCompareBuildId,trials:ui.labTrials});
