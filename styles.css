@@ -813,3 +813,7 @@
 .sim-real-rotation>small{color:var(--mint);font-size:11px}
 .sim-real-rotation>.btn{min-height:34px;white-space:normal}
 @media(max-width:540px){.sim-real-rotation>.btn{width:100%}}
+
+/* Permanent combat-test targets differ from HP-based ranking encounters. */
+.sim-dummy-note{grid-column:1/-1;padding:11px 13px;background:var(--panel2);border:1px solid var(--line2);border-radius:9px;color:var(--muted);font-size:12px;line-height:1.7}
+.simulation-workspace .sim-dummy-note+.field{grid-column:auto}
