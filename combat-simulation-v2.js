@@ -378,15 +378,19 @@ function compare(state,baselineBuild,candidateBuild,scenario){
  return {a,b,delta,comparable:a.ok&&b.ok,judgment:delta===null?'判定不能':delta<0?'候補の方が速い':delta>0?'現在の方が速い':'同等'};
 }
 function runSeeds(state,build,scenario={},seeds=[11,42,77,113,181]){
- const values=[],outcomes={clear:0,death:0,timeout:0,capped:0};
+ const values=[],dpsValues=[],outcomes={clear:0,death:0,timeout:0,capped:0,'dummy-finished':0};
  for(const seed of seeds){
   const result=evaluate(state,build,{...scenario,seed,randomCrit:true});
   if(!result.ok)return {ok:false,reason:result.reason};
   outcomes[result.outcome]=(outcomes[result.outcome]||0)+1;
   if(result.outcome==='clear')values.push(result.finishTime);
+  if(result.outcome==='dummy-finished')dpsValues.push(result.averageDps);
  }
  values.sort((a,b)=>a-b);
+ dpsValues.sort((a,b)=>a-b);
  return {ok:true,trials:seeds.length,outcomes,clearRate:outcomes.clear/seeds.length,
+  medianDps:dpsValues.length?dpsValues[(dpsValues.length-1)>>1]:null,
+  minDps:dpsValues[0]??null,maxDps:dpsValues.at(-1)??null,
   fastest:values[0]??null,median:values.length?values[(values.length-1)>>1]:null,
   slowest:values.at(-1)??null,
   warning:'固定Seedでの近似試行です。未再現の敵行動やルーン効果による不確実性は含みません。'};
