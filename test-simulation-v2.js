@@ -59,7 +59,7 @@ const auraNoCombat=sim({...auraScene,duration:2,initialDelay:4});
 assert.equal(auraNoCombat.auraCasts,0,'aura cannot cast before enemies arrive');
 const auraStats={...stats,effective:{...stats.effective,cdr:0,mana:50,
  critChance:45,critDamage:150,manaRegen:0}};
-const auraHit=sim({duration:1,enemyHP:1e11,slots:actualSlots},settings,auraStats);
+const auraHit=sim({duration:1,enemyHP:1e11,slots:['electrocute','lightningStorm','none','flameAura']},settings,auraStats);
 const plainHit=sim({duration:1,enemyHP:1e11,
  slots:['electrocute','lightningStorm','none','none']},settings,auraStats);
 assert(auraHit.damageBySource.storm>plainHit.damageBySource.storm,
