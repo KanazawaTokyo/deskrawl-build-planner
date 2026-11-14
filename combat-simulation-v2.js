@@ -48,6 +48,7 @@ function simulate(stats,settings={},context={},raw={}){
  if(maxMana<=0||n(effective.weaponDamage)<=0)return {ok:false,reason:'最大Manaと武器ダメージが必要です。装備・設定を確認してください。',options:o};
  if(o.enemyIncoming>0&&maxHP<=0)return {ok:false,reason:'被弾を計算するには最大HPが必要です',options:o};
  const mode=Rule.skills,selected=Runes.selection(settings),talents=Talents.allocation(settings).ranks;
+ const aura=Rule.flameAuraBonuses(settings,stats);
  const stormCount=selected.counts.stormcaller||0,zeroCount=selected.counts.absoluteZero||0;
  const runeSplash=stormCount>=4,runeBall=stormCount>=6,runeBeam4=zeroCount>=4,runeBeam6=zeroCount>=6;
  const coolRed=clamp(n(effective.cdr),0,80),manaRed=clamp(n(effective.mcr),0,85),
@@ -65,11 +66,15 @@ function simulate(stats,settings={},context={},raw={}){
   hpMax:maxHP,hpEnd:maxHP,damageTaken:0,deathTime:null,
   waitSeconds:0,actionCounts:{basic:0,strong:0,special:0},skillCasts:{},
   stormHits:0,stormBalls:0,ballPulses:0,beamTicks:0,beamInterruptions:0,
+  auraCasts:0,auraLevel:aura.level,auraCritChance:aura.critChance,auraCritDamage:aura.critDamage,
+  auraUptimeSeconds:0,auraUptimePercent:0,
   modelCoverage:{represented:[],approximate:[],notModeled:[]},warnings:[]
  };
  const coverage=output.modelCoverage;
  coverage.represented.push('基本・強攻撃・特殊2枠の優先度','ManaとCD','複数敵のHP','撃破時Mana回復','Wave間の待機');
  coverage.approximate.push('行動停止時間・GCD','落雷対象選択・時間差','範囲命中判定','敵の位置（静的配置）');
+ coverage.represented.push('フレイムオーラ：21秒CD・5秒Critバフ・スキルレベル補正');
+ coverage.approximate.push('フレイムオーラ：使用後の停止時間と再使用の実戦挙動は未校正');
  coverage.notModeled.push('敵の移動・衝突・進路','敵AIのスキル選択','ペット攻撃・継承','一部の固有・ルーン追加効果','DoT・継続回復・凍結AI・エレメンタル状態');
  if(runeBall)coverage.approximate.push('Stormcaller6: 雷球3パルス（間隔・範囲は仮定）');
  if(runeSplash)coverage.approximate.push('Stormcaller4: 範囲攻撃（重複扱いは近似）');
@@ -84,6 +89,7 @@ function simulate(stats,settings={},context={},raw={}){
  const q=new Heap();let time=0,mana=clamp(o.initialMana??maxMana,0,maxMana),hp=maxHP,
  wave=0,live=[],enemySeq=0,waitingFrom=0,lastClear=0,
  nextGcd=0,standingUntil=0,channel=null,shoulderUntil=0,shoulderStacks=0,
+ auraUntil=0,
  lastBasic=0,actedAt=-Infinity,actionPending=false,over=false,enemyStrikeStarted=false;
  const nextReady=[0,0,0,0];
  const end=o.duration,maxEvents=45000,maxLog=320;
@@ -96,6 +102,7 @@ function simulate(stats,settings={},context={},raw={}){
   actionPending=true;q.push(t,'action');
  }
  function move(t){if(t<time-EPS)throw Error('シミュレーションの時刻が逆転しました');
+  if(auraUntil>time+EPS)output.auraUptimeSeconds+=Math.max(0,Math.min(t,auraUntil)-time);
   mana=Math.min(maxMana,mana+Math.max(0,t-time)*regen);
   time=t;if(shoulderUntil>0&&time>=shoulderUntil-EPS){shoulderUntil=0;shoulderStacks=0;}
  }
@@ -143,11 +150,14 @@ function simulate(stats,settings={},context={},raw={}){
  function hit(e,ability,source,overrides={}){
   if(!e||e.hp<=EPS)return 0;
   const {critDamageBonus=0,...options}=overrides;
+  const auraActive=auraUntil>time+EPS;
   const dyn={...ctxBase,abilityId:ability,enemyHealth:e.hp/e.maxHP*100,
    elite:e.boss||ctxBase.elite,elementalStacks:shoulderUntil>time-EPS?shoulderStacks:0,
    ...options};
-  const dynamicStats=critDamageBonus?{...stats,effective:{...effective,
-   critDamage:n(effective.critDamage)+critDamageBonus}}:stats;
+  const extraCritDamage=critDamageBonus+(auraActive?aura.critDamage:0);
+  const dynamicStats=extraCritDamage||auraActive?{...stats,effective:{...effective,
+   critChance:n(effective.critChance)+(auraActive?aura.critChance:0),
+   critDamage:n(effective.critDamage)+extraCritDamage}}:stats;
   const h=Combat.attack(dynamicStats,settings,dyn,context);
   const damage=chanceCrit?
    (random()<h.critChance/100?h.critical?.final:h.normal?.final):h.expected;
@@ -232,7 +242,9 @@ function simulate(stats,settings={},context={},raw={}){
   const skill=mode[id],category=skill.kind;
   const manaCost=(skill.manaCost||0)*(1-manaRed/100);
   if(mana+EPS<manaCost)return false;
-  if(!targets(skill.range).length)return false;
+  // Self-buffs need an active combat state, but unlike attack skills they do not target an enemy.
+  // Auto-combat does not cast out of combat (decide() only runs while a wave is engaged).
+  if(skill.shape!=='self'&&!targets(skill.range).length)return false;
   mana-=manaCost;output.manaSpent+=manaCost;
   output.casts++;output.skillCasts[id]=(output.skillCasts[id]||0)+1;output.actionCounts[category]++;
   const cd=skill.kind==='basic'?1/Math.max(.1,attackSpeed):skill.baseCooldown*(1-coolRed/100);
@@ -260,6 +272,11 @@ function simulate(stats,settings={},context={},raw={}){
    standingUntil=time+3;
    for(let t=interval;t<=3+EPS;t+=interval)q.push(started+t,'beam-tick',{channel:channel.id});
    q.push(started+3,'beam-end',{channel:channel.id});
+  }else if(id==='flameAura'){
+   auraUntil=time+aura.duration;
+   output.auraCasts++;
+   log('flame-aura',{until:round(auraUntil,3),level:aura.level,
+    critChance:aura.critChance,critDamage:aura.critDamage});
   }else if(id==='iceNova'){
    aoe(0,skill.radius,id,'special');
    recoverNova();
@@ -328,6 +345,8 @@ function simulate(stats,settings={},context={},raw={}){
  }
  if(!over){output.outcome=processed>maxEvents?'capped':'timeout';move(end)}
  output.processed=processed;output.manaEnd=round(mana,2);output.hpEnd=round(hp,2);
+ output.auraUptimeSeconds=round(output.auraUptimeSeconds,3);
+ output.auraUptimePercent=time>0?round(output.auraUptimeSeconds/time*100,1):0;
  output.elapsed=round(time,4);output.averageDps=output.elapsed?output.totalDamage/output.elapsed:0;
  output.damagePerSecondWindow=output.totalDamage/o.duration;
  if(output.wavesCleared===0&&output.wavesSpawned===0)output.warnings.push('開始遅延が制限時間を超えているため敵が未出現');
