@@ -31,7 +31,7 @@ const skills={
   quality:'approximate',notes:'燃焼DoT・半径は未校正'}
 };
 const defaults=Object.freeze({
- mode:'single',duration:180,enemyHP:null,waveCount:1,enemiesPerWave:3,spawnGap:4,
+ mode:'single',duration:180,enemyHP:null,observedTime:null,waveCount:1,enemiesPerWave:3,spawnGap:4,
  initialDelay:0,bossEvery:0,bossMultiplier:8,enemySpacing:0.7,
  playerRange:10,enemyDistance:3,stormStrikeDelay:0.12,stormTargetMode:'spread',
  splashRadius:1,ballRadius:1.8,ballPulseInterval:1,beamTick:null,
@@ -40,7 +40,7 @@ const defaults=Object.freeze({
  slots:['electrocute','lightningStorm','iceNova','none']
 });
 const limits=Object.freeze({
- duration:[5,900],enemyHP:[1,1e15],waveCount:[1,60],enemiesPerWave:[1,12],spawnGap:[0,60],
+ duration:[5,900],enemyHP:[1,1e15],observedTime:[0.001,900],waveCount:[1,60],enemiesPerWave:[1,12],spawnGap:[0,60],
  initialDelay:[0,60],bossEvery:[0,60],bossMultiplier:[1,1000],enemySpacing:[0,8],
  playerRange:[1,100],enemyDistance:[0,100],stormStrikeDelay:[0,2],
  splashRadius:[0,10],ballRadius:[0,10],ballPulseInterval:[0.05,6],
@@ -49,7 +49,7 @@ const limits=Object.freeze({
  enemyIncoming:[0,1e11],enemyAttackEvery:[0.1,60]
 });
 const integers=new Set(['waveCount','enemiesPerWave','bossEvery','seed']);
-const nullable=new Set(['enemyHP','beamTick','manaRegen','initialMana']);
+const nullable=new Set(['enemyHP','observedTime','beamTick','manaRegen','initialMana']);
 const kinds={single:'単体敵',pack:'敵の集団',waves:'複数ウェーブ'};
 function normalize(source={}){
  const value={...defaults,slots:[...defaults.slots]},issues=[];
@@ -58,11 +58,8 @@ function normalize(source={}){
   if(key==='slots'){
    if(!Array.isArray(raw)||raw.length!==4){issues.push('スキル構成は4枠で指定');continue;}
    const slots=raw.map(x=>typeof x==='string'?x:'');
-   if(slots.some((x,i)=>x!=='none'&&(!skills[x]||skills[x].kind!==categories[Math.min(i,2)]&&
-    (i!==3||skills[x].kind!=='special')))){
-    // Slot indexes: 0 basic, 1 strong, 2 special, 3 special.
-    const invalid=slots.some((x,i)=>x!=='none'&&(!skills[x]||skills[x].kind!==['basic','strong','special','special'][i]));
-    if(invalid){issues.push('スキル枠に対応しないアビリティが指定されています');continue;}
+   if(slots.some((x,i)=>x!=='none'&&(!skills[x]||skills[x].kind!==['basic','strong','special','special'][i]))){
+    issues.push('スキル枠に対応しないアビリティが指定されています');continue;
    }
    if(slots[0]==='none'||slots[1]==='none'){issues.push('基本・強攻撃スロットは必須です');continue;}
    value.slots=slots;continue;
