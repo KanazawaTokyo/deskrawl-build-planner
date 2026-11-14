@@ -74,7 +74,7 @@ function alternate(state,build,mode,otherId){
  }
  return null;
 }
-function render({state,build,compareMode='runes',compareBuildId='',trials=null}){
+function render({state,build,compareMode='runes',compareBuildId='',trials=null,sweep=null}){
  const o=Rule.normalize(build.settings?.lab||{}).config,base=Sim.evaluate(state,build,o);
  const candidate=alternate(state,build,compareMode,compareBuildId),
   second=candidate?Sim.evaluate(state,candidate,o):null;
@@ -145,6 +145,13 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null})
   (trials?.ok?'<p>クリア率 '+fmt(trials.clearRate*100,0)+'% · 中央値 '+fmt(trials.median,2)+
    '秒 · 最短 '+fmt(trials.fastest,2)+'秒 · 最長 '+fmt(trials.slowest,2)+'秒</p>':
    '<p class="helper">必要なときに実行します。5回の試行だけで統計的な有意差は断定できません。</p>')+'</section>'+
+  '<section class="card sim-sweep"><div class="card-heading"><div><h2>難易度による優劣の変化</h2><span>通常敵HPを0.25・0.5・1・2・4倍に変更した同条件比較</span></div>'+
+   '<button class="btn outline" data-action="lab-run-sweep" '+(noHP||!candidate?'disabled':'')+'>HP別に比較</button></div>'+
+   (sweep?.ok?'<div class="sim-sweep-scroll"><table class="sim-sweep-table"><thead><tr><th>HP倍率</th><th>現在</th><th>比較候補</th><th>判定</th></tr></thead><tbody>'+
+     sweep.rows.map(x=>'<tr><td>'+fmt(x.factor,2)+'倍</td><td>'+fmt(x.baselineTime,2)+'</td><td>'+fmt(x.candidateTime,2)+'</td><td>'+E(x.status)+'</td></tr>').join('')+
+     '</tbody></table></div><p class="helper">'+E(sweep.notice)+'</p>':
+     '<p class="helper">計算結果から候補のHP境界を探すための実験です。現在の敵のHPを入力すると実行できます。</p>')+
+   '</section>'+
   (base.ok?eventTable(base):'');
  html+='<details class="card sim-coverage"><summary>計算の信頼性・未対応ルール</summary>'+
   '<p class="helper">未対応の効果を「0である」と断定しません。精度を保証しない理由を表示します。</p>'+
