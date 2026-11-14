@@ -26,6 +26,9 @@ assert.equal(Rules.flameAuraBonuses({skillRanks:{flameAura:10},
 
 assert.deepEqual(JSON.parse(JSON.stringify(Rules.normalize({}).issues)),[]);
 assert(Rules.normalize({mode:'fish'}).issues.length);
+assert.equal(Rules.normalize({mode:'dummy',enemyHP:null,observedDps:4700000000}).issues.length,0);
+assert.equal(Rules.normalize({observedDps:'abc'}).issues.length,1);
+
 assert(Rules.normalize({enemyHP:'Infinity'}).issues.length);
 assert(Rules.normalize({waveCount:-1}).issues.length);
 assert(Rules.normalize({slots:['none','lightningStorm','iceNova','none']}).issues.length);
@@ -67,6 +70,16 @@ assert(auraHit.damageBySource.storm>plainHit.damageBySource.storm,
 const statusAfter=sim({duration:2,enemyHP:1e11,slots:actualSlots},
  settings,{...stats,effective:{...stats.effective,critChance:83.2}});
 assert(statusAfter.ok && statusAfter.auraCasts>=1);
+const dummy=sim({mode:'dummy',enemyHP:null,duration:10,slots:actualSlots});
+assert(dummy.ok,dummy.reason);
+assert.equal(dummy.outcome,'dummy-finished');
+assert.equal(dummy.wavesSpawned,1);
+assert.equal(dummy.wavesCleared,0);
+assert.equal(dummy.kills,0,'dummy cannot be killed');
+assert(dummy.totalDamage>0);
+assert.equal(dummy.totalDamage,dummy.appliedDamage,'dummy does not absorb overkill');
+assert.equal(dummy.manaFromKills,0,'dummy cannot trigger on-kill Mana');
+assert(Math.abs(dummy.averageDps-dummy.totalDamage/10)<1e-6);
 const ranked=sim({slots:['electrocute','lightningStorm','iceNova','lightningCloud'],enemyHP:1e9,duration:4});
 assert(ranked.ok,ranked.reason);
 assert.equal(ranked.events.find(x=>x.type==='cast').id,'lightningCloud',
@@ -128,6 +141,12 @@ const rngB=sim({enemyHP:1e10,duration:3,randomCrit:true,seed:13},
  settings,{...stats,effective:{...stats.effective,critChance:50,critDamage:200}});
 assert.deepEqual(JSON.parse(JSON.stringify(rngA)),JSON.parse(JSON.stringify(rngB)),'same seed replays');
 const old=JSON.stringify(D.makeSeed()),doc=D.makeSeed(),build=doc.builds[0],before=JSON.stringify(doc);
+const auraSettings={...build.settings,aura:true};
+const fakeAuraBuild={...build,settings:auraSettings};
+const preAura=Sim.prepared(doc,fakeAuraBuild).stats.effective;
+const preNoAura=Sim.prepared(doc,{...build,settings:{...build.settings,aura:false}}).stats.effective;
+assert.equal(preAura.critChance,preNoAura.critChance,
+ 'combat base stats must exclude Aura ON even when stat preview has it selected');
 const real=Sim.evaluate(doc,build,{enemyHP:1e9,mode:'single',duration:10});
 assert(real&&typeof real.ok==='boolean');
 assert.equal(before,JSON.stringify(doc),'evaluate is read-only');
@@ -150,6 +169,12 @@ assert.match(previousHtml,/lab-apply-known-rotation/,'existing saved scenarios o
 assert.equal(previousRotation.settings.lab.slots[3],'none','render never silently changes a saved scenario');
 
 assert.match(initialHtml,/敵HPが未入力/);
+const dummyHtml=UI.render({state:doc,build:{...build,settings:{...build.settings,
+ lab:{mode:'dummy',duration:30,observedDps:4700000000}}},compareMode:'runes'});
+assert.match(dummyHtml,/ダミー測定完了/);
+assert.match(dummyHtml,/実測DPS/);
+assert.match(dummyHtml,/ダミー実測との照合/);
+assert.match(dummyHtml,/11月14日の実測/);
 const populatedHtml=UI.render({state:doc,build:{...build,settings:{...build.settings,
  lab:{mode:'single',duration:10,enemyHP:1000}}},compareMode:'runes'});
 assert.match(populatedHtml,/クリア|制限時間終了/);
@@ -171,6 +196,15 @@ assert.equal(JSON.stringify(doc),before,'sensitivity cannot change inventory');
 const trials=Sim.runSeeds(doc,build,{mode:'single',enemyHP:1e10,duration:5},[13,19,22]);
 assert(trials.ok);
 assert.equal(trials.trials,3);
+const dummyTrials=Sim.runSeeds(doc,build,{mode:'dummy',duration:10,enemyHP:null},[13,19,22]);
+assert(dummyTrials.ok);
+assert(dummyTrials.medianDps>=dummyTrials.minDps);
+assert(dummyTrials.maxDps>=dummyTrials.medianDps);
+assert.equal(dummyTrials.outcomes['dummy-finished'],3);
+const observed=JSON.parse(fs.readFileSync(__dirname+'/benchmarks/training-dummy-2026-11-14.json','utf8'));
+assert.equal(observed.measurement.observedDpsAbsolute,4.7e9);
+assert.deepEqual(observed.measurement.points.slice(2,5).map(x=>x.totalDamageB),[47,94,141]);
+
 console.log('PASS: multi-entity / waves / 4-slot rotation / Storm 4+6 / Frost 4+6 / mana-on-kill / seeded trials / coverage');
 
 // Browser-like app integration: editing lab controls does not change inventory.
@@ -221,4 +255,11 @@ click('lab-view-legacy');
 assert.match(app.innerHTML,/COMBAT LAB v1/);
 click('lab-view-new');
 assert.match(app.innerHTML,/COMBAT LAB V2/);
+change('mode','dummy');
+click('lab-apply-dummy-benchmark');
+const measured=ctx.DBPApp.getState().builds[0].settings.lab;
+assert.equal(measured.mode,'dummy');
+assert.equal(measured.observedDps,4700000000);
+assert.equal(measured.duration,30);
+assert.match(app.innerHTML,/ダミー実測との照合/);
 console.log('PASS: app lab navigation, four-slot controls, scenario persistence, reproducible trials and legacy fallback');
