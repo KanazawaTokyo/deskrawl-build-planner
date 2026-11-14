@@ -14,7 +14,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          for file in test.js test-gems.js test-cloud.js test-lock.js test-sets.js test-equipment-workflow.js test-input-review.js test-rankings.js test-required-ops.js test-affix-pools.js test-paragon.js test-pets.js test-combat.js test-runes.js test-talents.js test-unique-effects.js test-stats-view.js test-japanese.js test-ai-export.js test-op-optimizer.js test-dps-sim.js test-combat-engine.js; do
+          for file in test.js test-gems.js test-cloud.js test-lock.js test-sets.js test-equipment-workflow.js test-input-review.js test-rankings.js test-required-ops.js test-affix-pools.js test-paragon.js test-pets.js test-combat.js test-runes.js test-talents.js test-unique-effects.js test-stats-view.js test-japanese.js test-ai-export.js test-op-optimizer.js test-dps-sim.js test-combat-engine.js test-simulation-v2.js; do
             echo "Running $file"
             node "$file"
           done
