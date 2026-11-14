@@ -353,5 +353,26 @@ function runSeeds(state,build,scenario={},seeds=[11,42,77,113,181]){
   slowest:values.at(-1)??null,
   warning:'固定Seedでの近似試行です。未再現の敵行動やルーン効果による不確実性は含みません。'};
 }
-window.DBPSimulationV2={rng,Heap,prepared,evaluate,simulate,compare,runSeeds};
+function sweep(state,build,candidate,scenario={},factors=[0.25,0.5,1,2,4]){
+ if(!candidate)return {ok:false,reason:'比較対象がありません'};
+ const {config,issues}=Rule.normalize(scenario);
+ if(issues.length||config.enemyHP==null)return {ok:false,reason:'先に敵HP・戦闘条件を有効な数値で登録してください'};
+ if(!Array.isArray(factors)||factors.length>16||factors.some(x=>!Number.isFinite(x)||x<=0||x>1000))
+  return {ok:false,reason:'HP倍率は0より大きい数値で16個以下'};
+ const rows=[];
+ for(const factor of factors){
+  const hp=config.enemyHP*factor;
+  if(!Number.isFinite(hp)||hp<Rule.limits.enemyHP[0]||hp>Rule.limits.enemyHP[1])
+   return {ok:false,reason:'HP倍率が入力範囲を超えています'};
+  const scene={...config,enemyHP:hp,randomCrit:false};
+  const a=evaluate(state,build,scene),b=evaluate(state,candidate,scene);
+  const at=a.ok&&a.outcome==='clear'?a.finishTime:null,bt=b.ok&&b.outcome==='clear'?b.finishTime:null;
+  rows.push({factor,enemyHP:hp,baselineTime:at,candidateTime:bt,
+   delta:at!==null&&bt!==null?bt-at:null,
+   status:!a.ok||!b.ok?'計算不能':at===null||bt===null?'両方のクリア時刻が必要':bt<at?'比較候補が速い':bt>at?'現在が速い':'同じ時間',
+   baselineOutcome:a.ok?a.outcome:'error',candidateOutcome:b.ok?b.outcome:'error'});
+ }
+ return {ok:true,rows,notice:'入力した敵HPだけを変えた仮想実験。実際の難易度変化がHPだけとは限りません。'};
+}
+window.DBPSimulationV2={rng,Heap,prepared,evaluate,simulate,compare,runSeeds,sweep};
 })();
