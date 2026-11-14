@@ -79,6 +79,16 @@ assert(frost4.beamTicks>frost.beamTicks,'absolute zero 4 increases tick frequenc
 const zero6={...settings,runeSlots:Array.from({length:6},(_,i)=>'set:absoluteZero:'+(i+1))};
 const frost6=sim({slots:['electrocute','frostBeam','none','none'],enemyHP:1e10,duration:5},zero6);
 assert(frost6.damageBySource.beam>frost4.damageBySource.beam,'absolute zero 6 ramps damage');
+const critStats={...stats,effective:{...stats.effective,critChance:85,critDamage:0}};
+const beamScenario={slots:['electrocute','frostBeam','none','none'],enemyHP:1e10,duration:3.5};
+const withoutRime=sim(beamScenario,settings,critStats,{items:{}});
+const withRime=sim(beamScenario,settings,critStats,{items:{gloves:'bm-patch-rimebound-grasp'}});
+assert(withRime.damageBySource.beam>withoutRime.damageBySource.beam,
+ 'Rimebound Grasp channel time must grant escalating critical damage');
+assert(withRime.manaSpent>withoutRime.manaSpent,'Rimebound Grasp extra Mana is charged per tick');
+const cappedKill=sim({mode:'pack',enemiesPerWave:3,enemyHP:1,duration:4},
+ settings,{...stats,effective:{...stats.effective,manaKill:200}});
+assert(cappedKill.manaFromKills<=200,'mana-on-kill accounting must never exceed mana headroom');
 const rngA=sim({enemyHP:1e10,duration:3,randomCrit:true,seed:13},
  settings,{...stats,effective:{...stats.effective,critChance:50,critDamage:200}});
 const rngB=sim({enemyHP:1e10,duration:3,randomCrit:true,seed:13},
