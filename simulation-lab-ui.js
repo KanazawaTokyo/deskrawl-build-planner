@@ -83,6 +83,8 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
   second=candidate?Sim.evaluate(state,candidate,o):null;
  const comparison=base.ok&&second?.ok&&base.outcome==='clear'&&second.outcome==='clear'
   ?second.finishTime-base.finishTime:null;
+ const dummyComparison=base.ok&&second?.ok&&o.mode==='dummy'?
+  second.averageDps-base.averageDps:null;
  const others=state.builds.filter(x=>x.id!==build.id);
  const count=Runes.selection(build.settings||{}).counts.stormcaller||0;
  const noHP=o.enemyHP==null&&o.mode!=='dummy';
@@ -143,7 +145,10 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
      (others.length?others.map(x=>'<option value="'+E(x.id)+'"'+(candidate?.id===x.id?' selected':'')+'>'+E(x.name)+'</option>').join(''):'<option>別ビルドなし</option>')+
      '</select></label>':'')+'</div>'+
   (candidate?card(second,candidate.name):'<p class="notice">別のビルドがありません。複製して比較してください。</p>')+
-  (comparison!=null?'<p class="sim-delta">推定クリアタイム差（比較候補 − 現在）：'+
+  (dummyComparison!=null?'<p class="sim-delta">推定DPS差（比較候補 − 現在）：'+
+   (dummyComparison>0?'+':'')+fmt(dummyComparison,0)+' DPS · '+
+   (dummyComparison>0?'比較候補が高い':dummyComparison<0?'現在が高い':'同じ予測値')+'</p>':
+   comparison!=null?'<p class="sim-delta">推定クリアタイム差（比較候補 − 現在）：'+
    (comparison>0?'+':'')+fmt(comparison,2)+'秒'+
    (comparison<0?' · 候補の方が速い':comparison>0?' · 現在の方が速い':' · 同じ時間')+'</p>':
    '<p class="helper">両構成が制限時間内にクリアした場合のみ、タイム差を評価します。未クリアなら強さの順位は断定しません。</p>')+
@@ -159,7 +164,8 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
    '<p class="helper">実測に合わせて係数を自動調整していません。別の実戦データで再検証してください。</p></section>':'')+
   '<section class="card sim-trials"><div class="card-heading"><div><h2>クリティカル変動の確認</h2><span>固定Seedの5試行 · 敵AIなどは未サンプリング</span></div>'+
   '<button class="btn outline" data-action="lab-run-trials" '+(noHP?'disabled':'')+'>5回試行</button></div>'+
-  (trials?.ok&&o.mode==='dummy'?'<p>5回試行済み（ダミーはクリアタイムではなくDPSで比較してください）</p>':
+  (trials?.ok&&o.mode==='dummy'?'<p>5回のDPS中央値 '+fmt(trials.medianDps,0)+
+   ' · 最小 '+fmt(trials.minDps,0)+' · 最大 '+fmt(trials.maxDps,0)+' DPS</p>':
   trials?.ok?'<p>クリア率 '+fmt(trials.clearRate*100,0)+'% · 中央値 '+fmt(trials.median,2)+
    '秒 · 最短 '+fmt(trials.fastest,2)+'秒 · 最長 '+fmt(trials.slowest,2)+'秒</p>':
    '<p class="helper">必要なときに実行します。5回の試行だけで統計的な有意差は断定できません。</p>')+'</section>'+
