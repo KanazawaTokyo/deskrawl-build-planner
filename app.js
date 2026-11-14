@@ -343,6 +343,16 @@ case 'dps-duration':{
  case 'combat-debuffs':{if(value!=='on'&&value!=='off')return;modify(()=>{b.settings.combat??={};for(const key of window.DBPCombat.debuffKeys)b.settings.combat[key]=value==='on'});return;}
  case 'tab-engine':ui.tab='engine';ui.settingsOpen=false;ui.modal='';render();break;
 case 'lab-view-new':ui.labView='new';render();break;
+case 'lab-apply-dummy-benchmark':{
+ modify(()=>{
+  b.settings??={};
+  b.settings.lab??={};
+  Object.assign(b.settings.lab,{mode:'dummy',duration:30,observedDps:4700000000});
+  ui.labTrials=null;ui.labSweep=null;
+ });
+ flash('11月14日のダミー実測 4.7B DPS を比較条件に登録しました');
+ break;
+}
 case 'lab-apply-known-rotation':{
  const rule=window.DBPSimulationRules;
  if(!rule)return;
@@ -687,7 +697,7 @@ function changed(el){const kind=el.dataset.change,b=build(),id=el.dataset.id,it=
    if(idx<2&&v==='none')return;
    next=v;
   }else if(Object.hasOwn(Rule.limits,key)){
-   if(v===''&&['enemyHP','observedTime','beamTick','manaRegen','initialMana'].includes(key))next=null;
+   if(v===''&&['enemyHP','observedTime','observedDps','beamTick','manaRegen','initialMana'].includes(key))next=null;
    else{
     const value=Number(v),[min,max]=Rule.limits[key];
     if(v===''||!Number.isFinite(value)||value<min||value>max||
