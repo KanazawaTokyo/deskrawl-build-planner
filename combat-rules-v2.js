@@ -40,7 +40,7 @@ const defaults=Object.freeze({
  slots:['electrocute','lightningStorm','iceNova','none']
 });
 const limits=Object.freeze({
- duration:[5,900],enemyHP:[1,1e15],observedTime:[0.001,900],waveCount:[1,60],enemiesPerWave:[1,12],spawnGap:[0,60],
+ duration:[0.5,900],enemyHP:[1,1e15],observedTime:[0.001,900],waveCount:[1,60],enemiesPerWave:[1,12],spawnGap:[0,60],
  initialDelay:[0,60],bossEvery:[0,60],bossMultiplier:[1,1000],enemySpacing:[0,8],
  playerRange:[1,100],enemyDistance:[0,100],stormStrikeDelay:[0,2],
  splashRadius:[0,10],ballRadius:[0,10],ballPulseInterval:[0.05,6],
