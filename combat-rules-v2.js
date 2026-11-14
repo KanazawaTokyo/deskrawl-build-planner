@@ -9,6 +9,7 @@
 const version='simulation-rules-1.1.11a-v2';
 const sources={
  autoCombat:'https://wikily.gg/deskrawl/abilities/auto-combat',
+ flameAura:'https://wikily.gg/deskrawl/abilities/flame-aura',
  skills:'https://playongg.com/games/deskrawl/classes/magehero',
  patch:'https://steamdb.info/patchnotes/26310087/',
  patchLatest:'https://steamdb.info/patchnotes/26604532/'
@@ -25,6 +26,9 @@ const skills={
   quality:'partial',notes:'tick時刻・チャネリング速度補正は近似'},
  iceNova:{name:'アイスノヴァ',kind:'special',manaCost:0,baseCooldown:22,range:4.5,shape:'area',radius:4.5,
   quality:'partial',notes:'凍結の持続・対象AIは未校正'},
+ flameAura:{name:'フレイムオーラ',kind:'special',manaCost:0,baseCooldown:21,range:13,shape:'self',
+  duration:5,critChance:10,critDamageBase:50,critDamagePerLevel:10,quality:'partial',
+  notes:'自身に5秒間Crit率+10pt、Critダメージ+50%（Lv1）+10pt/Lv。バフ再使用・行動停止時間は要校正'},
  lightningCloud:{name:'ライトニングクラウド',kind:'special',manaCost:0,baseCooldown:24,range:11,shape:'zone',ticks:8,zoneDuration:4,
   quality:'approximate',notes:'8回/4秒の区切りを均等間隔で近似'},
  fireMeteor:{name:'ファイアメテオ',kind:'special',manaCost:0,baseCooldown:24,range:11,shape:'area',radius:2.5,
@@ -37,7 +41,7 @@ const defaults=Object.freeze({
  splashRadius:1,ballRadius:1.8,ballPulseInterval:1,beamTick:null,
  frameStep:0.05,actionRecovery:0.10,seed:42,randomCrit:false,
  manaRegen:null,initialMana:null,enemyIncoming:0,enemyAttackEvery:2,
- slots:['electrocute','lightningStorm','iceNova','none']
+ slots:['electrocute','lightningStorm','iceNova','flameAura']
 });
 const limits=Object.freeze({
  duration:[0.5,900],enemyHP:[1,1e15],observedTime:[0.001,900],waveCount:[1,60],enemiesPerWave:[1,12],spawnGap:[0,60],
@@ -90,10 +94,26 @@ const requiredGameRules=[
  ['stormSplash','嵐4セット範囲攻撃','approximate','半径1は仮定・範囲倍率は資料不足'],
  ['stormBall','嵐6セットの雷球3パルス','approximate','威力50%は既知、間隔は仮定'],
  ['frostBeam','Beam時間経過','partial','攻撃間隔・Mana・チャネリング補正を近似'],
+ ['flameAura','Flame Auraの5秒バフ','partial','LvによるCrit補正と21s CDを反映。実際の自動発動/停止時間は未校正'],
  ['petAI','ペットの戦闘行動','missing','現在はプレイヤー火力から除外'],
  ['enemyAI','敵移動・ターゲット・ウェーブ','approximate','入力された位置・周期だけを再現'],
  ['statusEffects','燃焼・凍結・感電など','missing','状態異常による行動・DoTは未計算'],
  ['recordCalibration','実測値との校正','missing','現段階では自動校正しない']
 ];
-window.DBPSimulationRules={version,sources,skills,defaults,limits,kinds,normalize,requiredGameRules};
+const actualStormRotation=Object.freeze(['electrocute','lightningStorm','iceNova','flameAura']);
+function skillLevel(settings={},stats={},id){
+ const raw=settings?.skillRanks?.[id],learned=Number.isSafeInteger(raw)&&raw>=1&&raw<=10?raw:10;
+ const all=Math.max(0,Math.floor(Number(stats?.effective?.abilityLevels)||0));
+ const runeBonus=stats?.sourceFlags?.runes===false?0:
+  (window.DBPRunes?.selection(settings).equipped||[]).filter(r=>r.skill===id).reduce((sum,r)=>sum+r.level,0);
+ return learned+all+runeBonus;
+}
+function flameAuraBonuses(settings={},stats={}){
+ const rule=skills.flameAura,level=skillLevel(settings,stats,'flameAura');
+ return {level,duration:rule.duration,critChance:rule.critChance,
+  critDamage:rule.critDamageBase+(level-1)*rule.critDamagePerLevel,
+  baseCooldown:rule.baseCooldown};
+}
+window.DBPSimulationRules={version,sources,skills,defaults,limits,kinds,normalize,requiredGameRules,
+ actualStormRotation,skillLevel,flameAuraBonuses};
 })();

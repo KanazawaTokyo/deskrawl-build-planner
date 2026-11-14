@@ -343,6 +343,18 @@ case 'dps-duration':{
  case 'combat-debuffs':{if(value!=='on'&&value!=='off')return;modify(()=>{b.settings.combat??={};for(const key of window.DBPCombat.debuffKeys)b.settings.combat[key]=value==='on'});return;}
  case 'tab-engine':ui.tab='engine';ui.settingsOpen=false;ui.modal='';render();break;
 case 'lab-view-new':ui.labView='new';render();break;
+case 'lab-apply-known-rotation':{
+ const rule=window.DBPSimulationRules;
+ if(!rule)return;
+ modify(()=>{
+  b.settings??={};
+  b.settings.lab??={};
+  b.settings.lab.slots=[...rule.actualStormRotation];
+  ui.labTrials=null;ui.labSweep=null;
+ });
+ flash('実際の4スキル構成を戦闘研究へ反映しました');
+ break;
+}
 case 'lab-view-legacy':ui.labView='legacy';render();break;
 case 'lab-run-trials':{
  const lab=window.DBPSimulationV2,opts=window.DBPSimulationRules.normalize(b.settings?.lab||{}).config;

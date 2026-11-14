@@ -19,7 +19,7 @@ function numeric(key,title,value,description,placeholder){
 const modes=Object.entries(Rule.kinds);
 const basic=['electrocute','fireBall','iceShards','flameLightning'];
 const strong=['lightningStorm','frostBeam'];
-const special=['none','iceNova','lightningCloud','fireMeteor'];
+const special=['none','iceNova','flameAura','lightningCloud','fireMeteor'];
 function abilitySelect(index,value){
  const ids=index===0?basic:index===1?strong:special;
  return '<label class="field"><span>'+['基本攻撃','強攻撃','特殊①','特殊②'][index]+'</span><select data-change="lab" data-key="slot'+index+'">'+
@@ -36,6 +36,7 @@ function card(result,title){
   ['落雷',fmt(result.stormHits,0)+'ヒット'],['雷球',fmt(result.ballPulses,0)+'パルス'],
   ['Mana残量',fmt(result.manaEnd,1)+' / '+fmt(result.manaMax,0)],
   ['撃破時回復',fmt(result.manaFromKills,1)],
+  ['フレイムオーラ',result.auraCasts+'回 · 稼働率'+fmt(result.auraUptimePercent,1)+'%'],
   ['Wave完了',result.wavesCleared+' / '+result.options.waveCount],
   ['スキル使用',result.casts+'回']
  ];
@@ -50,7 +51,7 @@ function card(result,title){
 function eventTable(result){
  if(!result.ok)return '';
  const sampled=result.events.slice(-55);
- const names={'spawn':'敵出現','wave-clear':'Wave撃破','cast':'スキル使用','kill':'撃破','shoulder-stack':'元素スタック',
+ const names={'spawn':'敵出現','wave-clear':'Wave撃破','cast':'スキル使用','kill':'撃破','flame-aura':'炎のオーラ発動','shoulder-stack':'元素スタック',
   'beam-tick':'Beamヒット','beam-interrupt':'Mana不足で中断','nova-recover':'Ice Nova回復','enemy-hit':'被弾'};
  return '<details class="card sim-logs"><summary>戦闘タイムライン（記録済み'+result.events.length+'件のうち直近'+sampled.length+'件）</summary>'+
   '<div class="sim-log-head"><span>時刻</span><span>事象</span><span>Mana</span><span>Wave</span></div>'+
@@ -83,6 +84,8 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
  const others=state.builds.filter(x=>x.id!==build.id);
  const count=Runes.selection(build.settings||{}).counts.stormcaller||0;
  const noHP=o.enemyHP==null;
+ const actual=Rule.actualStormRotation;
+ const matchesActual=o.slots.every((id,i)=>id===actual[i]);
  let html='<main class="workspace simulation-workspace">'+
   '<div class="page-heading"><div class="eyebrow">COMBAT LAB V2</div><h1>戦闘研究</h1>'+
   '<p>複数敵・Wave・自動戦闘を同じ条件で試算します。結果は検証途中のモデルであり、実戦で保証されたクリア時間ではありません。</p></div>'+
@@ -120,7 +123,11 @@ function render({state,build,compareMode='runes',compareBuildId='',trials=null,s
   select('randomCrit','クリティカル判定',String(o.randomCrit),[['false','期待値'],['true','乱数1試行']])+
   '</div></details>'+
   '<div class="sim-slots"><div class="sim-slot-title">自動戦闘の4スキル枠 <small>優先順位 ④ → ③ → ② → ①</small></div>'+
+  '<div class="sim-real-rotation"><span>申告された実戦構成：感電 / ライトニングストーム / アイスノヴァ / フレイムオーラ</span>'+
+  (matchesActual?'<small>現在の設定に反映済み</small>':
+   '<button class="btn outline" data-action="lab-apply-known-rotation">この4スキルを適用</button>')+'</div>'+
   '<div class="sim-slot-grid">'+o.slots.map((id,i)=>abilitySelect(i,id)).join('')+'</div></div>'+
+  '<p class="helper">フレイムオーラは敵への直接攻撃ではなく、5秒間のクリティカル強化です（Lv10時：率+10pt、ダメージ+140%）。自動戦闘中のみ発動します。</p>'+
   '<p class="helper">変更した条件は現在のビルドに保存されます。変更前後の比較は同じ敵条件を使用します。</p></section>'+
   '<div class="sim-comparison">'+card(base,build.name)+
   '<section class="card simulation-alternative"><div class="card-heading"><div><h2>ビルド比較</h2><span>ルーンだけの仮想変更も実際の装備データを変更しません</span></div></div>'+

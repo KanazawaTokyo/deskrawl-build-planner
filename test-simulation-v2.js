@@ -14,6 +14,16 @@ const settings={base:{int:0,critChance:0,critDamage:0,dodge:0},combat:{abilityId
 const raw={mode:'single',duration:10,enemyHP:1000,slots:['electrocute','lightningStorm','none','none']};
 const sim=(opts={},cfg=settings,fx=stats,effect={items:{}})=>Sim.simulate(fx,cfg,effect,{...raw,...opts});
 assert.equal(Rules.version,'simulation-rules-1.1.11a-v2');
+assert.deepEqual(JSON.parse(JSON.stringify(Rules.defaults.slots)),
+ ['electrocute','lightningStorm','iceNova','flameAura'],
+ 'default Sorcerer 4-slot rotation matches the confirmed screenshot');
+assert.equal(Rules.skills.flameAura.shape,'self');
+assert.equal(Rules.skills.flameAura.baseCooldown,21);
+assert.equal(Rules.flameAuraBonuses(settings,stats).critDamage,140);
+assert.equal(Rules.flameAuraBonuses({skillRanks:{flameAura:1}},stats).critDamage,50);
+assert.equal(Rules.flameAuraBonuses({skillRanks:{flameAura:10},
+ runeSlots:['grand:flameAura']},stats).critDamage,200,'rune skill levels change aura critical damage');
+
 assert.deepEqual(JSON.parse(JSON.stringify(Rules.normalize({}).issues)),[]);
 assert(Rules.normalize({mode:'fish'}).issues.length);
 assert(Rules.normalize({enemyHP:'Infinity'}).issues.length);
@@ -34,6 +44,29 @@ assert(first.skillCasts.lightningStorm>=1);
 assert(first.hitsBySource.storm>=1);
 assert(first.appliedDamage<=1000+1e-6,'overkill never counted as applied');
 assert(first.totalDamage>=first.appliedDamage);
+const actualSlots=[...Rules.actualStormRotation];
+const auraScene={mode:'single',duration:12,enemyHP:1e11,slots:actualSlots};
+const auraNoCDR=sim(auraScene,settings,
+ {...stats,effective:{...stats.effective,cdr:0}});
+assert(auraNoCDR.ok,auraNoCDR.reason);
+assert.equal(auraNoCDR.events.find(e=>e.type==='cast').id,'flameAura',
+ 'self buff should be preferred over Nova/Storm when a combat wave starts');
+assert.equal(auraNoCDR.auraCasts,1,'21s base cooldown prevents recast in a 12s fight');
+assert(Math.abs(auraNoCDR.auraUptimeSeconds-5)<1e-6,'5 second aura must expire');
+assert(Math.abs(auraNoCDR.auraUptimePercent-41.7)<0.2,'uptime is measured from actual cast');
+assert.equal(auraNoCDR.events.find(e=>e.type==='flame-aura').critDamage,140);
+const auraNoCombat=sim({...auraScene,duration:2,initialDelay:4});
+assert.equal(auraNoCombat.auraCasts,0,'aura cannot cast before enemies arrive');
+const auraStats={...stats,effective:{...stats.effective,cdr:0,mana:50,
+ critChance:45,critDamage:150,manaRegen:0}};
+const auraHit=sim({duration:1,enemyHP:1e11,slots:['electrocute','lightningStorm','none','flameAura']},settings,auraStats);
+const plainHit=sim({duration:1,enemyHP:1e11,
+ slots:['electrocute','lightningStorm','none','none']},settings,auraStats);
+assert(auraHit.damageBySource.storm>plainHit.damageBySource.storm,
+ 'timed aura must increase Storm expected critical damage without becoming a permanent base stat');
+const statusAfter=sim({duration:2,enemyHP:1e11,slots:actualSlots},
+ settings,{...stats,effective:{...stats.effective,critChance:83.2}});
+assert(statusAfter.ok && statusAfter.auraCasts>=1);
 const ranked=sim({slots:['electrocute','lightningStorm','iceNova','lightningCloud'],enemyHP:1e9,duration:4});
 assert(ranked.ok,ranked.reason);
 assert.equal(ranked.events.find(x=>x.type==='cast').id,'lightningCloud',
@@ -108,6 +141,14 @@ assert.match(initialHtml,/戦闘研究/);
 assert.match(initialHtml,/data-change="lab"/);
 assert.match(initialHtml,/通常敵のHP/);
 assert.match(initialHtml,/未校正/);
+assert.match(initialHtml,/フレイムオーラ/);
+assert.match(initialHtml,/現在の設定に反映済み/);
+const previousRotation={...build,settings:{...build.settings,
+ lab:{slots:['electrocute','lightningStorm','iceNova','none']}}};
+const previousHtml=UI.render({state:doc,build:previousRotation,compareMode:'runes'});
+assert.match(previousHtml,/lab-apply-known-rotation/,'existing saved scenarios offer an opt-in migration');
+assert.equal(previousRotation.settings.lab.slots[3],'none','render never silently changes a saved scenario');
+
 assert.match(initialHtml,/敵HPが未入力/);
 const populatedHtml=UI.render({state:doc,build:{...build,settings:{...build.settings,
  lab:{mode:'single',duration:10,enemyHP:1000}}},compareMode:'runes'});
@@ -153,12 +194,19 @@ change('waveCount','6');
 change('enemiesPerWave','5');
 change('slot2','lightningCloud');
 change('observedTime','116');
+change('slot3','none');
+assert.match(app.innerHTML,/lab-apply-known-rotation/);
+click('lab-apply-known-rotation');
+assert.deepEqual(JSON.parse(JSON.stringify(ctx.DBPApp.getState().builds[0].settings.lab.slots)),
+ ['electrocute','lightningStorm','iceNova','flameAura']);
+
 let saved=ctx.DBPApp.getState();
 assert.equal(saved.builds[0].settings.lab.mode,'waves');
 assert.equal(saved.builds[0].settings.lab.waveCount,6);
 assert.equal(saved.builds[0].settings.lab.enemiesPerWave,5);
 assert.equal(saved.builds[0].settings.lab.observedTime,116);
-assert.equal(saved.builds[0].settings.lab.slots[2],'lightningCloud');
+assert.equal(saved.builds[0].settings.lab.slots[2],'iceNova');
+assert.equal(saved.builds[0].settings.lab.slots[3],'flameAura');
 assert.equal(JSON.stringify(saved.items),oldGear);
 assert.equal(JSON.parse(store.deskrawl_planner_v01).builds[0].settings.lab.enemyHP,1e8);
 click('lab-run-trials');
